@@ -1,0 +1,57 @@
+```gitignore
+
+# Dependencies
+
+node_modules/
+
+# Logs
+
+npm-debug.log*
+
+yarn-debug.log*
+
+yarn-error.log*
+
+pnpm-debug.log*
+
+# Environment variables
+
+.env
+
+.env.local
+
+.env.development
+
+.env.production
+
+# Firebase / Google service account secrets
+
+serviceAccountKey.json
+
+firebase-adminsdk*.json
+
+# Expo / React Native
+
+.expo/
+
+dist/
+
+web-build/
+
+# macOS
+
+.DS_Store
+
+# IDE
+
+.vscode/
+
+.idea/
+
+.cursor/
+
+# Build outputs
+
+build/
+
+coverage/

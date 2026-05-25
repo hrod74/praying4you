@@ -1,0 +1,17 @@
+#logo{
+  height: 50px;
+  width: 100px;
+  position: relative;
+}
+#footer {
+	background: rgb(248, 245, 240);
+	width: 100%;
+	border-top: #edebeb 5px solid;
+	padding: 13px 0px;
+	margin-top: 10px;
+	padding-bottom:0px;
+	color: #f8f5f0;
+}
+.hide-display{
+  display: none;
+}
