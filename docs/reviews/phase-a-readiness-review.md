@@ -220,3 +220,14 @@ minimal; confirm `app.json` has no config identifiers).
 > Phases B–H. Do not modify `legacy-web-app/` or `.claude/`. Introduce no secrets. Then
 > run the Phase A validation checklist (Section 12) and have the Release Manager produce
 > the readiness summary before commit.
+
+---
+
+## Addendum (added after Phase A) — UI/UX Designer role
+
+*This note does not change the Phase A readiness decision above; it records a team
+change made before Phase B.* A [UI/UX Designer](../agents/ui-ux-designer.md) review role
+and a [design direction](../design-direction.md) document were added after Phase A
+completed. The seven roles applied in this readiness review remain as originally
+recorded; from **Phase B onward**, the UI/UX Designer lens is applied alongside them for
+new screens and flows.

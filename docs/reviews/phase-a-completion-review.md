@@ -225,6 +225,11 @@ follow-ups carried into later phases.
   target yet. Not required for the prototype (iOS/Android via Expo Go is the path).
 - **Empty `src/` folders use README placeholders:** they will be populated in Phases
   B–H; the READMEs document intent and keep the structure tracked.
+- **New UI/UX Designer role (added after Phase A):** a
+  [UI/UX Designer](../agents/ui-ux-designer.md) review role and a
+  [design direction](../design-direction.md) doc were added before Phase B. They do not
+  change this Phase A review; from Phase B onward, the UI/UX Designer lens should be
+  applied to new screens/flows alongside the existing roles.
 
 ## 12. Go/No-Go Decision
 

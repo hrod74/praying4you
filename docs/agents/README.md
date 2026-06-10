@@ -6,9 +6,9 @@ high quality as it moves from planning into a functional local prototype.
 
 These are **not** installed external agent skills and they do **not** copy any
 third-party agent files. They are original, project-specific role definitions
-inspired by senior engineering review workflows (product, engineering, code review,
-security, testing, release management). Each role is a focused reviewer with a clear
-remit, checklist, and output format.
+inspired by senior engineering review workflows (product, design, engineering, code
+review, security, testing, release management). Each role is a focused reviewer with a
+clear remit, checklist, and output format.
 
 ---
 
@@ -29,6 +29,7 @@ remit, checklist, and output format.
 | Role | Primary focus | Reviews work like… |
 |---|---|---|
 | [Product Owner](product-owner.md) | PRD alignment, MVP scope, user & portfolio value, scope creep | New features, scope decisions, milestone boundaries |
+| [UI/UX Designer](ui-ux-designer.md) | Mobile-first experience, screen hierarchy, navigation clarity, visual consistency, accessibility basics, forms, empty/error states, calm/respectful tone, trust & privacy cues, demo polish, anti-clutter & anti-dark-patterns | New screens/flows, layout & tone, before screenshots/demo capture |
 | [React Native Engineer](react-native-engineer.md) | Expo architecture, TypeScript, navigation, folder structure, state, Firebase seam | App scaffolding, component/architecture choices |
 | [Code Reviewer](code-reviewer.md) | Correctness, readability, maintainability, simplicity, plan adherence | Any code change or PR/diff |
 | [Security Reviewer](security-reviewer.md) | No secrets, safe auth assumptions, UGC & prayer-content privacy, moderation, future Firebase rules | Anything touching data, auth, config, or user content |
@@ -40,6 +41,16 @@ remit, checklist, and output format.
 > verified (test plans, regression, automation); the QA Engineer decides *whether the
 > result is good enough* for a real user and a portfolio (acceptance criteria,
 > usability, polish). They are complementary and intentionally separate roles.
+
+> **When to use the UI/UX Designer:** bring this role in **before** building a new
+> screen or flow (to agree on layout, hierarchy, and tone) and **after** it is built
+> (to check visual consistency, accessibility basics, and demo polish) — and before
+> capturing screenshots/recordings for the portfolio. It sits between the Product Owner
+> (what to build and why) and the React Native Engineer (how to build it): the Designer
+> defines *how the agreed thing should look and feel*. It differs from the QA Engineer,
+> who validates that the built result actually works and is bug-free for a demo — design
+> sets the target, QA verifies the outcome. Design intent lives in
+> [`../design-direction.md`](../design-direction.md).
 
 ## How reviews are produced
 
