@@ -5,7 +5,7 @@
 `../product-requirements.md`, `../legacy-app-audit.md`,
 `../cost-and-publishing-considerations.md`, `../workflows.md`
 **Roles applied:** Product Owner, React Native Engineer, Code Reviewer, Security
-Reviewer, Test Engineer, Release Manager (see `../agents/`)
+Reviewer, Test Engineer, QA Engineer, Release Manager (see `../agents/`)
 
 ---
 
@@ -116,7 +116,32 @@ be resolved before starting Phase A.
   and expected "it boots" result in `mobile-app/README.md` as part of Phase A.
 - **Verdict:** Proceed.
 
-## 8. Release Manager Review
+## 8. QA Engineer Review
+
+- **Acceptance criteria:** Not yet exercisable (no app exists), but the in-scope user
+  stories have observable criteria defined in the PRD and implementation plan, giving
+  QA a clear basis to assess against once Phase A produces a running shell.
+- **End-to-end flow:** Phase A delivers only a navigable shell, not the full loop. QA's
+  acceptance bar for Phase A is narrow: the app launches and any placeholder routes are
+  reachable without dead ends. The full core-loop acceptance check belongs to later
+  phases (B–H).
+- **Mobile usability:** Confirm the shell respects safe areas/insets and that any
+  placeholder screens render cleanly on a phone — no clipped content, comfortable tap
+  targets even for placeholder navigation.
+- **Edge cases (user-facing):** Minimal at this stage; ensure a placeholder screen is
+  obviously a placeholder and not mistaken for a finished, broken feature.
+- **Accessibility basics:** No real content yet, but establish good habits from the
+  start — any placeholder interactive elements should carry accessible labels and
+  readable contrast so later screens inherit the pattern.
+- **Visual & demo/portfolio readiness:** Phase A is **not** itself a portfolio demo;
+  it is scaffolding. QA's note: keep placeholders unobtrusive so early screenshots are
+  not mistaken for the finished prototype. Visual/demo readiness is assessed from
+  Phase C onward.
+- **Required changes:** None blocking. Follow-up (non-blocking): keep placeholder
+  screens minimal and clearly labeled; defer all polish judgments to feature phases.
+- **Verdict:** Proceed.
+
+## 9. Release Manager Review
 
 - **Expected Phase A changed files:** a new `mobile-app/` directory (Expo project:
   `app/`, `package.json`, `tsconfig.json`, `app.json`, initial `src/` folders, and
@@ -127,7 +152,7 @@ be resolved before starting Phase A.
 - **Required validation checks:** app installs; app runs locally; navigation works if
   placeholders are included; secret scan passes; only expected files changed;
   `.claude/` not staged.
-- **Commit readiness criteria:** all six role verdicts are Proceed; secret check passes;
+- **Commit readiness criteria:** all seven role verdicts are Proceed; secret check passes;
   run commands documented; git status matches expectations.
 - **Required release notes content:** what was scaffolded (Expo + TS + Expo Router +
   folder skeleton), files changed, validation performed (install + local run), run
@@ -136,7 +161,7 @@ be resolved before starting Phase A.
 
 ---
 
-## 9. Final Phase A Scope
+## 10. Final Phase A Scope
 
 Phase A includes **only** the following:
 
@@ -151,7 +176,7 @@ Phase A includes **only** the following:
   welcome screen and a tab shell) — no feature logic.
 - **`mobile-app/README.md`** (or a docs update) documenting the local run commands.
 
-## 10. Phase A Must-Not-Do List
+## 11. Phase A Must-Not-Do List
 
 - Do **not** add Firebase (Auth, Firestore, config, SDK).
 - Do **not** add AdMob or any ad/analytics/tracking SDK.
@@ -164,7 +189,7 @@ Phase A includes **only** the following:
 - Do **not** build Phases B–H (profile, feed, submit, prayer interaction, verse,
   reporting, settings, polish) in this phase.
 
-## 11. Required Validation Before Phase A Commit
+## 12. Required Validation Before Phase A Commit
 
 - [ ] App installs successfully (`npm install`).
 - [ ] App runs locally (`npx expo start`) and boots in Expo Go / a simulator.
@@ -176,11 +201,11 @@ Phase A includes **only** the following:
 - [ ] Git status reviewed and matches expectations.
 - [ ] Release summary created (per the Release Manager output format).
 
-## 12. Go/No-Go Decision
+## 13. Go/No-Go Decision
 
 **Decision: GO — Proceed to Phase A.**
 
-All six role lenses return **Proceed**, with no blockers and only non-blocking
+All seven role lenses return **Proceed**, with no blockers and only non-blocking
 follow-ups (pin the Expo SDK version; document exact run commands; keep placeholders
 minimal; confirm `app.json` has no config identifiers).
 
@@ -193,5 +218,5 @@ minimal; confirm `app.json` has no config identifiers).
 > placeholder screens to confirm navigation, and write `mobile-app/README.md` with the
 > local run commands. Do not add Firebase, AdMob, app-store config, production auth, or
 > Phases B–H. Do not modify `legacy-web-app/` or `.claude/`. Introduce no secrets. Then
-> run the Phase A validation checklist (Section 11) and have the Release Manager produce
+> run the Phase A validation checklist (Section 12) and have the Release Manager produce
 > the readiness summary before commit.

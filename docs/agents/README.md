@@ -32,8 +32,14 @@ remit, checklist, and output format.
 | [React Native Engineer](react-native-engineer.md) | Expo architecture, TypeScript, navigation, folder structure, state, Firebase seam | App scaffolding, component/architecture choices |
 | [Code Reviewer](code-reviewer.md) | Correctness, readability, maintainability, simplicity, plan adherence | Any code change or PR/diff |
 | [Security Reviewer](security-reviewer.md) | No secrets, safe auth assumptions, UGC & prayer-content privacy, moderation, future Firebase rules | Anything touching data, auth, config, or user content |
-| [Test Engineer](test-engineer.md) | Manual test plans, future automated tests, regression, local-run verification | Each build phase and feature flow |
+| [Test Engineer](test-engineer.md) | Test *strategy*: manual test plans, future automated tests, regression, local-run verification | Each build phase and feature flow |
+| [QA Engineer](qa-engineer.md) | User-facing *quality*: acceptance criteria, end-to-end flow, mobile usability, edge cases, accessibility basics, visual/demo & portfolio readiness | Before a phase/feature is demo-ready or shown |
 | [Release Manager](release-manager.md) | Git status, expected changed files, run commands, validation, commit quality, push readiness | Every commit / phase wrap-up |
+
+> **Test Engineer vs. QA Engineer:** the Test Engineer decides *how* quality is
+> verified (test plans, regression, automation); the QA Engineer decides *whether the
+> result is good enough* for a real user and a portfolio (acceptance criteria,
+> usability, polish). They are complementary and intentionally separate roles.
 
 ## How reviews are produced
 
