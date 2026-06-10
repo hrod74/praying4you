@@ -50,6 +50,8 @@ web-build/
 
 .cursor/
 
+.claude/
+
 # Build outputs
 
 build/
