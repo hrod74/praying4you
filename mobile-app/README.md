@@ -21,10 +21,13 @@ app-store configuration are intentionally deferred to later milestones.
 
 No Expo/EAS account is required to run the app locally.
 
-> **Expo SDK / Expo Go compatibility:** this app targets **Expo SDK 55**, the latest
-> stable SDK supported by the current public **Expo Go** app from the App Store / Play
-> Store. (It is intentionally *not* on the newer SDK 56 edge, which the public Expo Go
-> does not yet support.) Just use the latest Expo Go and it will open this project.
+> **Expo SDK / Expo Go compatibility:** this app is pinned to **Expo SDK 54**, the SDK
+> supported by the current public **Expo Go** app from the iOS App Store (Expo Go 54.x).
+> It is intentionally *not* on the newer SDK 55/56 edge, which the public Expo Go does
+> not yet run. Use the latest public Expo Go and it will open this project. **Do not
+> upgrade the Expo SDK** until public Expo Go ships support for the target SDK, or until
+> the project moves to a development build / EAS (out of scope for this prototype).
+> After any SDK change, start with a cleared cache: `npx expo start -c`.
 
 ## Setup & run (local only)
 

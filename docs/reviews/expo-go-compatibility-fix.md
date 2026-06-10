@@ -4,6 +4,12 @@
 **Type:** Compatibility fix (pre–Phase C)
 **Commit:** `chore: align Expo app with Expo Go compatibility`
 
+> **⚠️ Superseded.** This change moved the app to **SDK 55**, but the public iOS Expo Go
+> only supports **SDK 54**, so the incompatibility error persisted. The app was
+> subsequently pinned to SDK 54 — see
+> [`expo-go-ios-compatibility-fix.md`](expo-go-ios-compatibility-fix.md) for the
+> verified fix. This document is kept for history.
+
 ---
 
 ## What failed
