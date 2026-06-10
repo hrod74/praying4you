@@ -1,16 +1,22 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 
+import { useAuth } from '../../src/context/AuthContext';
 import { colors } from '../../src/theme/theme';
 
 /**
- * Main app tab shell (shown to a signed-in user in later phases).
+ * Main app tab shell (shown only to a signed-in user).
  *
- * Phase A: a tab navigator over Feed, Verse, and Settings so tab navigation can be
- * confirmed. The Feed tab is itself a stack (feed/index → feed/[id]) to confirm
- * stacked detail navigation inside a tab. No auth-gating yet — Phase B decides when
- * this group is shown.
+ * Phase B: gated on the simulated session — a signed-out user is redirected to the
+ * welcome screen and cannot reach the tabs. Feed is itself a stack (feed/index →
+ * feed/[id]); the feed/verse/detail content remains Phase A placeholders until Phase C+.
  */
 export default function AppTabsLayout() {
+  const { isSignedIn } = useAuth();
+
+  if (!isSignedIn) {
+    return <Redirect href="/" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

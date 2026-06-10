@@ -1,43 +1,57 @@
-import { Link } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing, typography } from '../src/theme/theme';
+import { Button } from '../src/components/Button';
+import { useAuth } from '../src/context/AuthContext';
+import { colors, spacing, typography } from '../src/theme/theme';
 
 /**
  * Welcome / entry screen.
  *
- * Phase A placeholder: explains the concept in a sentence and provides links that
- * confirm navigation into both route groups — the (auth) group and the (app) tab
- * shell. Real onboarding / auth-gating arrives in Phase B.
+ * Phase B: the signed-out entry point. A signed-in user is redirected straight into the
+ * app. Otherwise it offers a calm introduction and two clear paths — create a profile,
+ * or sign in to an existing local profile.
  */
 export default function WelcomeScreen() {
+  const router = useRouter();
+  const { isSignedIn } = useAuth();
+
+  if (isSignedIn) {
+    return <Redirect href="/(app)/feed" />;
+  }
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.hero}>
         <Text style={styles.title}>Praying 4 You</Text>
         <Text style={styles.subtitle}>
           Share a prayer request, or pick one up and pray for someone else.
         </Text>
-        <Text style={styles.placeholderNote}>
-          Phase A foundation — placeholder screens to confirm navigation. Features
-          arrive in later phases.
+        <Text style={styles.supporting}>
+          A calm, supportive space. You stay in control of what you share.
         </Text>
       </View>
 
       <View style={styles.actions}>
-        <Link href="/(app)/feed" style={[styles.button, styles.buttonPrimary]}>
-          Enter app shell (tabs)
-        </Link>
-        <Link href="/(auth)/sign-in" style={[styles.button, styles.buttonSecondary]}>
-          Auth screens (Phase B placeholder)
-        </Link>
+        <Button
+          label="Get started"
+          onPress={() => router.push('/(auth)/create-profile')}
+          accessibilityHint="Create your local profile"
+        />
+        <Button
+          label="I already have a profile"
+          variant="secondary"
+          onPress={() => router.push('/(auth)/sign-in')}
+          accessibilityHint="Sign in to your existing local profile"
+        />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
     padding: spacing.lg,
     justifyContent: 'space-between',
@@ -49,30 +63,12 @@ const styles = StyleSheet.create({
   },
   title: typography.title,
   subtitle: typography.body,
-  placeholderNote: {
+  supporting: {
     ...typography.muted,
     marginTop: spacing.sm,
   },
   actions: {
     gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  button: {
-    textAlign: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonPrimary: {
-    backgroundColor: colors.primary,
-    color: colors.primaryText,
-  },
-  buttonSecondary: {
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginBottom: spacing.lg,
   },
 });

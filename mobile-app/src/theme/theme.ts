@@ -16,6 +16,11 @@ export const colors = {
   text: '#2A2A33',
   textMuted: '#6B6B76',
   accent: '#E6F4FE',
+  // Warm gold accent for hope/encouragement (used sparingly — see design-direction.md §4).
+  gold: '#C9A227',
+  // Calm, non-alarming error tone (muted terracotta), paired with text/icon, never color-alone.
+  danger: '#B4533E',
+  dangerSurface: '#FBEDE9',
 } as const;
 
 export const spacing = {

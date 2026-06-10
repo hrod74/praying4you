@@ -40,3 +40,5 @@ Manager) to a piece of work and records a clear decision.
   Expo app.
 - [Phase A Completion Review](phase-a-completion-review.md) — go/no-go to commit the
   scaffolded app and proceed to Phase B.
+- [Phase B Completion Review](phase-b-completion-review.md) — go/no-go to commit local
+  auth + profile simulation and proceed to Phase C.

@@ -1,0 +1,61 @@
+import { type ReactNode } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
+
+import { colors, spacing } from '../theme/theme';
+
+/**
+ * Screen — a calm, consistently-padded container for a single screen's content.
+ *
+ * Gives every screen the same warm background, soft padding, and keyboard-avoiding
+ * behavior so forms stay usable on a phone. Keeps screens visually consistent per
+ * design-direction.md (soft spacing, mobile-first).
+ */
+export function Screen({
+  children,
+  scroll = false,
+  contentStyle,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      {scroll ? (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[styles.content, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={[styles.flex, styles.content, contentStyle]}>{children}</View>
+      )}
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+});
+
+export default Screen;

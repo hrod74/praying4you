@@ -1,32 +1,65 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { colors } from '../src/theme/theme';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { colors, spacing, typography } from '../src/theme/theme';
 
 /**
- * Root layout for the Praying 4 You prototype.
+ * Root layout.
  *
- * Phase A: a plain Stack over the welcome screen plus the (auth) and (app) route
- * groups, just enough to confirm navigation works. In later phases this is where the
- * app is wrapped in the Auth and Prayer providers (src/context/) and where auth-gating
- * decides whether to show the (auth) or (app) group. No providers or gating yet.
+ * Phase B: wraps the app in AuthProvider and gates navigation on the simulated session.
+ * While the persisted profile/session is loading we show a calm splash to avoid a
+ * flash of the wrong screen. Actual signed-in vs. signed-out routing is enforced by the
+ * group layouts ((auth) and (app)) and the welcome screen via <Redirect>.
  */
+function RootNavigator() {
+  const { isHydrating } = useAuth();
+
+  if (isHydrating) {
+    return (
+      <View style={styles.splash}>
+        <Text style={styles.splashTitle}>Praying 4 You</Text>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.background },
+        headerTintColor: colors.text,
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(app)" options={{ headerShown: false }} />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.text,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      >
-        <Stack.Screen name="index" options={{ title: 'Praying 4 You' }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      </Stack>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.background,
+  },
+  splashTitle: typography.title,
+});
