@@ -38,3 +38,5 @@ Manager) to a piece of work and records a clear decision.
 
 - [Phase A Readiness Review](phase-a-readiness-review.md) — go/no-go to scaffold the
   Expo app.
+- [Phase A Completion Review](phase-a-completion-review.md) — go/no-go to commit the
+  scaffolded app and proceed to Phase B.
