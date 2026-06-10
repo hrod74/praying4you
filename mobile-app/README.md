@@ -21,6 +21,11 @@ app-store configuration are intentionally deferred to later milestones.
 
 No Expo/EAS account is required to run the app locally.
 
+> **Expo SDK / Expo Go compatibility:** this app targets **Expo SDK 55**, the latest
+> stable SDK supported by the current public **Expo Go** app from the App Store / Play
+> Store. (It is intentionally *not* on the newer SDK 56 edge, which the public Expo Go
+> does not yet support.) Just use the latest Expo Go and it will open this project.
+
 ## Setup & run (local only)
 
 ```bash
@@ -100,7 +105,6 @@ mobile-app/
 │
 ├── assets/                    # App icons / splash
 ├── app.json                   # Expo config (no secrets)
-├── .npmrc                     # legacy-peer-deps=true (see note below)
 ├── package.json
 └── tsconfig.json
 ```
@@ -120,12 +124,6 @@ mobile-app/
   profile and the simulated session flag on-device so they survive app restarts. This
   is the only added runtime dependency in Phase B; it needs no backend and stores no
   secrets.
-
-> **Note on `.npmrc`:** Expo SDK 56 pins `react@19.2.3` while a web-only transitive
-> (`react-dom`) requests a slightly newer React. That mismatch only affects the unused
-> web target, but npm 11's strict peer resolution would block `npm install`. The
-> committed `.npmrc` sets `legacy-peer-deps=true` so `npm install` works from a clean
-> clone. It configures no registry credentials.
 
 ## Scope guardrails (prototype milestone)
 
