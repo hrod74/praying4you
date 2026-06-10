@@ -126,10 +126,10 @@ The app loads Firebase via:
 This is **Firebase SDK v3.0**, loaded from a `live` CDN channel. This version is approximately 8–9 years old. The current Firebase SDK is v9+ (modular). Firebase v3 uses the legacy namespaced API (`firebase.database()`, `firebase.initializeApp()`, etc.).
 
 ### Firebase Project References
-- The app references a specific Firebase project by URL and ID.
-- A Firebase API key is hardcoded directly in `js/app.js` and duplicated in `js/app-scratch.js`.
-- The project ID is also present in `.firebaserc`.
-- **Important:** Firebase web API keys are not secret in the traditional sense — they are public identifiers used to locate a Firebase project. However, with fully open database rules (see below), this API key combined with the open rules means anyone can read and write all data. The key should not be considered sensitive on its own, but the open rules make it dangerous in combination.
+- The original legacy app contained Firebase configuration values (an API key, a database URL, and a storage bucket) inline in client-side JavaScript (`js/app.js`, duplicated in `js/app-scratch.js`), and a Firebase project identifier in `.firebaserc`.
+- **These configuration values have since been removed from the source and replaced with non-functional placeholders** (for example, `REPLACE_WITH_FIREBASE_API_KEY`). The current repository does **not** contain live Firebase keys, database URLs, or bucket names.
+- **Important — the underlying concern still matters.** Firebase web API keys are not secret in the traditional sense; they are public identifiers used to locate a Firebase project. However, committing configuration into client-side source is poor practice, and combined with fully open database rules (see below) such values would let anyone read and write all data. Even though the legacy values are now placeholders, this remains a critical lesson for any future Firebase setup.
+- **For the React Native rebuild, Firebase configuration should use safe environment/config patterns** appropriate for Expo — for example, environment variables and `.gitignore`-excluded config loaded via `app.config` / EAS secrets — rather than hardcoded values committed to the repository. Real protection must come from strict, authentication-based Firestore security rules, not from obscuring the config.
 
 ### Database Usage
 - The app uses **Firebase Realtime Database** (not Firestore).
@@ -154,7 +154,7 @@ This is **Firebase SDK v3.0**, loaded from a `live` CDN channel. This version is
 ### Risks and Outdated Patterns
 - **Open database rules** are a critical security vulnerability.
 - **Firebase SDK v3 is unsupported.** It receives no security patches.
-- **API key hardcoded in source code** — while not a secret by Firebase design, it is bad practice and will be committed to version control.
+- **Configuration was originally hardcoded in source code** — while Firebase web keys are not secret by design, committing config into client-side source is bad practice. These values have since been replaced with placeholders in this repository, but the pattern must be avoided in the rebuild by using environment/config patterns appropriate for Expo.
 - **No Firebase Authentication** is used or configured.
 - The `live/3.0` CDN channel is no longer maintained; behavior is unpredictable.
 
