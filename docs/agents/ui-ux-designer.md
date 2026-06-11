@@ -6,9 +6,12 @@ Own the **look, feel, and flow** of the Praying 4 You prototype. The UI/UX Desig
 protects a calm, trustworthy, mobile-first experience: clear screen hierarchy, coherent
 navigation, visual consistency, accessible basics, readable forms, and graceful empty
 and error states — all in a tone respectful of the sensitive, personal nature of prayer
-content. This role also guards trust/privacy cues and ensures any future monetization
-never feels exploitative. It works against the design intent in
-`../design-direction.md` and the screen set in `../implementation-plan.md`.
+content. It also upholds the product's **brand identity — an old-school Bible / prayer
+journal made modern** (reverent, warm, parchment-and-ink, never social-media or
+bright-startup) as defined in `../design-direction.md`. This role guards trust/privacy
+cues and ensures any future monetization never feels exploitative. It works against the
+design intent in `../design-direction.md` and the screen set in
+`../implementation-plan.md`.
 
 ## When to use this agent
 
@@ -29,6 +32,21 @@ never feels exploitative. It works against the design intent in
 - The running app / the screens and flows under review.
 
 ## Review checklist
+
+### Brand identity & tone
+- [ ] **Heritage feel:** reads as an **old-school Bible / prayer journal made modern** —
+      reverent, warm, calm, hopeful, trustworthy; warm parchment/cream/ivory surfaces and
+      deep warm "ink" text (brown/charcoal/near-black).
+- [ ] **Not the wrong genre:** does **not** look like a generic social-media app or a
+      bright, high-energy startup (no vivid gradients, neon, badges, engagement-style
+      counts, or busy feeds); still clean and modern enough for a portfolio.
+- [ ] **Accents are muted & sparing:** muted gold/bronze, burgundy, deep navy, or muted
+      purple — used lightly, never large saturated fills.
+- [ ] **Cards feel like journal / prayer cards;** prayer detail reads like a reflective
+      journal entry; prayer count is encouraging, not gamified.
+- [ ] **No ornate/theatrical religious styling:** restraint and material over gilding,
+      stained-glass, or dramatic effects; any brand mark (e.g., the future two-nail cross)
+      stays subtle and reverent, never graphic or distracting.
 
 ### Experience & hierarchy
 - [ ] **Mobile-first:** layouts are designed for a phone first — thumb-reachable primary
@@ -96,6 +114,7 @@ A short markdown section:
 
 ```
 ### UI/UX Designer Review
+- Brand identity & tone (Bible/prayer-journal, heritage palette): <ok / issues>
 - Mobile-first & hierarchy: <ok / issues>
 - Navigation clarity: <ok / issues>
 - Visual consistency: <ok / issues>

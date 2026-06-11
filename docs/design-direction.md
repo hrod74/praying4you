@@ -25,10 +25,22 @@ design system the prototype does not yet need.
 The redesign deliberately moves away from the legacy app's dense Bootstrap-3 table
 layout toward a warm, card-based, touch-first mobile feel.
 
+**Design inspiration — an old-school Bible / prayer journal.** The app should feel like a
+worn, treasured Bible or a handwritten prayer journal: **reverent, warm, trustworthy,
+calm, and hopeful.** It should *not* feel like a generic social-media app or a bright,
+high-energy startup app — no busy feeds, vivid gradients, badges, or engagement bait.
+At the same time it must still feel **modern and clean enough for a mobile portfolio
+prototype**: the heritage feeling comes from warmth, restraint, and material (paper,
+ink, muted metal), not from skeuomorphic clutter or ornate decoration.
+
 ## 2. Brand Personality
 
 The product should feel:
 
+- **Reverent** — quietly sacred, like opening a well-loved Bible or prayer journal;
+  treats prayer with dignity, never casually or as content to be "engaged with."
+- **Warm** — inviting and human, with the warmth of paper, ink, and candlelight rather
+  than cold screens or clinical UI.
 - **Calm** — quiet layouts, soft spacing, nothing loud or urgent.
 - **Hopeful** — gently encouraging, light rather than heavy.
 - **Respectful** — mindful that prayer content can involve grief, illness, and fear.
@@ -38,45 +50,70 @@ The product should feel:
 - **Non-performative** — no vanity metrics, streaks, or pressure to engage; prayer is
   not a popularity contest.
 
+Taken together, the personality is **"old-school Bible / prayer journal, made modern":**
+reverent and warm in feeling, clean and legible in execution.
+
 ## 3. Visual Direction
 
-A lightweight, restrained visual style:
+A lightweight, restrained visual style with a warm, aged-paper heritage feel:
 
 - **Clean, mobile-first interface** — vertical flow, thumb-reachable primary actions.
-- **Soft spacing** — generous padding and breathing room; let content rest.
-- **Card-based prayer feed** — each request is a calm, self-contained card.
-- **Gentle contrast** — readable but not harsh; soft surfaces over stark white/black.
+- **Aged-paper / parchment foundation** — backgrounds evoke warm parchment, cream, or
+  ivory (see §4); surfaces feel like paper, not glossy cards. The warmth carries the
+  "Bible / prayer journal" feeling without literal textures becoming clutter.
+- **Soft spacing** — generous padding and breathing room; let content rest, like margins
+  around a printed verse.
+- **Journal-style prayer cards** — each request reads like a simple journal card, a Bible
+  page note, or a paper prayer card: calm surface, soft hairline border, gentle (low)
+  shadow, comfortable padding; whole card tappable.
+- **Gentle contrast** — readable but never harsh; warm off-white surfaces and deep warm
+  ink, not stark pure-white-on-black or high-glare contrast.
 - **Clear primary actions** — one obvious primary button per screen; secondary actions
   are visibly secondary (outline/text style).
 - **Minimal visual clutter** — only what the moment needs; hide advanced options.
-- **Avoid overly ornate religious styling** — no heavy iconography, gilded frames, or
-  decorative flourishes; the tone is welcoming and non-denominational.
-- **Avoid dark/heavy emotional design** — no somber, oppressive palettes; the mood is
-  light and hopeful even around hard topics.
+- **Avoid overly ornate religious styling** — no heavy iconography, gilded frames,
+  stained-glass motifs, or decorative flourishes; the tone is welcoming and
+  non-denominational. Heritage comes from material and restraint, not ornament.
+- **Avoid harsh contrast and anything theatrical** — no dramatic spotlights, heavy
+  vignettes, or somber/oppressive palettes; the mood stays light, warm, and hopeful even
+  around hard topics.
+- **Don't look like social media or a bright startup** — no vivid gradients, neon
+  accents, badges, like-counts styled as engagement, or busy multi-column feeds.
 
 ## 4. Suggested Color Direction
 
-A soft, accessible palette **direction** (final values can be tuned later; values below
-are illustrative and align with the current prototype theme):
+A soft, accessible, **aged-paper-inspired** palette **direction** (final values can be
+tuned later; values below are illustrative). The palette should feel like ink and muted
+metal on warm paper:
 
-- **Warm neutral background** — a soft off-white/cream rather than pure white, for a
-  calm, warm base (e.g., approx. `#FBF8F4`).
-- **Deep readable text** — a dark, slightly warm near-black/charcoal for high
-  legibility without harsh pure-black (e.g., approx. `#2A2A33`); muted gray for
+- **Warm parchment / cream / ivory background** — an aged-paper-inspired warm off-white,
+  never pure white (e.g., approx. `#FBF8F4`, or a touch warmer toward `#F5EFE4`). This is
+  the canvas that carries the Bible / prayer-journal feeling.
+- **Deep, readable "ink" text** — dark **warm brown**, **warm charcoal**, or near-black
+  for high legibility without harsh pure-black (e.g., a warm charcoal around `#2A2A33`,
+  or a deep espresso brown such as `#3A2E25`); a muted warm gray/taupe for
   secondary/metadata text.
-- **Soft blue or muted purple** for **trust / reflection** — the primary action and
-  brand accent (e.g., a muted indigo/purple around `#6C63FF`, or a calm blue). This
-  carries primary buttons and links.
-- **Muted gold or warm accent** for **hope / encouragement** — a gentle warm tone for
-  positive moments (e.g., a confirmed prayer, encouragement highlights); used sparingly.
-- **Clear but non-alarming error color** — a soft, desaturated red/terracotta that
+- **Muted, heritage accents — used sparingly** for trust, reflection, and hope. Draw from
+  a restrained, slightly antique set: **muted gold / bronze** (hope, encouragement,
+  confirmed prayer), **burgundy / deep wine** (warm emphasis), **deep navy** (calm,
+  trust), or **muted purple** (reflection). Pick a small accent family — ideally one
+  primary accent plus one or two supporting tones — rather than using all of them.
+- **Clear but non-alarming error color** — a soft, desaturated terracotta/clay that
   signals a problem calmly, never a harsh "danger" red; always paired with text/icon.
 - **Accessible contrast expectations** — aim for **WCAG AA**: ≥ 4.5:1 for body text and
-  ≥ 3:1 for large text and meaningful UI elements. Verify primary buttons, links, and
-  error text against their backgrounds.
+  ≥ 3:1 for large text and meaningful UI elements. Warm parchment + deep ink should
+  comfortably clear AA; verify accent-colored buttons, links, and error text against
+  their backgrounds (muted gold especially needs checking on light parchment).
 
-Use color sparingly: a warm neutral canvas, one trust-tone primary, and small accents.
-Avoid large saturated fills.
+Use color sparingly: a warm parchment canvas, deep ink text, and small muted-metal /
+deep-jewel accents. Avoid large saturated fills, bright primaries, and anything neon.
+
+> **Note on current theme tokens.** `mobile-app/src/theme/theme.ts` is an early baseline
+> that already leans warm (parchment-ish `#FBF8F4` background, warm-charcoal text, a
+> `gold` token). Its current primary is a brighter muted purple (`#6C63FF`); a Phase C /
+> polish pass should **shift the primary and accents toward this warmer heritage palette**
+> (e.g., muted gold/bronze, burgundy, or deep navy). This document updates the
+> *direction* only — it does not change code; the token refinement is a future task.
 
 ## 5. Typography Direction
 
@@ -98,9 +135,11 @@ Avoid large saturated fills.
 Reusable patterns the prototype should standardize (build as simple shared components
 when they first appear, not all up front):
 
-- **Prayer request cards** — display name or "Anonymous", relative date, prayer text
-  (truncated in feed), and prayer count; calm surface, soft border/shadow, comfortable
-  padding; whole card tappable to detail.
+- **Prayer request cards** — styled like a **simple journal card / paper prayer card**:
+  warm paper surface, soft hairline border, gentle low shadow, comfortable padding.
+  Show display name or "Anonymous", relative date, prayer text (truncated in feed), and
+  prayer count; whole card tappable to detail. Calm and readable first — never a dense,
+  social-media-style row.
 - **Primary & secondary buttons** — one primary (filled, trust-tone) per screen;
   secondary as outline/text; large tap targets; clear pressed/disabled states.
 - **Form fields** — visible label above the field, gentle placeholder, appropriate
@@ -108,10 +147,15 @@ when they first appear, not all up front):
 - **Anonymous posting toggle** — a clear switch on the submit screen with a one-line
   explanation ("Your name won't be shown publicly"); never implies the post is
   untracked.
-- **"I prayed for this" action** — a warm, satisfying primary action on detail; obvious
-  confirmed state after tapping; hidden/disabled on the user's own post.
-- **Prayer count display** — quiet metadata (e.g., "12 prayed"), framed as support, not
-  a competitive score.
+- **Anonymous / named display** — clear but **understated**: the display name or
+  "Anonymous" sits as quiet metadata on the card/detail, never a bold byline or avatar
+  that turns the post into a social profile.
+- **"I prayed for this" action** — a warm, sincere primary action on detail; obvious
+  confirmed state after tapping; hidden/disabled on the user's own post. It should feel
+  like *joining someone in prayer*, not "liking" a post.
+- **Prayer count display** — quiet, **encouraging** metadata (e.g., "12 people prayed"),
+  framed as companionship and support — **never gamified**: no leaderboards, streaks,
+  trophies, trending, or counts styled as engagement metrics.
 - **Empty states** — friendly illustration/text + a suggested next action (see §7).
 - **Error states** — calm inline messages (see §3 color guidance); recoverable.
 - **Settings rows** — simple list rows with a label, optional value, and chevron;
@@ -130,8 +174,10 @@ when they first appear, not all up front):
 - **Prayer feed** — scrollable list of calm cards, newest first; comfortable spacing
   between cards; obvious entry point to submit a request; friendly empty state when no
   requests exist; pull-to-refresh feels natural.
-- **Prayer detail** — full prayer text with room to breathe; the **"I prayed for this"**
-  action is the clear focus; prayer count shown quietly; report action available but
+- **Prayer detail** — should feel **reflective, like reading a prayer card or a journal
+  entry**: full prayer text centered and given room to breathe on warm paper, generous
+  margins, comfortable line height; the **"I prayed for this"** action is the clear,
+  quiet focus; prayer count shown gently as companionship; report action available but
   understated (e.g., overflow menu), never visually aggressive.
 - **Submit prayer request** — single focused compose screen; large text area with a
   character counter and gentle min/max guidance; the **anonymous toggle** with a short
@@ -213,6 +259,13 @@ role's full checklist in [`agents/ui-ux-designer.md`](agents/ui-ux-designer.md))
 - [ ] Each screen has one clear purpose and one obvious primary action.
 - [ ] Navigation is clear; the user can always orient and go back; no dead ends.
 - [ ] Visual style follows this direction and the theme tokens; no drifting one-offs.
+- [ ] **Heritage feel holds:** warm parchment/ink palette, journal-style cards; reads as
+      an old-school Bible / prayer journal made modern — **not** social media or a bright
+      startup app, and **not** ornate/theatrical.
+- [ ] Accents are muted and sparing (gold/bronze, burgundy, deep navy, or muted purple);
+      no neon, vivid gradients, or large saturated fills.
+- [ ] Prayer count reads as encouragement/companionship, never gamified (no streaks,
+      leaderboards, or engagement-style metrics).
 - [ ] Spacing is soft and uncluttered; nothing ornate or visually heavy.
 - [ ] Forms have visible labels, sensible keyboards, inline validation, and counters
       where length matters.
@@ -230,3 +283,44 @@ role's full checklist in [`agents/ui-ux-designer.md`](agents/ui-ux-designer.md))
       over-building for a prototype.
 - [ ] Verdict recorded (Proceed / Proceed with changes / Do not proceed) with any
       required changes.
+
+## 13. Brand Mark / Splash Concept — Two-Nail Cross (future)
+
+A future brand mark / splash idea to explore — **not** a Phase C deliverable and not
+required for the prototype:
+
+- **Concept:** a subtle cross formed from **two old iron nails** (one vertical, one
+  horizontal), suggesting the cross simply and symbolically — aged metal on warm paper.
+- **Tone:** **symbolic and reverent**, quiet and restrained. It should feel like a small
+  pressed emblem on a journal cover, not an illustration.
+- **Avoid:** anything **graphic, bloody, violent, gory, or overly detailed**; no dripping,
+  wounds, dramatic lighting, or hyper-realistic rendering. Keep it minimal and calm.
+- **Usage:** suitable later as a **loading/splash mark or small brand emblem** (e.g., a
+  muted bronze/iron mark on parchment). It must **never distract from the prayer
+  experience** — small, secondary, and absent from content-heavy or emotional moments.
+- **Scope note:** this is a forward concept only. Custom logo/illustration work and any
+  splash animation are deferred per §11 (Prototype Design Constraints) and should be
+  done well after the core screens, ideally toward portfolio polish or the later
+  milestones.
+
+## 14. Phase C UI Direction (Feed & Detail)
+
+Concrete guidance for the upcoming Phase C screens (mock prayer **feed** and **detail**),
+so they embody the heritage direction from day one. (Design *polish* remains a later
+phase; these are the principles to build against now.)
+
+- **Feed cards** — calm, readable, journal-style cards (see §6): warm paper surface, soft
+  hairline border, gentle low shadow, generous padding; one card per request, comfortable
+  vertical spacing between them. Newest first. No dense rows, avatars-as-identity, or
+  social-media chrome.
+- **Prayer detail** — reflective, like reading a **prayer card or journal entry** (see
+  §7): the prayer text is the centerpiece with warm paper, roomy margins, and easy line
+  height; supporting metadata stays quiet.
+- **Anonymous vs. named** — clear but **understated** quiet metadata (name or
+  "Anonymous"); never a prominent byline or profile treatment.
+- **Prayer count** — **encouraging, not gamified** (e.g., "12 people prayed"); framed as
+  companionship and support, with no streaks, leaderboards, trending, or engagement-style
+  emphasis.
+- **Overall** — nothing should make prayer feel like social-media engagement. Favor
+  stillness and legibility over density, motion, or visual noise. Empty/loading states
+  stay warm and calm (a quiet line on parchment, not a spinner-heavy screen).
