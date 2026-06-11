@@ -22,6 +22,48 @@ export interface UserProfile {
 
 export type PrayerStatus = 'active' | 'flagged' | 'removed';
 
+/**
+ * A small, controlled set of prayer categories. Stored as stable keys (so they carry
+ * forward cleanly to Firestore and support future filtering); use
+ * `PRAYER_CATEGORY_LABELS` for human-readable display text.
+ */
+export type PrayerCategory =
+  | 'health'
+  | 'family'
+  | 'finances'
+  | 'relationships'
+  | 'grief'
+  | 'work'
+  | 'guidance'
+  | 'praise'
+  | 'other';
+
+/** Display labels for each category key. */
+export const PRAYER_CATEGORY_LABELS: Record<PrayerCategory, string> = {
+  health: 'Health',
+  family: 'Family',
+  finances: 'Finances',
+  relationships: 'Relationships',
+  grief: 'Grief',
+  work: 'Work',
+  guidance: 'Guidance',
+  praise: 'Praise / Answered Prayer',
+  other: 'Other',
+};
+
+/** All category keys in display order (handy for future pickers/filters). */
+export const PRAYER_CATEGORIES: PrayerCategory[] = [
+  'health',
+  'family',
+  'finances',
+  'relationships',
+  'grief',
+  'work',
+  'guidance',
+  'praise',
+  'other',
+];
+
 export interface PrayerRequest {
   id: string;
   /** Owner — always set, even when the request is displayed anonymously. */
@@ -32,6 +74,8 @@ export interface PrayerRequest {
   displayName: string;
   /** Request body (10–500 chars, enforced in later phases). */
   body: string;
+  /** How the requester framed the request (helps scanning + future filtering). */
+  category: PrayerCategory;
   createdAt: string;
   status: PrayerStatus;
   prayerCount: number;

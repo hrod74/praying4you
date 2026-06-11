@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { PrayerRequest } from '../models/types';
+import { PRAYER_CATEGORY_LABELS, type PrayerRequest } from '../models/types';
 import { colors, radius, spacing, typography } from '../theme/theme';
 import { formatPrayerCount, formatShortDate, truncate } from '../utils/format';
+import { CategoryTag } from './CategoryTag';
 
 /**
  * PrayerCard — a single prayer request shown as a calm, journal-style card.
@@ -28,16 +29,18 @@ function PrayerCardComponent({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Prayer request from ${shownName}. ${formatPrayerCount(prayer.prayerCount)}.`}
+      accessibilityLabel={`${PRAYER_CATEGORY_LABELS[prayer.category]} prayer request from ${shownName}. ${formatPrayerCount(prayer.prayerCount)}.`}
       accessibilityHint="Opens the full prayer request"
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View style={styles.header}>
-        <Text style={styles.name} numberOfLines={1}>
-          {shownName}
-        </Text>
+        <CategoryTag category={prayer.category} />
         <Text style={styles.date}>{formatShortDate(prayer.createdAt)}</Text>
       </View>
+
+      <Text style={styles.name} numberOfLines={1}>
+        {shownName}
+      </Text>
 
       <Text style={styles.body}>{truncate(prayer.body, 200)}</Text>
 

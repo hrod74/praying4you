@@ -87,7 +87,7 @@ The following features must be present in the version 1 release. Nothing listed 
 
 **Public anonymous posting option.** A toggle on the submission form that allows the user to post without their display name visible to others. When toggled on, the post appears in the feed attributed to "Anonymous." The user's account is always privately associated with the post in the database.
 
-**Prayer request feed.** A scrollable, paginated card-based feed of active prayer requests ordered by most recent first. Each card displays: date posted, display name or "Anonymous," the prayer request text, and the current prayer count.
+**Prayer request feed.** A scrollable, paginated card-based feed of active prayer requests ordered by most recent first. Each card displays: a subtle category tag, date posted, display name or "Anonymous," the prayer request text, and the current prayer count.
 
 **Prayer detail view.** Tapping a prayer card opens a full detail screen with the complete prayer text, the prayer count, and the "I prayed for this" button.
 
@@ -184,21 +184,22 @@ As a user who forgot their password, I want to request a password reset email, s
 - Character count displayed in real time below the text input.
 - Submit button is disabled until the minimum length is met.
 - An anonymous toggle allows the user to choose whether their display name appears publicly. Default is non-anonymous (name shown).
-- On submit, the request is written to the `prayerRequests` Firestore collection with: `userId`, `isAnonymous`, `displayName` (or "Anonymous" if toggled), `body`, `createdAt` (server timestamp), `status: "active"`, `prayerCount: 0`, `reportCount: 0`.
+- The submit form includes a category selector (a small controlled set: Health, Family, Finances, Relationships, Grief, Work, Guidance, Praise / Answered Prayer, Other). Default is "Other".
+- On submit, the request is written to the `prayerRequests` Firestore collection with: `userId`, `isAnonymous`, `displayName` (or "Anonymous" if toggled), `body`, `category`, `createdAt` (server timestamp), `status: "active"`, `prayerCount: 0`, `reportCount: 0`.
 - A success screen is shown after submission. It confirms the request was received and offers a return-to-feed button.
 - Firebase write errors are caught and displayed as an in-app error message. The form is not cleared if the write fails.
 
 ### Prayer Feed
 - Displays a scrollable list of `prayerRequests` documents where `status == "active"`, ordered by `createdAt` descending.
 - Feed is paginated (load more on scroll) using Firestore cursor-based pagination. Initial page size: 20 records.
-- Each card displays: date posted (formatted, e.g., "May 26"), display name or "Anonymous," the first 200 characters of the prayer body (truncated with ellipsis if longer), and the current `prayerCount`.
+- Each card displays: the `category` (as a subtle tag), date posted (formatted, e.g., "May 26"), display name or "Anonymous," the first 200 characters of the prayer body (truncated with ellipsis if longer), and the current `prayerCount`.
 - A report option is accessible on each card via a long-press or a three-dot menu icon.
 - Tapping a card navigates to the prayer detail view.
 - The Verse of the Day card is pinned above the feed list.
 - Pull-to-refresh reloads the feed from the top.
 
 ### Prayer Detail
-- Displays the full prayer request text, display name or "Anonymous," the full date and time posted, and the current prayer count.
+- Displays the `category` (as a subtle tag), the full prayer request text, display name or "Anonymous," the full date and time posted, and the current prayer count.
 - Shows the "I prayed for this" button.
 - If the current user has already prayed for this request, the button is shown in a completed/active state and cannot be tapped again.
 - A report option is accessible from this screen.
@@ -305,7 +306,7 @@ Fields: `uid` (string), `email` (string, private), `displayName` (string, public
 ### `prayerRequests`
 One document per submitted prayer request, stored at `prayerRequests/{requestId}` with a Firestore auto-generated ID.
 
-Fields: `id` (string), `userId` (string, always present regardless of anonymous flag), `isAnonymous` (boolean), `displayName` (string, cached at post time — "Anonymous" if `isAnonymous` is true), `body` (string, 10–500 characters), `createdAt` (server timestamp), `updatedAt` (server timestamp), `status` (string: "active" | "flagged" | "removed"), `prayerCount` (integer, atomic server-side counter), `reportCount` (integer).
+Fields: `id` (string), `userId` (string, always present regardless of anonymous flag), `isAnonymous` (boolean), `displayName` (string, cached at post time — "Anonymous" if `isAnonymous` is true), `body` (string, 10–500 characters), `category` (string, one of a controlled set: "health" | "family" | "finances" | "relationships" | "grief" | "work" | "guidance" | "praise" | "other"; helps users frame requests, makes the feed easier to scan, and supports future filtering), `createdAt` (server timestamp), `updatedAt` (server timestamp), `status` (string: "active" | "flagged" | "removed"), `prayerCount` (integer, atomic server-side counter), `reportCount` (integer).
 
 ### `prayerInteractions`
 One document per unique user-request prayer interaction. Document ID convention: `{userId}_{requestId}`. Alternatively implemented as a subcollection at `prayerRequests/{requestId}/interactions/{userId}`.

@@ -147,6 +147,9 @@ when they first appear, not all up front):
 - **Anonymous posting toggle** — a clear switch on the submit screen with a one-line
   explanation ("Your name won't be shown publicly"); never implies the post is
   untracked.
+- **Category tag** — a small, **understated** chip (soft parchment-tinted, muted text)
+  showing the prayer's category on cards and detail. It helps users frame and scan
+  requests; keep it quiet — never a loud colored badge or a row of competing tags.
 - **Anonymous / named display** — clear but **understated**: the display name or
   "Anonymous" sits as quiet metadata on the card/detail, never a bold byline or avatar
   that turns the post into a social profile.

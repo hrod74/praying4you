@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { CategoryTag } from '../../../src/components/CategoryTag';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { usePrayers } from '../../../src/context/PrayerContext';
 import type { PrayerRequest } from '../../../src/models/types';
@@ -66,6 +67,8 @@ export default function PrayerDetailScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.page}>
+        <CategoryTag category={prayer.category} />
+
         <View style={styles.meta}>
           <Text style={styles.name}>{shownName}</Text>
           <Text style={styles.date}>{formatLongDate(prayer.createdAt)}</Text>

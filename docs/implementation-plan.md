@@ -201,12 +201,18 @@ export interface UserProfile {
 
 export type PrayerStatus = "active" | "flagged" | "removed";
 
+// A small controlled set; stored as stable keys, shown via a label map (Phase C.5).
+export type PrayerCategory =
+  | "health" | "family" | "finances" | "relationships" | "grief"
+  | "work" | "guidance" | "praise" | "other";
+
 export interface PrayerRequest {
   id: string;            // local id
   userId: string;        // owner (always set, even when anonymous)
   isAnonymous: boolean;  // controls display only
   displayName: string;   // cached name, or "Anonymous"
   body: string;          // 10–500 chars
+  category: PrayerCategory; // how the request is framed (scan + future filtering)
   createdAt: string;     // ISO string
   status: PrayerStatus;  // "active" by default; "flagged" after a report
   prayerCount: number;   // incremented by "I prayed for this"
@@ -238,8 +244,9 @@ export interface Verse {
 ```
 
 - **Seed data:** `mockPrayers.ts` provides ~8–12 varied requests (mix of named and
-  anonymous, a range of prayer counts) so the feed looks alive. `mockVerses.ts`
-  provides a small curated set; `verseService` picks one deterministically per day.
+  anonymous, across categories, a range of prayer counts) so the feed looks alive.
+  `mockVerses.ts` provides a small curated set; `verseService` picks one
+  deterministically per day.
 - **No real names, no real personal data, no secrets** in seed data — use clearly
   fictional sample content.
 - These types are the same shapes the Firebase-backed MVP will read/write, so the

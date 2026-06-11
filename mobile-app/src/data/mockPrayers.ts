@@ -8,9 +8,10 @@ import type { PrayerRequest } from '../models/types';
  * the same data carries forward to Firestore later.
  *
  * All content is clearly fictional: no real people, no real personal data, no secrets.
- * A mix of named and anonymous posts with a range of prayer counts and dates so the feed
- * looks alive and "newest first" sorting is demonstrable. Anonymous posts still retain a
- * real `userId` (ownership is kept for later moderation) but display "Anonymous".
+ * A mix of named and anonymous posts across categories, with a range of prayer counts and
+ * dates so the feed looks alive and "newest first" sorting is demonstrable. Anonymous
+ * posts still retain a real `userId` (ownership is kept for later moderation) but display
+ * "Anonymous".
  */
 export const mockPrayers: PrayerRequest[] = [
   {
@@ -19,6 +20,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'You',
     body: 'Starting a new job next week after a long season of searching. Praying for steady nerves, a kind team, and the confidence to do good work.',
+    category: 'work',
     createdAt: '2026-06-09T08:15:00.000Z',
     status: 'active',
     prayerCount: 4,
@@ -30,6 +32,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'Amelia R.',
     body: 'My mother goes in for surgery on Thursday. Please pray for the surgeons, for clear results, and for peace over our whole family as we wait.',
+    category: 'health',
     createdAt: '2026-06-08T19:40:00.000Z',
     status: 'active',
     prayerCount: 27,
@@ -41,6 +44,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: true,
     displayName: 'Anonymous',
     body: 'I have been carrying a quiet struggle with anxiety that no one around me knows about. I just need to feel less alone tonight. Thank you for praying.',
+    category: 'health',
     createdAt: '2026-06-08T03:05:00.000Z',
     status: 'active',
     prayerCount: 41,
@@ -52,6 +56,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'James O.',
     body: 'Grateful today. My daughter took her first steps this morning. Praying I never lose sight of these small, ordinary gifts.',
+    category: 'praise',
     createdAt: '2026-06-07T14:22:00.000Z',
     status: 'active',
     prayerCount: 12,
@@ -63,6 +68,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: true,
     displayName: 'Anonymous',
     body: 'Please pray for my marriage. We are trying to find our way back to each other after a hard year, and I want to choose patience over pride.',
+    category: 'relationships',
     createdAt: '2026-06-06T21:10:00.000Z',
     status: 'active',
     prayerCount: 33,
@@ -74,6 +80,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'Grace M.',
     body: 'My grandfather passed away last week. Praying for comfort for my grandmother, who feels lost without him after fifty-two years together.',
+    category: 'grief',
     createdAt: '2026-06-05T11:48:00.000Z',
     status: 'active',
     prayerCount: 58,
@@ -85,6 +92,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'Daniel K.',
     body: 'Finals start Monday and I am overwhelmed. Praying for focus, rest, and the grace to do my best and trust the rest.',
+    category: 'guidance',
     createdAt: '2026-06-04T16:30:00.000Z',
     status: 'active',
     prayerCount: 9,
@@ -96,6 +104,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: true,
     displayName: 'Anonymous',
     body: 'I lost my job today and I am scared about how we will manage. Praying for provision for my family and for hope to hold on to.',
+    category: 'finances',
     createdAt: '2026-06-03T09:05:00.000Z',
     status: 'active',
     prayerCount: 46,
@@ -107,6 +116,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'Nina P.',
     body: 'Praying for my friend who is walking through chemotherapy with so much courage. Please lift her up for strength and gentle days ahead.',
+    category: 'health',
     createdAt: '2026-06-01T18:55:00.000Z',
     status: 'active',
     prayerCount: 38,
@@ -118,6 +128,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'Thomas L.',
     body: 'Trying to forgive someone who hurt me deeply. Praying for a softer heart and the strength to let the bitterness go.',
+    category: 'relationships',
     createdAt: '2026-05-28T07:20:00.000Z',
     status: 'active',
     prayerCount: 21,
@@ -129,6 +140,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: true,
     displayName: 'Anonymous',
     body: 'Praying for my son who is far from home and finding his own way. I miss him, and I am asking for his safety and his peace.',
+    category: 'family',
     createdAt: '2026-05-24T22:12:00.000Z',
     status: 'active',
     prayerCount: 17,
@@ -140,6 +152,7 @@ export const mockPrayers: PrayerRequest[] = [
     isAnonymous: false,
     displayName: 'Ruth A.',
     body: 'Simple thanksgiving today: a long walk, a good meal, and a quiet heart. Praying that gratitude becomes my first response, not my last.',
+    category: 'praise',
     createdAt: '2026-05-20T13:00:00.000Z',
     status: 'active',
     prayerCount: 15,

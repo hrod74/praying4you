@@ -44,3 +44,5 @@ Manager) to a piece of work and records a clear decision.
   auth + profile simulation and proceed to Phase C.
 - [Phase C Completion Review](phase-c-completion-review.md) — go/no-go to commit the mock
   prayer feed + detail read path and proceed to Phase D.
+- [Phase C.5 Category Model Review](phase-c5-category-model-review.md) — go/no-go to commit
+  prayer categories in the data model + UI.
