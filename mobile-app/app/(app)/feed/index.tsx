@@ -1,51 +1,106 @@
-import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '../../../src/theme/theme';
+import { EmptyState } from '../../../src/components/EmptyState';
+import { PrayerCard } from '../../../src/components/PrayerCard';
+import { usePrayers } from '../../../src/context/PrayerContext';
+import { colors, spacing, typography } from '../../../src/theme/theme';
 
 /**
- * Prayer feed — Phase A placeholder.
+ * Prayer feed (Phase C, read path).
  *
- * No data is loaded yet. Phase C wires PrayerContext + prayerService to the mock data
- * and renders real cards (newest first). The single placeholder "card" below links to
- * the detail route to confirm stacked navigation works.
+ * Renders the active prayer requests (newest first) from PrayerContext as calm,
+ * journal-style cards. Tapping a card opens its detail screen. Loading, empty, and error
+ * states are warm and quiet, in keeping with the prayer-journal tone. No submission or
+ * "I prayed for this" interaction yet — those are Phases D and E.
  */
 export default function FeedScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.muted}>
-        Placeholder feed. The card list (from mock data, via the services layer) is
-        built in Phase C.
-      </Text>
+  const router = useRouter();
+  const { prayers, isLoading, error, refresh } = usePrayers();
 
-      <Link href="/(app)/feed/sample-1" style={styles.card}>
-        <Text style={styles.cardTitle}>Sample prayer request</Text>
-        <Text style={styles.cardBody}>
-          Tap to open the detail screen (confirms stacked navigation).
-        </Text>
-      </Link>
-    </View>
+  // First load (nothing to show yet): a quiet centered spinner.
+  if (isLoading && prayers.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color={colors.primary} />
+        <Text style={styles.centeredText}>Gathering today's prayer requests…</Text>
+      </View>
+    );
+  }
+
+  if (error && prayers.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <EmptyState
+          icon="🌥️"
+          title="Couldn't load the feed"
+          message={error}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={prayers}
+      keyExtractor={(item) => item.id}
+      style={styles.list}
+      contentContainerStyle={styles.content}
+      ListHeaderComponent={
+        <View style={styles.header}>
+          <Text style={styles.title}>Prayer requests</Text>
+          <Text style={styles.subtitle}>
+            Read what others are carrying, and lift them up in prayer.
+          </Text>
+        </View>
+      }
+      renderItem={({ item }) => (
+        <PrayerCard prayer={item} onPress={() => router.push(`/(app)/feed/${item.id}`)} />
+      )}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ListEmptyComponent={
+        <EmptyState
+          title="No prayer requests yet"
+          message="When requests are shared, they'll appear here."
+        />
+      }
+      refreshControl={
+        <RefreshControl
+          refreshing={isLoading}
+          onRefresh={refresh}
+          tintColor={colors.primary}
+        />
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  list: {
     flex: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
     backgroundColor: colors.background,
   },
-  muted: typography.muted,
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
+  content: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+    flexGrow: 1,
   },
-  cardTitle: {
-    ...typography.heading,
-    marginBottom: spacing.xs,
+  header: {
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
   },
-  cardBody: typography.muted,
+  title: typography.title,
+  subtitle: typography.muted,
+  separator: {
+    height: spacing.md,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    padding: spacing.xl,
+    backgroundColor: colors.background,
+  },
+  centeredText: typography.muted,
 });

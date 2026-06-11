@@ -42,3 +42,5 @@ Manager) to a piece of work and records a clear decision.
   scaffolded app and proceed to Phase B.
 - [Phase B Completion Review](phase-b-completion-review.md) — go/no-go to commit local
   auth + profile simulation and proceed to Phase C.
+- [Phase C Completion Review](phase-c-completion-review.md) — go/no-go to commit the mock
+  prayer feed + detail read path and proceed to Phase D.

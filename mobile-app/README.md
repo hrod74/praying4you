@@ -5,12 +5,12 @@ A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
 Praying 4 You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
 app-store configuration are intentionally deferred to later milestones.
 
-> **Status: Phase B — Local auth + profile (simulated).** Builds on the Phase A
-> foundation with a working create-profile flow, simulated sign-in/sign-out, and
-> signed-in vs. signed-out routing. The profile is stored **locally on the device** (no
-> backend, no password, no real authentication). The Feed, Verse, and Prayer-detail
-> screens remain Phase A placeholders until Phase C+ (see
-> [`../docs/implementation-plan.md`](../docs/implementation-plan.md)).
+> **Status: Phase C — Mock prayer feed + detail (read path).** Builds on the Phase B
+> local auth/profile with a real, scrollable **prayer feed** (mock data, newest first)
+> and a reflective **prayer detail** screen, styled toward the old-school Bible /
+> prayer-journal design direction. All data is local mock data via a service seam — still
+> **no backend**. Submission and the "I prayed for this" interaction are read-only here
+> and arrive in Phases D–E. The Verse screen remains a Phase A placeholder until Phase F.
 
 ## Requirements
 
@@ -53,22 +53,22 @@ npm run web       # start + open web
 npx tsc --noEmit  # type-check the project
 ```
 
-## What you can do in Phase B
+## What you can do in Phase C
 
-The app opens to a **Welcome** screen when signed out:
+After creating a local profile (Phase B), once signed in:
 
-- **Get started** → **Create profile**: enter a display name and email, then enter the
-  app. Your email is kept private and is never shown on prayer content.
-- **I already have a profile** → **Sign in**: restores the signed-in state for the local
-  profile saved on this device (a simulated, password-free sign-in).
-- Once signed in, you land in the tab shell (**Feed**, **Verse**, **Settings**). Feed,
-  Verse, and Prayer detail are still Phase A placeholders.
-- **Settings** shows your display name and (privately) your email, and lets you
-  **Sign out** — which returns you to the Welcome screen.
-- **Gating:** signed-out users cannot reach the app tabs; signed-in users skip the auth
-  screens. The profile persists across app restarts (local device storage).
+- **Feed tab** shows a scrollable list of **mock prayer requests** as calm,
+  journal-style cards, **newest first**. Each card shows the poster's display name (or
+  **"Anonymous"**), the date, a preview of the request, and an encouraging prayer count
+  (e.g., "27 people prayed"). Pull down to refresh.
+- **Tap any card** to open the **prayer detail** screen — a reflective, journal-entry
+  layout with the full request text, date, and prayer count.
+- **Anonymous requests** display as "Anonymous" on both feed and detail; named requests
+  show only the display name. **Email never appears** on any prayer surface.
+- **Settings** still shows your profile and **Sign out**.
 
-There is still no backend, no real authentication, and no prayer data yet.
+Read-only for now: there is no submission form and no "I prayed for this" action yet
+(Phases D–E). Everything is local mock data — no backend, no real authentication.
 
 ## Project structure
 
@@ -82,28 +82,34 @@ mobile-app/
 │   │   ├── create-profile.tsx # Create local profile (name + email)
 │   │   └── sign-in.tsx        # Simulated sign-in for an existing local profile
 │   └── (app)/                 # Main app tab shell (signed-in only)
-│       ├── _layout.tsx        # Tabs: Feed, Verse, Settings; redirects out if signed out
+│       ├── _layout.tsx        # Tabs: Feed, Verse, Settings; PrayerProvider; gating
 │       ├── feed/
 │       │   ├── _layout.tsx    # Feed stack
-│       │   ├── index.tsx      # Prayer feed (placeholder)
-│       │   └── [id].tsx       # Prayer detail (placeholder)
+│       │   ├── index.tsx      # Prayer feed (mock cards, newest first)
+│       │   └── [id].tsx       # Prayer detail (reflective read view)
 │       ├── verse.tsx          # Verse of the day (placeholder)
 │       └── settings.tsx       # Profile (name + private email) + sign out
 │
 ├── src/
 │   ├── context/
-│   │   └── AuthContext.tsx     # Local profile + simulated session (AsyncStorage-backed)
-│   ├── services/              # (empty) data-access seam — Firebase swaps in here later
-│   ├── data/                  # (empty) mock seed data later
+│   │   ├── AuthContext.tsx     # Local profile + simulated session (AsyncStorage-backed)
+│   │   └── PrayerContext.tsx   # In-memory prayer list (read path) via the service seam
+│   ├── services/
+│   │   └── prayerService.ts    # Prayer read seam (mock now, Firestore later)
+│   ├── data/
+│   │   └── mockPrayers.ts      # Seed prayer requests (fictional, model-shaped)
 │   ├── models/
 │   │   └── types.ts           # TypeScript contracts (mirror future Firestore shapes)
 │   ├── components/
 │   │   ├── Button.tsx          # Primary/secondary action button
+│   │   ├── EmptyState.tsx      # Calm empty / not-found / error state
+│   │   ├── PrayerCard.tsx      # Journal-style prayer feed card
 │   │   ├── Screen.tsx          # Padded, keyboard-aware screen container
 │   │   └── TextField.tsx       # Labeled input with helper/inline-error text
 │   ├── theme/
-│   │   └── theme.ts           # Colors, spacing, typography
+│   │   └── theme.ts           # Warm parchment palette, spacing, typography
 │   └── utils/
+│       ├── format.ts           # Pure date / truncate / prayer-count helpers
 │       └── validation.ts       # Pure display-name / email validators
 │
 ├── assets/                    # App icons / splash
