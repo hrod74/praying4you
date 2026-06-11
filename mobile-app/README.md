@@ -5,13 +5,13 @@ A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
 Praying 4 You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
 app-store configuration are intentionally deferred to later milestones.
 
-> **Status: Phase E — "I prayed for this" (local interaction).** Builds on the Phase D
-> write path: on a prayer's detail screen a signed-in user can tap **I prayed for this**;
-> the count increments locally, duplicate taps are prevented, and a **"You prayed for
-> this"** state shows (also a subtle indicator on the feed card). A user can't pray for
-> their own request. Still **local/mock only — no backend**; interactions are session-only
-> and map to a future Firebase `prayerInteractions` collection. The Verse screen remains a
-> placeholder until Phase F.
+> **Status: Phase F — Verse of the day.** The **Verse** tab now shows a real, calm daily
+> verse from bundled **local** data (KJV, public domain) via a `verseService` that picks a
+> **deterministic verse for the current day** (same day → same verse) — **no external
+> Bible API**, no network, no keys. The screen shows the verse + reference and a short
+> app-written reflection, clearly distinct from scripture, in the parchment/journal style.
+> Earlier phases (auth, feed, submit, "I prayed for this") are unchanged. Still
+> **local/mock only — no backend**. Reporting is Phase G.
 
 ## Requirements
 
@@ -54,7 +54,7 @@ npm run web       # start + open web
 npx tsc --noEmit  # type-check the project
 ```
 
-## What you can do in Phase E
+## What you can do in Phase F
 
 After creating a local profile (Phase B), once signed in:
 
@@ -70,6 +70,9 @@ After creating a local profile (Phase B), once signed in:
   request (it shows "This is your request" instead).
 - **Anonymous** requests show "Anonymous"; named requests show only the display name.
   **Email never appears** on any prayer surface.
+- **Verse tab** shows the **Verse of the day** — a calm parchment card with the verse and
+  reference, plus a short, clearly-labeled app **Reflection**. It's deterministic by day
+  (the same day shows the same verse) and comes entirely from local data — no Bible API.
 - **Settings** still shows your profile and **Sign out**.
 
 Everything is local mock data — submitted requests and prayed-state live in memory for the
@@ -93,7 +96,7 @@ mobile-app/
 │       │   ├── index.tsx      # Prayer feed (mock cards, newest first) + Share button
 │       │   ├── [id].tsx       # Prayer detail (reflective read view)
 │       │   └── submit.tsx     # Share a prayer request (write path, local)
-│       ├── verse.tsx          # Verse of the day (placeholder)
+│       ├── verse.tsx          # Verse of the day (deterministic daily verse, local)
 │       └── settings.tsx       # Profile (name + private email) + sign out
 │
 ├── src/
@@ -101,9 +104,11 @@ mobile-app/
 │   │   ├── AuthContext.tsx     # Local profile + simulated session (AsyncStorage-backed)
 │   │   └── PrayerContext.tsx   # In-memory prayer list (read path) via the service seam
 │   ├── services/
-│   │   └── prayerService.ts    # Prayer read / create / pray-interaction seam (Firestore later)
+│   │   ├── prayerService.ts    # Prayer read / create / pray-interaction seam (Firestore later)
+│   │   └── verseService.ts     # Deterministic daily verse from local data (no API)
 │   ├── data/
-│   │   └── mockPrayers.ts      # Seed prayer requests (fictional, model-shaped)
+│   │   ├── mockPrayers.ts      # Seed prayer requests (fictional, model-shaped)
+│   │   └── mockVerses.ts       # Seed verses (KJV, public domain) + app reflections
 │   ├── models/
 │   │   └── types.ts           # TypeScript contracts (mirror future Firestore shapes)
 │   ├── components/

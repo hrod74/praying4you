@@ -74,7 +74,11 @@ submission. No secrets or Firebase config values are introduced at any point.
   the screens** — a key design decision for a clean MVP migration.
 - **No backend, no network calls** for core data in this milestone. The verse of the
   day is served from a bundled local list (no third-party API yet), avoiding the
-  legacy app's plain-HTTP/JSONP dependency.
+  legacy app's plain-HTTP/JSONP dependency. The prototype's seed verses use the
+  **King James Version (public domain)** to avoid translation-licensing concerns.
+  **Production note:** before any public release, review verse sourcing and translation
+  licensing (e.g., NIV/ESV require permission/attribution) — keep to public-domain
+  translations or obtain the appropriate license.
 
 ---
 

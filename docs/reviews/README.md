@@ -50,3 +50,5 @@ Manager) to a piece of work and records a clear decision.
   prayer request submission (write path) and proceed to Phase E.
 - [Phase E Completion Review](phase-e-completion-review.md) — go/no-go to commit the local
   "I prayed for this" interaction and proceed to Phase F.
+- [Phase F Completion Review](phase-f-completion-review.md) — go/no-go to commit the local
+  Verse of the Day and proceed to Phase G.

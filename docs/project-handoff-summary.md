@@ -51,6 +51,11 @@ Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
   reachable from the feed; `prayerService.createPrayer` + `PrayerContext.addPrayer`
   prepend the new request to local state (top of feed → opens in detail). Local owner
   retained; anonymous shows "Anonymous"; email never shown. Session-only (in-memory).
+- **Phase E — "I prayed for this" (local interaction):** on a request's detail, a
+  signed-in user taps to mark they prayed; the count increments locally, a race-safe
+  one-per-user guard prevents double-counting, and a "You prayed for this" state shows
+  (subtle "🙏 You prayed" on the feed card). Can't pray for your own request. Via
+  `prayerService.recordPrayerInteraction` + `PrayerContext.pray`/`hasPrayed`; session-only.
 
 ## Design direction
 
@@ -77,14 +82,15 @@ app-store/EAS setup yet. Run: `cd mobile-app && npm install && npx expo start` (
 
 App runs in Expo Go on iPhone · local profile creation · simulated sign-in/out · three
 tabs (Feed, Verse, Settings) · feed shows mock prayer cards (newest first) · detail screen
-works · categories show on feed + detail · **submitting a new request works** (appears at
-top of feed) · **email is never shown publicly**. The "I prayed for this" interaction is
-Phase E; Verse is still a placeholder (Phase F).
+works · categories show on feed + detail · **submitting a new request works** (top of
+feed) · **"I prayed for this" works** (count increments, one per user, prayed state) ·
+**email is never shown publicly**. The Verse tab is still a placeholder (Phase F).
 
 ## Next phase
 
-**Phase E — "I prayed for this" (local interaction):** a signed-in user marks that they
-prayed for a request; the count increments locally, duplicate taps are prevented, and a
-"You prayed for this" state shows. A user can't pray for their own request. Local/mock
-only, encouraging (not gamified); maps to a future Firebase `prayerInteractions`
-collection.
+**Phase F — Verse of the day:** a local/mock daily verse experience. `mockVerses` +
+`verseService` pick a deterministic verse for the current day (same day → same verse) from
+bundled local data — no external Bible API. The Verse screen shows the verse text +
+reference and a short app-generated reflection (clearly distinct from scripture), in the
+calm parchment/journal style. (Production verse sourcing/licensing to be reviewed before
+public release.)
