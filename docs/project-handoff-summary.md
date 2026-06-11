@@ -46,6 +46,11 @@ Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
 - **Phase C.5 — Prayer categories:** added `category` (controlled set, stable keys +
   label map) to the model + all mock data; subtle `CategoryTag` chip on feed/detail; PRD
   and plan updated.
+- **Phase D — Local prayer request submission (write path):** a "Share a prayer request"
+  form (text + counter + 10–500 validation, category selector, named/anonymous choice)
+  reachable from the feed; `prayerService.createPrayer` + `PrayerContext.addPrayer`
+  prepend the new request to local state (top of feed → opens in detail). Local owner
+  retained; anonymous shows "Anonymous"; email never shown. Session-only (in-memory).
 
 ## Design direction
 
@@ -72,11 +77,14 @@ app-store/EAS setup yet. Run: `cd mobile-app && npm install && npx expo start` (
 
 App runs in Expo Go on iPhone · local profile creation · simulated sign-in/out · three
 tabs (Feed, Verse, Settings) · feed shows mock prayer cards (newest first) · detail screen
-works · categories show on feed + detail · **email is never shown publicly**. Read-only:
-no submission, no "I prayed for this" yet. Verse is still a placeholder (Phase F).
+works · categories show on feed + detail · **submitting a new request works** (appears at
+top of feed) · **email is never shown publicly**. The "I prayed for this" interaction is
+Phase E; Verse is still a placeholder (Phase F).
 
 ## Next phase
 
-**Phase D — Local prayer request submission (write path):** a signed-in user composes a
-request (text + category + named/anonymous choice), it's added to local state, and appears
-at the top of the feed. Still local/mock only; no "I prayed for this" (Phase E).
+**Phase E — "I prayed for this" (local interaction):** a signed-in user marks that they
+prayed for a request; the count increments locally, duplicate taps are prevented, and a
+"You prayed for this" state shows. A user can't pray for their own request. Local/mock
+only, encouraging (not gamified); maps to a future Firebase `prayerInteractions`
+collection.

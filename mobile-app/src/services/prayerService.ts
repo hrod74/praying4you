@@ -1,5 +1,5 @@
 import { mockPrayers } from '../data/mockPrayers';
-import type { PrayerCategory, PrayerRequest } from '../models/types';
+import type { PrayerCategory, PrayerInteraction, PrayerRequest } from '../models/types';
 
 /**
  * prayerService — the data-access seam for prayer requests.
@@ -71,5 +71,28 @@ export async function createPrayer(input: NewPrayerInput): Promise<PrayerRequest
     status: 'active',
     prayerCount: 0,
     reportCount: 0,
+  };
+}
+
+/** Stable, one-per-user-per-request key (mirrors the PRD interaction doc id). */
+export function interactionKey(userId: string, requestId: string): string {
+  return `${userId}_${requestId}`;
+}
+
+/**
+ * Record an "I prayed for this" interaction (local/mock). Mirrors the future Firestore
+ * write: create `prayerInteractions/{userId}_{requestId}` (existence = the user prayed)
+ * and atomically `FieldValue.increment(prayerCount)` on the parent request. Here it just
+ * returns the interaction record; the context applies the local count increment. When
+ * Firebase replaces this seam, only this function changes.
+ */
+export async function recordPrayerInteraction(
+  userId: string,
+  requestId: string,
+): Promise<PrayerInteraction> {
+  return {
+    userId,
+    requestId,
+    prayedAt: new Date().toISOString(),
   };
 }

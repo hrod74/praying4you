@@ -2,8 +2,10 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '../../../src/components/Button';
 import { CategoryTag } from '../../../src/components/CategoryTag';
 import { EmptyState } from '../../../src/components/EmptyState';
+import { useAuth } from '../../../src/context/AuthContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
 import type { PrayerRequest } from '../../../src/models/types';
 import { getPrayerById } from '../../../src/services/prayerService';
@@ -24,8 +26,11 @@ import { formatLongDate, formatPrayerCount } from '../../../src/utils/format';
  */
 export default function PrayerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getById } = usePrayers();
+  const { profile } = useAuth();
+  const { getById, hasPrayed, pray } = usePrayers();
   const fromContext = getById(id);
+
+  const [pending, setPending] = useState(false);
 
   // undefined = still resolving the fallback; null = confirmed not found.
   const [fetched, setFetched] = useState<PrayerRequest | null | undefined>(undefined);
@@ -63,6 +68,18 @@ export default function PrayerDetailScreen() {
   }
 
   const shownName = prayer.isAnonymous ? 'Anonymous' : prayer.displayName;
+  const isOwnRequest = Boolean(profile && prayer.userId === profile.id);
+  const alreadyPrayed = Boolean(profile && hasPrayed(prayer.id, profile.id));
+
+  const handlePray = async () => {
+    if (!profile) return;
+    setPending(true);
+    try {
+      await pray(prayer.id, profile.id);
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -79,6 +96,21 @@ export default function PrayerDetailScreen() {
         <View style={styles.divider} />
 
         <Text style={styles.count}>{formatPrayerCount(prayer.prayerCount)}</Text>
+
+        {isOwnRequest ? (
+          <Text style={styles.ownNote}>This is your request.</Text>
+        ) : alreadyPrayed ? (
+          <View style={styles.prayedConfirm} accessibilityRole="text">
+            <Text style={styles.prayedConfirmText}>🙏 You prayed for this</Text>
+          </View>
+        ) : (
+          <Button
+            label="I prayed for this"
+            onPress={handlePray}
+            disabled={pending}
+            accessibilityHint="Marks that you prayed for this request"
+          />
+        )}
       </View>
     </ScrollView>
   );
@@ -122,6 +154,22 @@ const styles = StyleSheet.create({
   count: {
     ...typography.muted,
     color: colors.gold,
+  },
+  ownNote: {
+    ...typography.muted,
+    fontStyle: 'italic',
+  },
+  prayedConfirm: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+  },
+  prayedConfirmText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.text,
   },
   centered: {
     flex: 1,

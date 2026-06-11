@@ -5,12 +5,13 @@ A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
 Praying 4 You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
 app-store configuration are intentionally deferred to later milestones.
 
-> **Status: Phase D — Local prayer request submission (write path).** Builds on the
-> Phase C read path with a **Share a prayer request** form: a signed-in user writes a
-> request, picks a category, and chooses named or anonymous display; on submit it is added
-> to **local state** and appears at the top of the feed (and opens in detail). Still
-> **local/mock only — no backend**. The "I prayed for this" interaction is Phase E; the
-> Verse screen remains a placeholder until Phase F. Categories were added in Phase C.5.
+> **Status: Phase E — "I prayed for this" (local interaction).** Builds on the Phase D
+> write path: on a prayer's detail screen a signed-in user can tap **I prayed for this**;
+> the count increments locally, duplicate taps are prevented, and a **"You prayed for
+> this"** state shows (also a subtle indicator on the feed card). A user can't pray for
+> their own request. Still **local/mock only — no backend**; interactions are session-only
+> and map to a future Firebase `prayerInteractions` collection. The Verse screen remains a
+> placeholder until Phase F.
 
 ## Requirements
 
@@ -53,24 +54,26 @@ npm run web       # start + open web
 npx tsc --noEmit  # type-check the project
 ```
 
-## What you can do in Phase D
+## What you can do in Phase E
 
 After creating a local profile (Phase B), once signed in:
 
-- **Feed tab** shows a scrollable list of prayer requests as calm, journal-style cards,
-  **newest first**, each with a subtle category tag, the poster's display name (or
-  **"Anonymous"**), the date, a preview, and an encouraging prayer count. Pull to refresh.
-- **Share a prayer request** (button at the top of the feed) opens the submit form: write
-  your request (with a character counter, min 10 / max 500), pick a **category**, and
-  choose **Post with my name** or **Post as Anonymous**. On submit, your request is added
-  locally, appears at the **top of the feed**, and opens in **detail**.
-- **Tap any card** to open the reflective **prayer detail** screen.
-- **Anonymous** requests display as "Anonymous" on feed and detail; named requests show
-  only the display name. **Email never appears** on any prayer surface.
+- **Feed tab** shows journal-style cards, **newest first**, each with a category tag, the
+  poster's name (or **"Anonymous"**), date, preview, and an encouraging prayer count.
+  Cards you've prayed for show a subtle **"🙏 You prayed"** indicator. Pull to refresh.
+- **Share a prayer request** (button atop the feed) opens the submit form (text + counter,
+  category, named/anonymous); on submit it appears at the **top of the feed** and opens in
+  detail.
+- **Tap any card** → the reflective **prayer detail** screen. There you can tap
+  **I prayed for this** to mark that you prayed: the count increments, a second tap won't
+  inflate it, and it shows **"🙏 You prayed for this"**. You can't pray for your **own**
+  request (it shows "This is your request" instead).
+- **Anonymous** requests show "Anonymous"; named requests show only the display name.
+  **Email never appears** on any prayer surface.
 - **Settings** still shows your profile and **Sign out**.
 
-Still read-only for the "I prayed for this" action (Phase E). Everything is local mock
-data — submitted requests live in memory for the session; no backend, no real auth.
+Everything is local mock data — submitted requests and prayed-state live in memory for the
+session; no backend, no real auth.
 
 ## Project structure
 
@@ -98,7 +101,7 @@ mobile-app/
 │   │   ├── AuthContext.tsx     # Local profile + simulated session (AsyncStorage-backed)
 │   │   └── PrayerContext.tsx   # In-memory prayer list (read path) via the service seam
 │   ├── services/
-│   │   └── prayerService.ts    # Prayer read + create seam (mock now, Firestore later)
+│   │   └── prayerService.ts    # Prayer read / create / pray-interaction seam (Firestore later)
 │   ├── data/
 │   │   └── mockPrayers.ts      # Seed prayer requests (fictional, model-shaped)
 │   ├── models/

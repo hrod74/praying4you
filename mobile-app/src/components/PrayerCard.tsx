@@ -17,9 +17,12 @@ import { CategoryTag } from './CategoryTag';
 function PrayerCardComponent({
   prayer,
   onPress,
+  prayed = false,
 }: {
   prayer: PrayerRequest;
   onPress: () => void;
+  /** Whether the current user has prayed for this request (lightweight feed indicator). */
+  prayed?: boolean;
 }) {
   // Display name is derived from the anonymity flag, so an anonymous post can never
   // reveal a real name even if cached data were inconsistent.
@@ -29,7 +32,7 @@ function PrayerCardComponent({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${PRAYER_CATEGORY_LABELS[prayer.category]} prayer request from ${shownName}. ${formatPrayerCount(prayer.prayerCount)}.`}
+      accessibilityLabel={`${PRAYER_CATEGORY_LABELS[prayer.category]} prayer request from ${shownName}. ${formatPrayerCount(prayer.prayerCount)}.${prayed ? ' You prayed for this.' : ''}`}
       accessibilityHint="Opens the full prayer request"
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
@@ -44,7 +47,10 @@ function PrayerCardComponent({
 
       <Text style={styles.body}>{truncate(prayer.body, 200)}</Text>
 
-      <Text style={styles.count}>{formatPrayerCount(prayer.prayerCount)}</Text>
+      <View style={styles.footer}>
+        <Text style={styles.count}>{formatPrayerCount(prayer.prayerCount)}</Text>
+        {prayed ? <Text style={styles.prayed}>🙏 You prayed</Text> : null}
+      </View>
     </Pressable>
   );
 }
@@ -87,10 +93,21 @@ const styles = StyleSheet.create({
   body: {
     ...typography.body,
   },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.xs,
+  },
   count: {
     ...typography.muted,
     color: colors.gold,
-    marginTop: spacing.xs,
+  },
+  prayed: {
+    ...typography.muted,
+    fontWeight: '600',
+    color: colors.text,
   },
 });
 

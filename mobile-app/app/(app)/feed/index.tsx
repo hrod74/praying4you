@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } f
 import { Button } from '../../../src/components/Button';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { PrayerCard } from '../../../src/components/PrayerCard';
+import { useAuth } from '../../../src/context/AuthContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
 import { colors, spacing, typography } from '../../../src/theme/theme';
 
@@ -17,7 +18,8 @@ import { colors, spacing, typography } from '../../../src/theme/theme';
  */
 export default function FeedScreen() {
   const router = useRouter();
-  const { prayers, isLoading, error, refresh } = usePrayers();
+  const { profile } = useAuth();
+  const { prayers, isLoading, error, refresh, hasPrayed } = usePrayers();
 
   // First load (nothing to show yet): a quiet centered spinner.
   if (isLoading && prayers.length === 0) {
@@ -62,7 +64,11 @@ export default function FeedScreen() {
         </View>
       }
       renderItem={({ item }) => (
-        <PrayerCard prayer={item} onPress={() => router.push(`/(app)/feed/${item.id}`)} />
+        <PrayerCard
+          prayer={item}
+          prayed={profile ? hasPrayed(item.id, profile.id) : false}
+          onPress={() => router.push(`/(app)/feed/${item.id}`)}
+        />
       )}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={
