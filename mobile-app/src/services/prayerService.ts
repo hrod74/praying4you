@@ -1,5 +1,11 @@
 import { mockPrayers } from '../data/mockPrayers';
-import type { PrayerCategory, PrayerInteraction, PrayerRequest } from '../models/types';
+import type {
+  PrayerCategory,
+  PrayerInteraction,
+  PrayerRequest,
+  Report,
+  ReportReason,
+} from '../models/types';
 
 /**
  * prayerService — the data-access seam for prayer requests.
@@ -94,5 +100,31 @@ export async function recordPrayerInteraction(
     userId,
     requestId,
     prayedAt: new Date().toISOString(),
+  };
+}
+
+/** Input for reporting a prayer request. */
+export interface NewReportInput {
+  requestId: string;
+  reportedBy: string;
+  reason: ReportReason;
+  /** Optional free-text note (<= 300 chars). */
+  notes?: string;
+}
+
+/**
+ * Record a report against a prayer request (local/mock). Mirrors the future Firestore
+ * write: create a `reports` document and `FieldValue.increment(reportCount)` on the target
+ * request (the context applies the local count/status change). No real moderation backend
+ * exists in the prototype. When Firebase replaces this seam, only this function changes.
+ */
+export async function recordReport(input: NewReportInput): Promise<Report> {
+  return {
+    id: generateLocalId(),
+    requestId: input.requestId,
+    reportedBy: input.reportedBy,
+    reason: input.reason,
+    notes: input.notes?.trim() ? input.notes.trim() : undefined,
+    createdAt: new Date().toISOString(),
   };
 }

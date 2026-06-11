@@ -56,6 +56,15 @@ Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
   one-per-user guard prevents double-counting, and a "You prayed for this" state shows
   (subtle "🙏 You prayed" on the feed card). Can't pray for your own request. Via
   `prayerService.recordPrayerInteraction` + `PrayerContext.pray`/`hasPrayed`; session-only.
+- **Phase F — Verse of the day:** the Verse tab shows a deterministic daily verse (same
+  day → same verse) from bundled local data (`mockVerses`, KJV public domain) via
+  `verseService` — no external Bible API. Verse + reference + a clearly-distinct app
+  reflection, in the parchment style. (Production verse licensing to be reviewed.)
+- **Phase G — Navigation, Settings/About, Reporting:** persistent **bottom-tab icons**
+  (FontAwesome5: dove/quill/bible/user) and a persistent **Create Prayer** tab (always
+  reachable); a fuller **Settings/Profile** (profile + privacy language + About); and a
+  local **Report request** flow on detail (reason + optional note → calm confirmation;
+  increments `reportCount`, flags locally; hidden on own posts). All local/mock.
 
 ## Design direction
 
@@ -80,17 +89,17 @@ app-store/EAS setup yet. Run: `cd mobile-app && npm install && npx expo start` (
 
 ## Functional status (works today)
 
-App runs in Expo Go on iPhone · local profile creation · simulated sign-in/out · three
-tabs (Feed, Verse, Settings) · feed shows mock prayer cards (newest first) · detail screen
-works · categories show on feed + detail · **submitting a new request works** (top of
-feed) · **"I prayed for this" works** (count increments, one per user, prayed state) ·
-**email is never shown publicly**. The Verse tab is still a placeholder (Phase F).
+App runs in Expo Go on iPhone · local profile creation · simulated sign-in/out · **four
+tabs with concept icons (Feed, Create Prayer, Verse, Settings)** · feed shows mock prayer
+cards (newest first) · **Create Prayer is always reachable from the tab bar** · detail
+screen works · categories on feed + detail · submitting works (top of feed) · "I prayed
+for this" works · **Verse of the day works** · **Settings shows profile + privacy + About**
+· **Report request works locally** on others' posts (hidden on own) · **email is never
+shown publicly**.
 
 ## Next phase
 
-**Phase F — Verse of the day:** a local/mock daily verse experience. `mockVerses` +
-`verseService` pick a deterministic verse for the current day (same day → same verse) from
-bundled local data — no external Bible API. The Verse screen shows the verse text +
-reference and a short app-generated reflection (clearly distinct from scripture), in the
-calm parchment/journal style. (Production verse sourcing/licensing to be reviewed before
-public release.)
+**Phase H — Polish + persistence (optional) + demo capture:** empty/loading/error-state
+polish, accessibility/tap-target passes, optional AsyncStorage persistence for the local
+profile + submitted requests, and screenshots / a screen recording of the full loop for
+the portfolio. Still local/mock; Firebase remains the next *milestone* after the prototype.

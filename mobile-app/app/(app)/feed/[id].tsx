@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../../src/components/Button';
 import { CategoryTag } from '../../../src/components/CategoryTag';
@@ -26,8 +26,9 @@ import { formatLongDate, formatPrayerCount } from '../../../src/utils/format';
  */
 export default function PrayerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { profile } = useAuth();
-  const { getById, hasPrayed, pray } = usePrayers();
+  const { getById, hasPrayed, pray, hasReported } = usePrayers();
   const fromContext = getById(id);
 
   const [pending, setPending] = useState(false);
@@ -70,6 +71,7 @@ export default function PrayerDetailScreen() {
   const shownName = prayer.isAnonymous ? 'Anonymous' : prayer.displayName;
   const isOwnRequest = Boolean(profile && prayer.userId === profile.id);
   const alreadyPrayed = Boolean(profile && hasPrayed(prayer.id, profile.id));
+  const alreadyReported = Boolean(profile && hasReported(prayer.id, profile.id));
 
   const handlePray = async () => {
     if (!profile) return;
@@ -112,6 +114,24 @@ export default function PrayerDetailScreen() {
           />
         )}
       </View>
+
+      {/* Reporting — quiet and understated; hidden on the user's own request. */}
+      {!isOwnRequest ? (
+        <View style={styles.reportRow}>
+          {alreadyReported ? (
+            <Text style={styles.reportedNote}>You reported this request. Thank you.</Text>
+          ) : (
+            <Pressable
+              onPress={() => router.push(`/(app)/feed/report?id=${prayer.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel="Report this request"
+              hitSlop={8}
+            >
+              <Text style={styles.reportLink}>Report this request</Text>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -171,6 +191,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
+  reportRow: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  reportLink: {
+    ...typography.muted,
+    textDecorationLine: 'underline',
+  },
+  reportedNote: typography.muted,
   centered: {
     flex: 1,
     alignItems: 'center',

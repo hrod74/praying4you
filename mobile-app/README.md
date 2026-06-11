@@ -5,13 +5,14 @@ A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
 Praying 4 You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
 app-store configuration are intentionally deferred to later milestones.
 
-> **Status: Phase F — Verse of the day.** The **Verse** tab now shows a real, calm daily
-> verse from bundled **local** data (KJV, public domain) via a `verseService` that picks a
-> **deterministic verse for the current day** (same day → same verse) — **no external
-> Bible API**, no network, no keys. The screen shows the verse + reference and a short
-> app-written reflection, clearly distinct from scripture, in the parchment/journal style.
-> Earlier phases (auth, feed, submit, "I prayed for this") are unchanged. Still
-> **local/mock only — no backend**. Reporting is Phase G.
+> **Status: Phase G — Navigation, Settings/About, Reporting.** The bottom navigation now
+> has four tabs with quiet, concept-matched icons (a dove for **Feed**, a quill for
+> **Share**, a Bible for **Verse**, a person for **Settings**), and **Create/Share Prayer
+> is a persistent tab** so it's always reachable — even after scrolling. **Settings** is a
+> fuller Profile/Privacy/About screen, and the prayer **detail** screen has a calm, local
+> **Report request** flow (reason + optional note → gentle confirmation; flagged locally;
+> hidden on your own posts). Still **local/mock only — no backend**. Polish + demo capture
+> is Phase H.
 
 ## Requirements
 
@@ -54,29 +55,31 @@ npm run web       # start + open web
 npx tsc --noEmit  # type-check the project
 ```
 
-## What you can do in Phase F
+## What you can do in Phase G
 
-After creating a local profile (Phase B), once signed in:
+After creating a local profile (Phase B), once signed in, the bottom navigation has four
+tabs — **Feed** (dove), **Share** (quill), **Verse** (Bible), **Settings** (person):
 
-- **Feed tab** shows journal-style cards, **newest first**, each with a category tag, the
+- **Feed** shows journal-style cards, **newest first**, each with a category tag, the
   poster's name (or **"Anonymous"**), date, preview, and an encouraging prayer count.
   Cards you've prayed for show a subtle **"🙏 You prayed"** indicator. Pull to refresh.
-- **Share a prayer request** (button atop the feed) opens the submit form (text + counter,
-  category, named/anonymous); on submit it appears at the **top of the feed** and opens in
-  detail.
-- **Tap any card** → the reflective **prayer detail** screen. There you can tap
-  **I prayed for this** to mark that you prayed: the count increments, a second tap won't
-  inflate it, and it shows **"🙏 You prayed for this"**. You can't pray for your **own**
-  request (it shows "This is your request" instead).
+- **Share** (persistent tab — always reachable, even after scrolling) opens the compose
+  form (text + counter, category, named/anonymous); on submit it appears at the **top of
+  the feed** and opens in detail.
+- **Tap any card** → the reflective **prayer detail**. Tap **I prayed for this** to mark
+  that you prayed (count increments, second tap won't inflate it, shows **"🙏 You prayed
+  for this"**); you can't pray for your **own** request. A quiet **Report this request**
+  link (hidden on your own posts) opens a calm reason picker + optional note → a gentle
+  confirmation; the request is flagged locally (no real moderation backend).
 - **Anonymous** requests show "Anonymous"; named requests show only the display name.
   **Email never appears** on any prayer surface.
-- **Verse tab** shows the **Verse of the day** — a calm parchment card with the verse and
-  reference, plus a short, clearly-labeled app **Reflection**. It's deterministic by day
-  (the same day shows the same verse) and comes entirely from local data — no Bible API.
-- **Settings** still shows your profile and **Sign out**.
+- **Verse** shows the **Verse of the day** — verse + reference + a labeled app
+  **Reflection**, deterministic by day, from local data (no Bible API).
+- **Settings** shows your **Profile** (display name + private email), plain-language
+  **Privacy** guidance, an **About** section, and **Sign out**.
 
-Everything is local mock data — submitted requests and prayed-state live in memory for the
-session; no backend, no real auth.
+Everything is local mock data — submitted requests, prayed-state, and reports live in
+memory for the session; no backend, no real auth.
 
 ## Project structure
 
@@ -90,21 +93,22 @@ mobile-app/
 │   │   ├── create-profile.tsx # Create local profile (name + email)
 │   │   └── sign-in.tsx        # Simulated sign-in for an existing local profile
 │   └── (app)/                 # Main app tab shell (signed-in only)
-│       ├── _layout.tsx        # Tabs: Feed, Verse, Settings; PrayerProvider; gating
+│       ├── _layout.tsx        # Tabs (icons): Feed, Share, Verse, Settings; PrayerProvider; gating
+│       ├── submit.tsx         # Share/create a prayer request (persistent tab, write path)
 │       ├── feed/
 │       │   ├── _layout.tsx    # Feed stack
-│       │   ├── index.tsx      # Prayer feed (mock cards, newest first) + Share button
-│       │   ├── [id].tsx       # Prayer detail (reflective read view)
-│       │   └── submit.tsx     # Share a prayer request (write path, local)
+│       │   ├── index.tsx      # Prayer feed (mock cards, newest first)
+│       │   ├── [id].tsx       # Prayer detail (read + "I prayed" + report link)
+│       │   └── report.tsx     # Report a request (modal: reason + note → confirmation)
 │       ├── verse.tsx          # Verse of the day (deterministic daily verse, local)
-│       └── settings.tsx       # Profile (name + private email) + sign out
+│       └── settings.tsx       # Profile + privacy + about + sign out
 │
 ├── src/
 │   ├── context/
 │   │   ├── AuthContext.tsx     # Local profile + simulated session (AsyncStorage-backed)
 │   │   └── PrayerContext.tsx   # In-memory prayer list (read path) via the service seam
 │   ├── services/
-│   │   ├── prayerService.ts    # Prayer read / create / pray-interaction seam (Firestore later)
+│   │   ├── prayerService.ts    # Prayer read / create / pray / report seam (Firestore later)
 │   │   └── verseService.ts     # Deterministic daily verse from local data (no API)
 │   ├── data/
 │   │   ├── mockPrayers.ts      # Seed prayer requests (fictional, model-shaped)
@@ -143,9 +147,15 @@ mobile-app/
   shapes so the same types carry forward into the Firebase-backed MVP.
 - **State:** lightweight React Context + hooks; no Redux.
 - **Local persistence:** `@react-native-async-storage/async-storage` stores the local
-  profile and the simulated session flag on-device so they survive app restarts. This
-  is the only added runtime dependency in Phase B; it needs no backend and stores no
-  secrets.
+  profile and the simulated session flag on-device so they survive app restarts. It needs
+  no backend and stores no secrets.
+- **Navigation:** a four-tab bottom bar (Feed / Share / Verse / Settings). "Share"
+  (create a prayer request) is its own persistent tab so it's always reachable. Icons use
+  **`@expo/vector-icons`** (FontAwesome5) with **`expo-font`** (both SDK-54 versions).
+- **Dependency note:** `package.json` pins `overrides.react-dom` to match React. A
+  web-only transitive (`react-dom`) otherwise resolves to a newer React than Expo SDK 54
+  pins, which would break a clean `npm install`. The override keeps strict installs
+  working with no global `legacy-peer-deps`; it configures nothing sensitive.
 
 ## Scope guardrails (prototype milestone)
 

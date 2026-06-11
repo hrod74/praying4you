@@ -14,9 +14,10 @@ import {
   interactionKey,
   listActivePrayers,
   recordPrayerInteraction,
+  recordReport,
   type NewPrayerInput,
 } from '../services/prayerService';
-import type { PrayerInteraction, PrayerRequest } from '../models/types';
+import type { PrayerInteraction, PrayerRequest, Report, ReportReason } from '../models/types';
 
 /**
  * PrayerContext — in-memory prayer-request state for the signed-in app.
@@ -31,9 +32,14 @@ import type { PrayerInteraction, PrayerRequest } from '../models/types';
  *
  * Interaction (Phase E): `pray` records a one-per-user "I prayed for this" interaction
  * and increments that request's `prayerCount` locally; `hasPrayed` reports whether the
- * given user has already prayed. Interactions are session-only (in-memory) and map to a
- * future Firebase `prayerInteractions` collection. All local/mock — nothing is persisted
- * to a backend. Report remains for Phase G.
+ * given user has already prayed.
+ *
+ * Reporting (Phase G): `reportPrayer` records a one-per-user report (reason + optional
+ * note), increments `reportCount`, and flags the request locally; `hasReported` reports
+ * whether the given user already reported it. There is NO real moderation backend — this
+ * is local/mock only and maps to a future Firebase `reports` collection.
+ *
+ * All state is session-only (in-memory); nothing is persisted to a backend.
  */
 
 interface PrayerContextValue {
@@ -53,6 +59,15 @@ interface PrayerContextValue {
   hasPrayed: (requestId: string, userId: string) => boolean;
   /** Record an "I prayed for this" interaction (idempotent per user+request). */
   pray: (requestId: string, userId: string) => Promise<void>;
+  /** Whether the given user has already reported the given request. */
+  hasReported: (requestId: string, userId: string) => boolean;
+  /** Report a request locally (idempotent per user+request); flags it and counts it. */
+  reportPrayer: (
+    requestId: string,
+    userId: string,
+    reason: ReportReason,
+    notes?: string,
+  ) => Promise<void>;
 }
 
 const PrayerContext = createContext<PrayerContextValue | undefined>(undefined);
@@ -65,6 +80,9 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   const [interactions, setInteractions] = useState<PrayerInteraction[]>([]);
   // Synchronous guard so rapid double-taps can't double-count before state updates.
   const prayedKeys = useRef<Set<string>>(new Set());
+  // Recorded reports (session-only) + a synchronous one-per-user guard.
+  const [reports, setReports] = useState<Report[]>([]);
+  const reportedKeys = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -116,9 +134,47 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const hasReported = useCallback(
+    (requestId: string, userId: string) =>
+      reports.some((r) => r.requestId === requestId && r.reportedBy === userId),
+    [reports],
+  );
+
+  const reportPrayer = useCallback(
+    async (requestId: string, userId: string, reason: ReportReason, notes?: string) => {
+      const key = interactionKey(userId, requestId);
+      if (reportedKeys.current.has(key)) return; // one report per user+request
+      reportedKeys.current.add(key);
+
+      const report = await recordReport({ requestId, reportedBy: userId, reason, notes });
+      setReports((prev) => [...prev, report]);
+      // Local moderation effect only: count the report and flag the request. The feed does
+      // not hide flagged items in the prototype (no real moderation queue).
+      setPrayers((prev) =>
+        prev.map((p) =>
+          p.id === requestId
+            ? { ...p, reportCount: p.reportCount + 1, status: 'flagged' }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
+
   const value = useMemo<PrayerContextValue>(
-    () => ({ prayers, isLoading, error, refresh: load, getById, addPrayer, hasPrayed, pray }),
-    [prayers, isLoading, error, load, getById, addPrayer, hasPrayed, pray],
+    () => ({
+      prayers,
+      isLoading,
+      error,
+      refresh: load,
+      getById,
+      addPrayer,
+      hasPrayed,
+      pray,
+      hasReported,
+      reportPrayer,
+    }),
+    [prayers, isLoading, error, load, getById, addPrayer, hasPrayed, pray, hasReported, reportPrayer],
   );
 
   return <PrayerContext.Provider value={value}>{children}</PrayerContext.Provider>;

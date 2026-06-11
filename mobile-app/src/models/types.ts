@@ -92,6 +92,17 @@ export interface PrayerInteraction {
 
 export type ReportReason = 'spam' | 'inappropriate' | 'harmful' | 'other';
 
+/** Display labels for each report reason. */
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  spam: 'Spam',
+  inappropriate: 'Inappropriate',
+  harmful: 'Harmful or unsafe',
+  other: 'Something else',
+};
+
+/** Report reasons in display order (for the report picker). */
+export const REPORT_REASONS: ReportReason[] = ['spam', 'inappropriate', 'harmful', 'other'];
+
 export interface Report {
   id: string;
   requestId: string;

@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { Button } from '../../../src/components/Button';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { PrayerCard } from '../../../src/components/PrayerCard';
 import { useAuth } from '../../../src/context/AuthContext';
@@ -9,12 +8,13 @@ import { usePrayers } from '../../../src/context/PrayerContext';
 import { colors, spacing, typography } from '../../../src/theme/theme';
 
 /**
- * Prayer feed (Phase C, read path).
+ * Prayer feed (read path).
  *
  * Renders the active prayer requests (newest first) from PrayerContext as calm,
- * journal-style cards. Tapping a card opens its detail screen. Loading, empty, and error
- * states are warm and quiet, in keeping with the prayer-journal tone. No submission or
- * "I prayed for this" interaction yet — those are Phases D and E.
+ * journal-style cards; tapping a card opens its detail. Loading, empty, and error states
+ * are warm and quiet. Composing a new request is the persistent "Share" tab in the bottom
+ * navigation (always reachable, even after scrolling), so the feed itself stays a clean,
+ * readable list.
  */
 export default function FeedScreen() {
   const router = useRouter();
@@ -55,12 +55,6 @@ export default function FeedScreen() {
           <Text style={styles.subtitle}>
             Read what others are carrying, and lift them up in prayer.
           </Text>
-          <Button
-            label="Share a prayer request"
-            onPress={() => router.push('/(app)/feed/submit')}
-            accessibilityHint="Opens the form to write a new prayer request"
-            style={styles.shareButton}
-          />
         </View>
       }
       renderItem={({ item }) => (
@@ -104,9 +98,6 @@ const styles = StyleSheet.create({
   },
   title: typography.title,
   subtitle: typography.muted,
-  shareButton: {
-    marginTop: spacing.md,
-  },
   separator: {
     height: spacing.md,
   },

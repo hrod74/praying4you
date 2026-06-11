@@ -52,3 +52,5 @@ Manager) to a piece of work and records a clear decision.
   "I prayed for this" interaction and proceed to Phase F.
 - [Phase F Completion Review](phase-f-completion-review.md) — go/no-go to commit the local
   Verse of the Day and proceed to Phase G.
+- [Phase G Completion Review](phase-g-completion-review.md) — go/no-go to commit the
+  navigation QA fixes + Settings/About + local Reporting, and proceed to Phase H.

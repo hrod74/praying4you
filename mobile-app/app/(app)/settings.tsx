@@ -6,18 +6,19 @@ import { useAuth } from '../../src/context/AuthContext';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
 
 /**
- * Settings / about.
+ * Settings / Profile / About (Phase G).
  *
- * Phase B: shows the local profile (display name, and email clearly marked private)
- * and provides sign-out. Display-name editing and the fuller about content arrive in
- * Phase G. Email is shown only here, on the owner's own private settings screen — never
- * on any public prayer surface.
+ * An intentional settings screen: the local profile (display name + email clearly marked
+ * private), plain-language privacy guidance, a sincere About section, and sign-out. Email
+ * appears only here, on the owner's own private screen — never on any public prayer
+ * surface. This is a local prototype, not a production account system.
  */
 export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
 
   return (
     <Screen scroll>
+      {/* Profile */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your profile</Text>
         <View style={styles.card}>
@@ -31,18 +32,56 @@ export default function SettingsScreen() {
             <Text style={styles.rowValue}>{profile?.email ?? '—'}</Text>
           </View>
           <Text style={styles.privateNote}>
-            🔒 Private — only you can see this. It's never shown on prayer requests.
+            🔒 Private — only you can see your email. It is never shown on prayer requests.
           </Text>
         </View>
       </View>
 
+      {/* Privacy */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={styles.sectionTitle}>Privacy</Text>
+        <View style={styles.card}>
+          <View style={styles.bullet}>
+            <Text style={styles.dot}>•</Text>
+            <Text style={styles.bulletText}>
+              Your prayer requests show either your <Text style={styles.bold}>display
+              name</Text> or <Text style={styles.bold}>“Anonymous”</Text> — your choice,
+              each time you post.
+            </Text>
+          </View>
+          <View style={styles.bullet}>
+            <Text style={styles.dot}>•</Text>
+            <Text style={styles.bulletText}>
+              Your <Text style={styles.bold}>email is private</Text> and is never shown on
+              prayer requests or to other people.
+            </Text>
+          </View>
+          <View style={styles.bullet}>
+            <Text style={styles.dot}>•</Text>
+            <Text style={styles.bulletText}>
+              This is an early <Text style={styles.bold}>local prototype</Text>, not a
+              production account system — your profile and data stay on this device.
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* About */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>About Praying 4 You</Text>
         <View style={styles.card}>
           <Text style={styles.aboutText}>
-            Praying 4 You is a calm, supportive space to share prayer requests and pray
-            for others. This is an early local prototype — your profile and data stay on
-            this device.
+            Praying 4 You is a quiet, supportive place to share what you're carrying and to
+            pray for others who are carrying their own. Post a request, or pick one up and
+            lift it in prayer.
+          </Text>
+          <Text style={styles.aboutText}>
+            It's built to feel calm and respectful — closer to an old, well-loved prayer
+            journal than a busy social feed. You're never asked to perform; you're simply
+            invited to be present with one another.
+          </Text>
+          <Text style={styles.aboutMuted}>
+            A local prototype. Be kind with what you share, and with one another.
           </Text>
         </View>
       </View>
@@ -65,6 +104,7 @@ const styles = StyleSheet.create({
     ...typography.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontWeight: '600',
   },
   card: {
     backgroundColor: colors.surface,
@@ -98,5 +138,24 @@ const styles = StyleSheet.create({
     ...typography.muted,
     marginTop: spacing.xs,
   },
+  bullet: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dot: {
+    ...typography.body,
+    color: colors.gold,
+  },
+  bulletText: {
+    ...typography.body,
+    flex: 1,
+  },
+  bold: {
+    fontWeight: '700',
+  },
   aboutText: typography.body,
+  aboutMuted: {
+    ...typography.muted,
+    marginTop: spacing.xs,
+  },
 });

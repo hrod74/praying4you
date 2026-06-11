@@ -1,3 +1,4 @@
+import { FontAwesome5 } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 
 import { useAuth } from '../../src/context/AuthContext';
@@ -7,11 +8,22 @@ import { colors } from '../../src/theme/theme';
 /**
  * Main app tab shell (shown only to a signed-in user).
  *
- * Gated on the simulated session — a signed-out user is redirected to the welcome
- * screen and cannot reach the tabs. Wrapped in PrayerProvider so the Feed and Detail
- * screens share the loaded prayer list (Phase C, read path). Feed is itself a stack
- * (feed/index → feed/[id]); Verse remains a Phase A placeholder until Phase F.
+ * Gated on the simulated session — a signed-out user is redirected to the welcome screen
+ * and cannot reach the tabs. Wrapped in PrayerProvider so all app screens share the
+ * loaded prayer list and interactions.
+ *
+ * Phase G navigation: four tabs with quiet, concept-matched FontAwesome5 icons (a dove
+ * for the feed, a quill for composing, a Bible for the verse, a person for settings).
+ * "Create Prayer" is a persistent tab so it is always reachable from the bottom bar, even
+ * after scrolling the feed.
  */
+
+// Small helper: render a FontAwesome5 glyph tinted by the tab's active/inactive color.
+const tabIcon =
+  (name: React.ComponentProps<typeof FontAwesome5>['name']) =>
+  ({ color }: { color: string }) =>
+    <FontAwesome5 name={name} size={20} color={color} />;
+
 export default function AppTabsLayout() {
   const { isSignedIn } = useAuth();
 
@@ -32,9 +44,22 @@ export default function AppTabsLayout() {
           sceneStyle: { backgroundColor: colors.background },
         }}
       >
-        <Tabs.Screen name="feed" options={{ title: 'Feed', headerShown: false }} />
-        <Tabs.Screen name="verse" options={{ title: 'Verse' }} />
-        <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+        <Tabs.Screen
+          name="feed"
+          options={{ title: 'Feed', headerShown: false, tabBarIcon: tabIcon('dove') }}
+        />
+        <Tabs.Screen
+          name="submit"
+          options={{ title: 'Share', tabBarIcon: tabIcon('feather-alt') }}
+        />
+        <Tabs.Screen
+          name="verse"
+          options={{ title: 'Verse', tabBarIcon: tabIcon('bible') }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{ title: 'Settings', tabBarIcon: tabIcon('user') }}
+        />
       </Tabs>
     </PrayerProvider>
   );
