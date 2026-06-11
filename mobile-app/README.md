@@ -5,12 +5,12 @@ A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
 Praying 4 You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
 app-store configuration are intentionally deferred to later milestones.
 
-> **Status: Phase C — Mock prayer feed + detail (read path).** Builds on the Phase B
-> local auth/profile with a real, scrollable **prayer feed** (mock data, newest first)
-> and a reflective **prayer detail** screen, styled toward the old-school Bible /
-> prayer-journal design direction. All data is local mock data via a service seam — still
-> **no backend**. Submission and the "I prayed for this" interaction are read-only here
-> and arrive in Phases D–E. The Verse screen remains a Phase A placeholder until Phase F.
+> **Status: Phase D — Local prayer request submission (write path).** Builds on the
+> Phase C read path with a **Share a prayer request** form: a signed-in user writes a
+> request, picks a category, and chooses named or anonymous display; on submit it is added
+> to **local state** and appears at the top of the feed (and opens in detail). Still
+> **local/mock only — no backend**. The "I prayed for this" interaction is Phase E; the
+> Verse screen remains a placeholder until Phase F. Categories were added in Phase C.5.
 
 ## Requirements
 
@@ -53,22 +53,24 @@ npm run web       # start + open web
 npx tsc --noEmit  # type-check the project
 ```
 
-## What you can do in Phase C
+## What you can do in Phase D
 
 After creating a local profile (Phase B), once signed in:
 
-- **Feed tab** shows a scrollable list of **mock prayer requests** as calm,
-  journal-style cards, **newest first**. Each card shows the poster's display name (or
-  **"Anonymous"**), the date, a preview of the request, and an encouraging prayer count
-  (e.g., "27 people prayed"). Pull down to refresh.
-- **Tap any card** to open the **prayer detail** screen — a reflective, journal-entry
-  layout with the full request text, date, and prayer count.
-- **Anonymous requests** display as "Anonymous" on both feed and detail; named requests
-  show only the display name. **Email never appears** on any prayer surface.
+- **Feed tab** shows a scrollable list of prayer requests as calm, journal-style cards,
+  **newest first**, each with a subtle category tag, the poster's display name (or
+  **"Anonymous"**), the date, a preview, and an encouraging prayer count. Pull to refresh.
+- **Share a prayer request** (button at the top of the feed) opens the submit form: write
+  your request (with a character counter, min 10 / max 500), pick a **category**, and
+  choose **Post with my name** or **Post as Anonymous**. On submit, your request is added
+  locally, appears at the **top of the feed**, and opens in **detail**.
+- **Tap any card** to open the reflective **prayer detail** screen.
+- **Anonymous** requests display as "Anonymous" on feed and detail; named requests show
+  only the display name. **Email never appears** on any prayer surface.
 - **Settings** still shows your profile and **Sign out**.
 
-Read-only for now: there is no submission form and no "I prayed for this" action yet
-(Phases D–E). Everything is local mock data — no backend, no real authentication.
+Still read-only for the "I prayed for this" action (Phase E). Everything is local mock
+data — submitted requests live in memory for the session; no backend, no real auth.
 
 ## Project structure
 
@@ -85,8 +87,9 @@ mobile-app/
 │       ├── _layout.tsx        # Tabs: Feed, Verse, Settings; PrayerProvider; gating
 │       ├── feed/
 │       │   ├── _layout.tsx    # Feed stack
-│       │   ├── index.tsx      # Prayer feed (mock cards, newest first)
-│       │   └── [id].tsx       # Prayer detail (reflective read view)
+│       │   ├── index.tsx      # Prayer feed (mock cards, newest first) + Share button
+│       │   ├── [id].tsx       # Prayer detail (reflective read view)
+│       │   └── submit.tsx     # Share a prayer request (write path, local)
 │       ├── verse.tsx          # Verse of the day (placeholder)
 │       └── settings.tsx       # Profile (name + private email) + sign out
 │
@@ -95,13 +98,15 @@ mobile-app/
 │   │   ├── AuthContext.tsx     # Local profile + simulated session (AsyncStorage-backed)
 │   │   └── PrayerContext.tsx   # In-memory prayer list (read path) via the service seam
 │   ├── services/
-│   │   └── prayerService.ts    # Prayer read seam (mock now, Firestore later)
+│   │   └── prayerService.ts    # Prayer read + create seam (mock now, Firestore later)
 │   ├── data/
 │   │   └── mockPrayers.ts      # Seed prayer requests (fictional, model-shaped)
 │   ├── models/
 │   │   └── types.ts           # TypeScript contracts (mirror future Firestore shapes)
 │   ├── components/
 │   │   ├── Button.tsx          # Primary/secondary action button
+│   │   ├── CategorySelect.tsx  # Selectable category chips (submit form)
+│   │   ├── CategoryTag.tsx     # Subtle category chip (feed/detail)
 │   │   ├── EmptyState.tsx      # Calm empty / not-found / error state
 │   │   ├── PrayerCard.tsx      # Journal-style prayer feed card
 │   │   ├── Screen.tsx          # Padded, keyboard-aware screen container

@@ -8,19 +8,21 @@ import {
   type ReactNode,
 } from 'react';
 
-import { listActivePrayers } from '../services/prayerService';
+import { createPrayer, listActivePrayers, type NewPrayerInput } from '../services/prayerService';
 import type { PrayerRequest } from '../models/types';
 
 /**
  * PrayerContext — in-memory prayer-request state for the signed-in app.
  *
- * Phase C scope (read path only): loads the active prayer requests (newest first) via
+ * Read path (Phase C): loads the active prayer requests (newest first) via
  * `prayerService` and exposes them, plus loading/error state and a refresh action, to
  * the Feed and Detail screens. Screens never import mock data directly — they read from
  * here, which reads from the service seam.
  *
- * Write actions (submit, "I prayed for this", report) are intentionally NOT implemented
- * yet — those arrive in Phases D, E, and G.
+ * Write path (Phase D): `addPrayer` creates a new request via the service and prepends it
+ * to the in-memory list so it appears at the top of the feed immediately (local/mock
+ * only — nothing is persisted to a backend). "I prayed for this" and report remain for
+ * Phases E and G.
  */
 
 interface PrayerContextValue {
@@ -34,6 +36,8 @@ interface PrayerContextValue {
   refresh: () => Promise<void>;
   /** Look up a loaded request by id (used by the detail screen). */
   getById: (id: string) => PrayerRequest | undefined;
+  /** Create a new prayer request locally; returns its new id. */
+  addPrayer: (input: NewPrayerInput) => Promise<string>;
 }
 
 const PrayerContext = createContext<PrayerContextValue | undefined>(undefined);
@@ -65,9 +69,16 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     [prayers],
   );
 
+  const addPrayer = useCallback(async (input: NewPrayerInput) => {
+    const created = await createPrayer(input);
+    // Prepend so the new request appears at the top of the feed (it is also the newest).
+    setPrayers((prev) => [created, ...prev]);
+    return created.id;
+  }, []);
+
   const value = useMemo<PrayerContextValue>(
-    () => ({ prayers, isLoading, error, refresh: load, getById }),
-    [prayers, isLoading, error, load, getById],
+    () => ({ prayers, isLoading, error, refresh: load, getById, addPrayer }),
+    [prayers, isLoading, error, load, getById, addPrayer],
   );
 
   return <PrayerContext.Provider value={value}>{children}</PrayerContext.Provider>;

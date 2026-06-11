@@ -46,3 +46,5 @@ Manager) to a piece of work and records a clear decision.
   prayer feed + detail read path and proceed to Phase D.
 - [Phase C.5 Category Model Review](phase-c5-category-model-review.md) — go/no-go to commit
   prayer categories in the data model + UI.
+- [Phase D Completion Review](phase-d-completion-review.md) — go/no-go to commit local
+  prayer request submission (write path) and proceed to Phase E.

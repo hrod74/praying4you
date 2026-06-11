@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '../../../src/components/Button';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { PrayerCard } from '../../../src/components/PrayerCard';
 import { usePrayers } from '../../../src/context/PrayerContext';
@@ -52,6 +53,12 @@ export default function FeedScreen() {
           <Text style={styles.subtitle}>
             Read what others are carrying, and lift them up in prayer.
           </Text>
+          <Button
+            label="Share a prayer request"
+            onPress={() => router.push('/(app)/feed/submit')}
+            accessibilityHint="Opens the form to write a new prayer request"
+            style={styles.shareButton}
+          />
         </View>
       }
       renderItem={({ item }) => (
@@ -91,6 +98,9 @@ const styles = StyleSheet.create({
   },
   title: typography.title,
   subtitle: typography.muted,
+  shareButton: {
+    marginTop: spacing.md,
+  },
   separator: {
     height: spacing.md,
   },

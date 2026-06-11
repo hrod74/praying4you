@@ -1,13 +1,17 @@
 /**
- * Pure validation helpers for the local profile form.
+ * Pure validation helpers for the app's forms (profile, prayer submission).
  *
  * Framework-agnostic and side-effect-free so they are easy to unit test later and to
- * reuse when real (Firebase) auth replaces the simulated local flow. They validate
- * shape only — there is no backend or account check in the prototype.
+ * reuse when real (Firebase) services replace the simulated local flow. They validate
+ * shape only — there is no backend in the prototype.
  */
 
 export const DISPLAY_NAME_MIN = 2;
 export const DISPLAY_NAME_MAX = 40;
+
+// Prayer body length bounds (mirrors the PRD: 10–500 characters).
+export const PRAYER_BODY_MIN = 10;
+export const PRAYER_BODY_MAX = 500;
 
 /** Pragmatic email shape check — intentionally simple, not RFC-exhaustive. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,5 +33,18 @@ export function validateEmail(value: string): string | null {
   const trimmed = value.trim();
   if (trimmed.length === 0) return 'Please enter your email.';
   if (!EMAIL_PATTERN.test(trimmed)) return 'Please enter a valid email address.';
+  return null;
+}
+
+/** Validates the prayer request body length. Returns an error string, or null if valid. */
+export function validatePrayerBody(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return 'Please write your prayer request.';
+  if (trimmed.length < PRAYER_BODY_MIN) {
+    return `Please write at least ${PRAYER_BODY_MIN} characters.`;
+  }
+  if (trimmed.length > PRAYER_BODY_MAX) {
+    return `Please keep it to ${PRAYER_BODY_MAX} characters or fewer.`;
+  }
   return null;
 }

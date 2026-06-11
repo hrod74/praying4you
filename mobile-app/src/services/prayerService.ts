@@ -1,5 +1,5 @@
 import { mockPrayers } from '../data/mockPrayers';
-import type { PrayerRequest } from '../models/types';
+import type { PrayerCategory, PrayerRequest } from '../models/types';
 
 /**
  * prayerService — the data-access seam for prayer requests.
@@ -33,4 +33,43 @@ export async function listActivePrayers(): Promise<PrayerRequest[]> {
 export async function getPrayerById(id: string): Promise<PrayerRequest | null> {
   const found = mockPrayers.find((p) => p.id === id && p.status === 'active');
   return found ? { ...found } : null;
+}
+
+/**
+ * Input for creating a new prayer request. The owner (userId) and the owner's display
+ * name are always supplied — ownership is retained even when posting anonymously.
+ */
+export interface NewPrayerInput {
+  userId: string;
+  /** The owner's display name (cached). Ignored for display when isAnonymous is true. */
+  displayName: string;
+  isAnonymous: boolean;
+  body: string;
+  category: PrayerCategory;
+}
+
+/** Generate a unique local id for a newly created prayer (prototype only). */
+function generateLocalId(): string {
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Create a new prayer request (local/mock). Mirrors a Firestore `add` that returns the
+ * created document: it assigns the id/timestamp/initial counters and caches the display
+ * name ("Anonymous" when posting anonymously, per the PRD). When Firebase replaces this
+ * seam, only this function changes — call sites stay the same.
+ */
+export async function createPrayer(input: NewPrayerInput): Promise<PrayerRequest> {
+  return {
+    id: generateLocalId(),
+    userId: input.userId,
+    isAnonymous: input.isAnonymous,
+    displayName: input.isAnonymous ? 'Anonymous' : input.displayName,
+    body: input.body.trim(),
+    category: input.category,
+    createdAt: new Date().toISOString(),
+    status: 'active',
+    prayerCount: 0,
+    reportCount: 0,
+  };
 }
