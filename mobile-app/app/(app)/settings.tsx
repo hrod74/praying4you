@@ -1,20 +1,42 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/context/AuthContext';
+import { usePrayers } from '../../src/context/PrayerContext';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
 
 /**
- * Settings / Profile / About (Phase G).
+ * Settings / Profile / About (Phase G, polished in Phase H).
  *
  * An intentional settings screen: the local profile (display name + email clearly marked
- * private), plain-language privacy guidance, a sincere About section, and sign-out. Email
- * appears only here, on the owner's own private screen — never on any public prayer
- * surface. This is a local prototype, not a production account system.
+ * private), plain-language privacy guidance, a sincere About section, a way to reset local
+ * prototype activity, and sign-out. Email appears only here, on the owner's own private
+ * screen — never on any public prayer surface. This is a local prototype, not a production
+ * account system.
  */
 export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
+  const { resetLocalData } = usePrayers();
+
+  // Reset clears local prototype activity (submitted requests, prayed marks, reports) but
+  // keeps the profile. A confirmation guards against an accidental tap.
+  const confirmReset = () => {
+    Alert.alert(
+      'Reset prototype data?',
+      'This clears prayer requests you have submitted, your prayed marks, and any reports on this device. Your profile stays signed in. The starter prayers return to how they began.',
+      [
+        { text: 'Keep my data', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            void resetLocalData();
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <Screen scroll>
@@ -86,12 +108,31 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Prototype data */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Prototype data</Text>
+        <View style={styles.card}>
+          <Text style={styles.aboutText}>
+            Your requests, prayed marks, and reports are saved on this device so they are
+            still here when you reopen the app. You can clear them anytime and start fresh.
+          </Text>
+          <Button
+            label="Reset prototype data"
+            variant="secondary"
+            onPress={confirmReset}
+            accessibilityHint="Clears your local prayer requests, prayed marks, and reports. Keeps your profile."
+          />
+        </View>
+      </View>
+
       <Button
         label="Sign out"
         variant="secondary"
         onPress={signOut}
         accessibilityHint="Signs you out and returns to the welcome screen"
       />
+
+      <Text style={styles.footer}>Praying 4 You · Local prototype</Text>
     </Screen>
   );
 }
@@ -157,5 +198,10 @@ const styles = StyleSheet.create({
   aboutMuted: {
     ...typography.muted,
     marginTop: spacing.xs,
+  },
+  footer: {
+    ...typography.muted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
 });

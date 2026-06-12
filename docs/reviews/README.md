@@ -54,3 +54,6 @@ Manager) to a piece of work and records a clear decision.
   Verse of the Day and proceed to Phase G.
 - [Phase G Completion Review](phase-g-completion-review.md) — go/no-go to commit the
   navigation QA fixes + Settings/About + local Reporting, and proceed to Phase H.
+- [Phase H Completion Review](phase-h-completion-review.md) — go/no-go to commit the
+  final prototype polish + local persistence + demo readiness, and proceed to Firebase
+  MVP planning.

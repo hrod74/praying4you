@@ -45,6 +45,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push('/(auth)/sign-in')}
           accessibilityHint="Sign in to your existing local profile"
         />
+        <Text style={styles.footnote}>A local prototype. Your profile stays on this device.</Text>
       </View>
     </SafeAreaView>
   );
@@ -70,5 +71,10 @@ const styles = StyleSheet.create({
   actions: {
     gap: spacing.md,
     marginBottom: spacing.lg,
+  },
+  footnote: {
+    ...typography.muted,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });

@@ -65,6 +65,13 @@ Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
   reachable); a fuller **Settings/Profile** (profile + privacy language + About); and a
   local **Report request** flow on detail (reason + optional note → calm confirmation;
   increments `reportCount`, flags locally; hidden on own posts). All local/mock.
+- **Phase H — Polish + local persistence + demo readiness:** small, safe polish (Welcome
+  footnote, Settings footer); **local persistence** via AsyncStorage in the `prayerService`
+  seam — submitted requests, "I prayed for this" interactions, and reports survive app
+  restarts, layered on the bundled seed. Counts are **derived** from the interaction/report
+  lists (no double-counting on refresh/restart). **Reset prototype data** in Settings clears
+  local activity but keeps the profile. Email is never stored in prayer/interaction/report
+  data. Added `docs/demo-readiness-checklist.md`. Still local/mock — no Firebase.
 
 ## Design direction
 
@@ -94,12 +101,16 @@ tabs with concept icons (Feed, Create Prayer, Verse, Settings)** · feed shows m
 cards (newest first) · **Create Prayer is always reachable from the tab bar** · detail
 screen works · categories on feed + detail · submitting works (top of feed) · "I prayed
 for this" works · **Verse of the day works** · **Settings shows profile + privacy + About**
-· **Report request works locally** on others' posts (hidden on own) · **email is never
+· **Report request works locally** on others' posts (hidden on own) · **submitted requests,
+prayed marks, and reports persist across app restarts** (AsyncStorage; counts derived, no
+double-count) · **Reset prototype data** in Settings (keeps profile) · **email is never
 shown publicly**.
 
 ## Next phase
 
-**Phase H — Polish + persistence (optional) + demo capture:** empty/loading/error-state
-polish, accessibility/tap-target passes, optional AsyncStorage persistence for the local
-profile + submitted requests, and screenshots / a screen recording of the full loop for
-the portfolio. Still local/mock; Firebase remains the next *milestone* after the prototype.
+**Firebase MVP planning (Plan Mode first).** The local prototype milestone is complete.
+Before any backend code, plan the Firebase-backed MVP: Firestore data model + security
+rules (auth-gated reads, owner-only writes), real authentication, the reporting/moderation
+approach, and how the `prayerService` seam maps onto Firestore. Handle config with safe
+environment patterns (never hardcoded secrets). See `docs/demo-readiness-checklist.md` for
+the demo flow and portfolio screenshot list.

@@ -10,17 +10,23 @@ import {
 } from 'react';
 
 import {
+  clearLocalPrayerData,
   createPrayer,
   interactionKey,
   listActivePrayers,
+  loadInteractions,
+  loadReports,
   recordPrayerInteraction,
   recordReport,
+  saveInteractions,
+  saveReports,
+  saveSubmittedPrayers,
   type NewPrayerInput,
 } from '../services/prayerService';
 import type { PrayerInteraction, PrayerRequest, Report, ReportReason } from '../models/types';
 
 /**
- * PrayerContext — in-memory prayer-request state for the signed-in app.
+ * PrayerContext — prayer-request state for the signed-in app, with local persistence.
  *
  * Read path (Phase C): loads the active prayer requests (newest first) via
  * `prayerService` and exposes them, plus loading/error state and a refresh action, to
@@ -28,22 +34,26 @@ import type { PrayerInteraction, PrayerRequest, Report, ReportReason } from '../
  * here, which reads from the service seam.
  *
  * Write path (Phase D): `addPrayer` creates a new request via the service and prepends it
- * to the in-memory list so it appears at the top of the feed immediately.
+ * to the in-memory baseline so it appears at the top of the feed immediately.
  *
- * Interaction (Phase E): `pray` records a one-per-user "I prayed for this" interaction
- * and increments that request's `prayerCount` locally; `hasPrayed` reports whether the
- * given user has already prayed.
+ * Interaction (Phase E): `pray` records a one-per-user "I prayed for this" interaction;
+ * `hasPrayed` reports whether the given user has already prayed.
  *
  * Reporting (Phase G): `reportPrayer` records a one-per-user report (reason + optional
- * note), increments `reportCount`, and flags the request locally; `hasReported` reports
- * whether the given user already reported it. There is NO real moderation backend — this
- * is local/mock only and maps to a future Firebase `reports` collection.
+ * note) and flags the request; `hasReported` reports whether the user already reported it.
+ * There is NO real moderation backend — this is local/mock only.
  *
- * All state is session-only (in-memory); nothing is persisted to a backend.
+ * Persistence (Phase H): submitted requests, interactions, and reports are loaded from
+ * on-device storage on startup and saved as they change, so local activity survives app
+ * restarts. Counts are DERIVED: the displayed `prayers` recomputes each request's
+ * prayerCount/reportCount/flag from the interaction/report lists layered on the base
+ * record, so a refresh or restart can never double-count. `resetLocalData` clears all
+ * local prototype activity (the profile, owned by AuthContext, is left intact). Email is
+ * never stored in or derived from any of this data.
  */
 
 interface PrayerContextValue {
-  /** Active prayer requests, newest first. */
+  /** Active prayer requests, newest first (with derived live counts). */
   prayers: PrayerRequest[];
   /** True while the initial load (or a refresh) is in flight. */
   isLoading: boolean;
@@ -68,19 +78,23 @@ interface PrayerContextValue {
     reason: ReportReason,
     notes?: string,
   ) => Promise<void>;
+  /** Clear all local prototype activity (submitted requests, prayed marks, reports). */
+  resetLocalData: () => Promise<void>;
 }
 
 const PrayerContext = createContext<PrayerContextValue | undefined>(undefined);
 
 export function PrayerProvider({ children }: { children: ReactNode }) {
-  const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
+  // Base records (seed + locally-submitted), with their BASE counts; live counts are
+  // derived below from the interaction/report lists.
+  const [baseline, setBaseline] = useState<PrayerRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Recorded "I prayed for this" interactions (session-only); state drives re-render.
+  // Recorded "I prayed for this" interactions; state drives the derived counts/re-render.
   const [interactions, setInteractions] = useState<PrayerInteraction[]>([]);
-  // Synchronous guard so rapid double-taps can't double-count before state updates.
+  // Synchronous guard so rapid double-taps can't double-record before state updates.
   const prayedKeys = useRef<Set<string>>(new Set());
-  // Recorded reports (session-only) + a synchronous one-per-user guard.
+  // Recorded reports + a synchronous one-per-user guard.
   const [reports, setReports] = useState<Report[]>([]);
   const reportedKeys = useRef<Set<string>>(new Set());
 
@@ -88,8 +102,21 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const list = await listActivePrayers();
-      setPrayers(list);
+      const [list, storedInteractions, storedReports] = await Promise.all([
+        listActivePrayers(),
+        loadInteractions(),
+        loadReports(),
+      ]);
+      setBaseline(list);
+      setInteractions(storedInteractions);
+      setReports(storedReports);
+      // Rebuild the synchronous guards from persisted data so restored marks aren't redone.
+      prayedKeys.current = new Set(
+        storedInteractions.map((i) => interactionKey(i.userId, i.requestId)),
+      );
+      reportedKeys.current = new Set(
+        storedReports.map((r) => interactionKey(r.reportedBy, r.requestId)),
+      );
     } catch {
       setError('We could not load prayer requests right now. Pull down to try again.');
     } finally {
@@ -101,6 +128,24 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     void load();
   }, [load]);
 
+  // Displayed list: layer interaction/report deltas onto each base record. Recomputing
+  // from the deduped lists (rather than mutating) guarantees no double-counting on
+  // refresh/restart, and flags any request that has at least one report.
+  const prayers = useMemo<PrayerRequest[]>(() => {
+    if (interactions.length === 0 && reports.length === 0) return baseline;
+    return baseline.map((p) => {
+      const prayerDelta = interactions.filter((i) => i.requestId === p.id).length;
+      const reportDelta = reports.filter((r) => r.requestId === p.id).length;
+      if (prayerDelta === 0 && reportDelta === 0) return p;
+      return {
+        ...p,
+        prayerCount: p.prayerCount + prayerDelta,
+        reportCount: p.reportCount + reportDelta,
+        status: reportDelta > 0 ? 'flagged' : p.status,
+      };
+    });
+  }, [baseline, interactions, reports]);
+
   const getById = useCallback(
     (id: string) => prayers.find((p) => p.id === id),
     [prayers],
@@ -108,8 +153,13 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
 
   const addPrayer = useCallback(async (input: NewPrayerInput) => {
     const created = await createPrayer(input);
-    // Prepend so the new request appears at the top of the feed (it is also the newest).
-    setPrayers((prev) => [created, ...prev]);
+    // Prepend so the new request appears at the top of the feed (it is also the newest),
+    // then persist the locally-submitted subset so it survives a restart.
+    setBaseline((prev) => {
+      const next = [created, ...prev];
+      void saveSubmittedPrayers(next.filter((p) => p.id.startsWith('local-')));
+      return next;
+    });
     return created.id;
   }, []);
 
@@ -126,12 +176,11 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     prayedKeys.current.add(key);
 
     const interaction = await recordPrayerInteraction(userId, requestId);
-    setInteractions((prev) => [...prev, interaction]);
-    setPrayers((prev) =>
-      prev.map((p) =>
-        p.id === requestId ? { ...p, prayerCount: p.prayerCount + 1 } : p,
-      ),
-    );
+    setInteractions((prev) => {
+      const next = [...prev, interaction];
+      void saveInteractions(next);
+      return next;
+    });
   }, []);
 
   const hasReported = useCallback(
@@ -147,19 +196,25 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       reportedKeys.current.add(key);
 
       const report = await recordReport({ requestId, reportedBy: userId, reason, notes });
-      setReports((prev) => [...prev, report]);
-      // Local moderation effect only: count the report and flag the request. The feed does
-      // not hide flagged items in the prototype (no real moderation queue).
-      setPrayers((prev) =>
-        prev.map((p) =>
-          p.id === requestId
-            ? { ...p, reportCount: p.reportCount + 1, status: 'flagged' }
-            : p,
-        ),
-      );
+      setReports((prev) => {
+        const next = [...prev, report];
+        void saveReports(next);
+        return next;
+      });
     },
     [],
   );
+
+  const resetLocalData = useCallback(async () => {
+    await clearLocalPrayerData();
+    prayedKeys.current = new Set();
+    reportedKeys.current = new Set();
+    setInteractions([]);
+    setReports([]);
+    // Reload the baseline so the feed returns to seed-only (submitted requests cleared).
+    const list = await listActivePrayers();
+    setBaseline(list);
+  }, []);
 
   const value = useMemo<PrayerContextValue>(
     () => ({
@@ -173,8 +228,21 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       pray,
       hasReported,
       reportPrayer,
+      resetLocalData,
     }),
-    [prayers, isLoading, error, load, getById, addPrayer, hasPrayed, pray, hasReported, reportPrayer],
+    [
+      prayers,
+      isLoading,
+      error,
+      load,
+      getById,
+      addPrayer,
+      hasPrayed,
+      pray,
+      hasReported,
+      reportPrayer,
+      resetLocalData,
+    ],
   );
 
   return <PrayerContext.Provider value={value}>{children}</PrayerContext.Provider>;
