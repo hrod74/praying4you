@@ -1,4 +1,4 @@
-# Reviews: Praying 4 You
+# Reviews: Praying For You
 
 This folder stores **review outputs** produced by the AI development team defined in
 `../agents/`. Each review applies one or more of the role lenses (Product Owner,

@@ -1,4 +1,4 @@
-# Prototype Roadmap: Praying 4 You
+# Prototype Roadmap: Praying For You
 
 This roadmap defines the path from the current planning documents to a working,
 portfolio-ready prototype. It sits between the high-level product requirements

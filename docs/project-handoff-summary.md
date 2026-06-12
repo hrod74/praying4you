@@ -1,4 +1,4 @@
-# Project Handoff Summary — Praying 4 You
+# Project Handoff Summary — Praying For You
 
 A compact, current-state snapshot to preserve context. For detail, see
 `implementation-plan.md`, `prototype-roadmap.md`, `product-requirements.md`,
@@ -61,7 +61,7 @@ Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
   `verseService` — no external Bible API. Verse + reference + a clearly-distinct app
   reflection, in the parchment style. (Production verse licensing to be reviewed.)
 - **Phase G — Navigation, Settings/About, Reporting:** persistent **bottom-tab icons**
-  (FontAwesome5: dove/quill/bible/user) and a persistent **Create Prayer** tab (always
+  (FontAwesome5: dove/praying-hands/bible/user) and a persistent **Create Prayer** tab (always
   reachable); a fuller **Settings/Profile** (profile + privacy language + About); and a
   local **Report request** flow on detail (reason + optional note → calm confirmation;
   increments `reportCount`, flags locally; hidden on own posts). All local/mock.

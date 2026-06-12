@@ -1,4 +1,4 @@
-# Implementation Plan: Praying 4 You — Functional Local Prototype
+# Implementation Plan: Praying For You — Functional Local Prototype
 
 **Scope of this document:** the **functional local React Native / Expo prototype
 only** — milestone 1 of the three defined in `prototype-roadmap.md`. It does **not**
@@ -20,7 +20,7 @@ Related docs:
 
 ## 1. Objective
 
-Build a **functional local prototype** of Praying 4 You as a React Native / Expo
+Build a **functional local prototype** of Praying For You as a React Native / Expo
 app that runs locally and lets a user complete the core prayer flow end to end,
 using mock / local data. It must be demonstrable in a portfolio (screenshots and a
 screen recording) and serve as a credible foundation for the later Firebase-backed
@@ -349,7 +349,7 @@ Per `prototype-roadmap.md` Section 8 (Portfolio Deliverables):
 When ready to scaffold the app, the following is a ready-to-use prompt. **Do not run
 it as part of this plan** — it is the next step after approval.
 
-> Create the functional local prototype for Praying 4 You as a new Expo app in
+> Create the functional local prototype for Praying For You as a new Expo app in
 > `mobile-app/`, following `docs/implementation-plan.md`.
 >
 > - Use Expo (managed workflow) with TypeScript and Expo Router.

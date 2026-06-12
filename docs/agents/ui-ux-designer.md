@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Own the **look, feel, and flow** of the Praying 4 You prototype. The UI/UX Designer
+Own the **look, feel, and flow** of the Praying For You prototype. The UI/UX Designer
 protects a calm, trustworthy, mobile-first experience: clear screen hierarchy, coherent
 navigation, visual consistency, accessible basics, readable forms, and graceful empty
 and error states — all in a tone respectful of the sensitive, personal nature of prayer

@@ -1,7 +1,7 @@
-# AI Development Team: Praying 4 You
+# AI Development Team: Praying For You
 
 This folder defines a lightweight, project-specific **AI development team** — a set
-of review roles ("agents") used to keep the Praying 4 You rebuild aligned, safe, and
+of review roles ("agents") used to keep the Praying For You rebuild aligned, safe, and
 high quality as it moves from planning into a functional local prototype.
 
 These are **not** installed external agent skills and they do **not** copy any

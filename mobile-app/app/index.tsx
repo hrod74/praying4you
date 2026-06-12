@@ -24,7 +24,7 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.hero}>
-        <Text style={styles.title}>Praying 4 You</Text>
+        <Text style={styles.title}>Praying For You</Text>
         <Text style={styles.subtitle}>
           Share a prayer request, or pick one up and pray for someone else.
         </Text>

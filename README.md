@@ -1,6 +1,6 @@
-# Praying 4 You
+# Praying For You
 
-Praying 4 You began as a simple Advanced JavaScript class project hosted on Firebase. The original web app allowed users to submit and view prayer requests.
+Praying For You began as a simple Advanced JavaScript class project hosted on Firebase. The original web app allowed users to submit and view prayer requests.
 
 This repository preserves the original Firebase web version in `/legacy-web-app` and will be used to rebuild the app as a cross-platform React Native mobile application for iOS and Android.
 

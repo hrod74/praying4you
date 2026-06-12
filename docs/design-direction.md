@@ -1,4 +1,4 @@
-# Design Direction: Praying 4 You Mobile Prototype
+# Design Direction: Praying For You Mobile Prototype
 
 **Status:** Lightweight design direction for the functional local prototype
 (milestone 1). It guides the look, feel, and flow of the React Native / Expo screens

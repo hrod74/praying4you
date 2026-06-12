@@ -20,7 +20,7 @@ function RootNavigator() {
   if (isHydrating) {
     return (
       <View style={styles.splash}>
-        <Text style={styles.splashTitle}>Praying 4 You</Text>
+        <Text style={styles.splashTitle}>Praying For You</Text>
         <ActivityIndicator color={colors.primary} />
       </View>
     );

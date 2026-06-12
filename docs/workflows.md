@@ -1,6 +1,6 @@
-# Project Workflows: Praying 4 You
+# Project Workflows: Praying For You
 
-These are reusable, repeatable workflows for the Praying 4 You project. They exist
+These are reusable, repeatable workflows for the Praying For You project. They exist
 so that documentation, prototyping, and version control stay consistent and safe
 across sessions — whether the work is done by a person or with AI assistance.
 

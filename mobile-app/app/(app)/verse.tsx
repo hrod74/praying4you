@@ -40,7 +40,7 @@ export default function VerseScreen() {
       <View style={styles.reflectionBlock}>
         <Text style={styles.reflectionLabel}>Reflection</Text>
         <Text style={styles.reflectionText}>{reflection}</Text>
-        <Text style={styles.reflectionNote}>A gentle prompt from Praying 4 You.</Text>
+        <Text style={styles.reflectionNote}>A gentle prompt from Praying For You.</Text>
       </View>
     </Screen>
   );

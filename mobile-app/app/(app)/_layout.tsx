@@ -13,9 +13,9 @@ import { colors } from '../../src/theme/theme';
  * loaded prayer list and interactions.
  *
  * Phase G navigation: four tabs with quiet, concept-matched FontAwesome5 icons (a dove
- * for the feed, a quill for composing, a Bible for the verse, a person for settings).
- * "Create Prayer" is a persistent tab so it is always reachable from the bottom bar, even
- * after scrolling the feed.
+ * for the feed, folded praying hands for composing, a Bible for the verse, a person for
+ * settings). "Create Prayer" is a persistent tab so it is always reachable from the bottom
+ * bar, even after scrolling the feed.
  */
 
 // Small helper: render a FontAwesome5 glyph tinted by the tab's active/inactive color.
@@ -50,7 +50,7 @@ export default function AppTabsLayout() {
         />
         <Tabs.Screen
           name="submit"
-          options={{ title: 'Share', tabBarIcon: tabIcon('feather-alt') }}
+          options={{ title: 'Share', tabBarIcon: tabIcon('praying-hands') }}
         />
         <Tabs.Screen
           name="verse"

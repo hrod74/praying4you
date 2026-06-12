@@ -1,4 +1,4 @@
-# Product Requirements Document: Praying 4 You Mobile App
+# Product Requirements Document: Praying For You Mobile App
 
 **Version:** 1.0
 **Date:** 2026-05-26
@@ -9,7 +9,7 @@
 
 ## 1. Product Overview
 
-Praying 4 You is a community prayer app that allows people to post prayer requests and pray for the requests of others. The app centers on a simple and meaningful idea: you share what you are carrying, and strangers will lift it up in prayer.
+Praying For You is a community prayer app that allows people to post prayer requests and pray for the requests of others. The app centers on a simple and meaningful idea: you share what you are carrying, and strangers will lift it up in prayer.
 
 The original app was built as an Advanced JavaScript class project — a single-page web app running on jQuery, Bootstrap 3, and Firebase Realtime Database. That version demonstrated the concept but was never production-ready. It lacked user accounts, moderation, mobile optimization, and reliable core features.
 

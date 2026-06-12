@@ -1,8 +1,8 @@
-# Praying 4 You — Mobile App
+# Praying For You — Mobile App
 
 A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
 **Expo Router** (file-based navigation). This is the functional local prototype of
-Praying 4 You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
+Praying For You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
 app-store configuration are intentionally deferred to later milestones.
 
 > **Status: Phase G — Navigation, Settings/About, Reporting.** The bottom navigation now

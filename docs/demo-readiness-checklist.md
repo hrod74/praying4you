@@ -1,4 +1,4 @@
-# Demo Readiness Checklist — Praying 4 You (Local Prototype)
+# Demo Readiness Checklist — Praying For You (Local Prototype)
 
 A quick guide for demoing the local prototype and capturing portfolio screenshots. This
 is the **local/mock milestone** — everything runs on-device with no backend.

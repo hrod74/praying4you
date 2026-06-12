@@ -1,4 +1,4 @@
-# Cost and Publishing Considerations: Praying 4 You
+# Cost and Publishing Considerations: Praying For You
 
 ## 1. Summary
 
@@ -23,7 +23,7 @@ Publishing to the iOS App Store and Google Play Store does require paid develope
 - Required to publish any app on the Google Play Store, including internal testing tracks.
 - Current cost: approximately $25 one-time registration fee (not annual).
 - Once the account is created, there is no annual renewal fee to maintain it or keep published apps live.
-- The lower cost and one-time nature make Android a strong candidate for the first public release of Praying 4 You.
+- The lower cost and one-time nature make Android a strong candidate for the first public release of Praying For You.
 - Recommendation: this fee is low enough to pay whenever the team is ready for a real-device distribution test beyond Expo Go — but it is still not required during local development.
 
 ---
@@ -116,7 +116,7 @@ Publishing to the iOS App Store and Google Play Store does require paid develope
 
 ### Do Not Let Monetization Hurt the Prayer Experience
 
-The core purpose of Praying 4 You is communal spiritual support. Users are sharing personal, often emotionally vulnerable requests. Every product decision — including where and when ads appear — should be evaluated against whether it serves or undermines that purpose.
+The core purpose of Praying For You is communal spiritual support. Users are sharing personal, often emotionally vulnerable requests. Every product decision — including where and when ads appear — should be evaluated against whether it serves or undermines that purpose.
 
 ### Do Not Show Ads During Sensitive Moments
 
