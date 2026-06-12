@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
@@ -93,6 +93,17 @@ export default function CreateProfileScreen() {
         disabled={!canSubmit}
         accessibilityHint="Saves your local profile and enters the app"
       />
+
+      <Pressable
+        onPress={() => router.push('/(auth)/sign-in')}
+        accessibilityRole="button"
+        accessibilityLabel="Already have a profile? Sign in"
+        accessibilityHint="Goes to the sign-in screen to continue with your existing profile"
+        hitSlop={8}
+        style={styles.signInRow}
+      >
+        <Text style={styles.signInText}>Already have a profile? Sign in</Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -111,5 +122,14 @@ const styles = StyleSheet.create({
   privacyText: {
     ...typography.muted,
     color: colors.text,
+  },
+  signInRow: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  signInText: {
+    ...typography.muted,
+    color: colors.primary,
+    fontWeight: '600',
   },
 });

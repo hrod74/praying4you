@@ -12,10 +12,11 @@ import { colors } from '../../src/theme/theme';
  * and cannot reach the tabs. Wrapped in PrayerProvider so all app screens share the
  * loaded prayer list and interactions.
  *
- * Phase G navigation: four tabs with quiet, concept-matched FontAwesome5 icons (a dove
- * for the feed, folded praying hands for composing, a Bible for the verse, a person for
- * settings). "Create Prayer" is a persistent tab so it is always reachable from the bottom
- * bar, even after scrolling the feed.
+ * Navigation: four tabs with quiet, concept-matched FontAwesome5 icons — a dove for the
+ * feed, a fountain pen for composing a prayer request (the act is writing/journaling, not
+ * social "sharing"), a Bible for the verse, and a person for settings. The compose tab is
+ * labeled "Pray" and is persistent, so it is always reachable from the bottom bar, even
+ * after scrolling the feed. The bar reads: Feed | Pray | Verse | Settings.
  */
 
 // Small helper: render a FontAwesome5 glyph tinted by the tab's active/inactive color.
@@ -50,7 +51,7 @@ export default function AppTabsLayout() {
         />
         <Tabs.Screen
           name="submit"
-          options={{ title: 'Share', tabBarIcon: tabIcon('praying-hands') }}
+          options={{ title: 'Pray', tabBarIcon: tabIcon('pen-fancy') }}
         />
         <Tabs.Screen
           name="verse"

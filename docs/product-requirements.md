@@ -170,6 +170,7 @@ As a user who forgot their password, I want to request a password reset email, s
 - Password reset email triggered from the sign-in screen.
 - All protected screens (feed, submission, settings) require an authenticated session. Unauthenticated users see only the sign-in and registration screens.
 - Sign out terminates the local session and returns the user to the sign-in screen.
+- **Future-backend note (registration vs. existing account).** When real authentication is added, the registration flow must check whether the entered email is already in use. If it is, do not create a duplicate account; instead surface a calm message and route the user to sign in with that email (Firebase Auth returns `auth/email-already-in-use`, which the UI should handle this way). The local prototype already offers an "Already have a profile? Sign in" link on the create-profile screen as the placeholder for this path; the local flow does not yet verify email uniqueness.
 
 ### User Profile
 - On first sign-in after registration, the user is prompted to set a display name before accessing the feed.
