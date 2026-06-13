@@ -84,8 +84,18 @@ identity and category tags. See `design-direction.md`.
 ## AI development team (review roles in `docs/agents/`)
 
 Product Owner · UI/UX Designer · React Native Engineer · Code Reviewer · Security
-Reviewer · Test Engineer · QA Engineer · Release Manager. Each phase ends with an
-eight-role go/no-go completion review in `docs/reviews/`.
+Reviewer · Test Engineer · QA Engineer · Release Manager. Each local-prototype phase
+ends with an eight-role go/no-go completion review in `docs/reviews/`.
+
+**Expanded team for backend/beta work:** two roles were added to support the move from
+local prototype to a Firebase-backed beta — **Backend Engineer**
+(`agents/backend-engineer.md`: Firebase Auth & Firestore data modeling, service
+boundaries, API/data contracts, ownership/permissions, validation, soft-remove
+behavior, backend & security-rule testing) and **Systems Admin / DevOps Engineer**
+(`agents/systems-admin.md`: Firebase/Expo/EAS setup, config & secret safety, builds,
+beta distribution, repeatable setup & cost checklists). Both are **required reviewers
+from Firebase MVP planning (roadmap Phase I) onward**, joining in Plan Mode before any
+backend code is written.
 
 ## Technical approach
 
@@ -108,9 +118,21 @@ shown publicly**.
 
 ## Next phase
 
-**Firebase MVP planning (Plan Mode first).** The local prototype milestone is complete.
-Before any backend code, plan the Firebase-backed MVP: Firestore data model + security
-rules (auth-gated reads, owner-only writes), real authentication, the reporting/moderation
-approach, and how the `prayerService` seam maps onto Firestore. Handle config with safe
-environment patterns (never hardcoded secrets). See `docs/demo-readiness-checklist.md` for
-the demo flow and portfolio screenshot list.
+**Immediate next work: full visual QA + Phase H local polish/demo readiness.** Before
+any backend work, close out the local prototype: a **full visual QA pass** and final
+Phase H polish/demo readiness (empty/loading/error states, accessibility labels and
+tap-target sizing, demo/portfolio capture). Still local/mock data — no Firebase. See
+`docs/demo-readiness-checklist.md` for the demo flow and portfolio screenshot list.
+(Note: a Phase H completion review already exists in `docs/reviews/`; the remaining gate
+is the full visual QA pass before backend planning.)
+
+**Then: Firebase MVP planning in Plan Mode (roadmap Phase I).** Only **after** Phase H
+is closed out, plan the Firebase-backed MVP **in Plan Mode**, with the **Backend
+Engineer** and **Systems Admin / DevOps Engineer** included on the review panel: the
+Firestore data model + security rules (auth-gated reads, owner-only writes, no `userId`
+spoofing), real authentication, the reporting/moderation approach, owner-only edit/
+remove (soft remove — "Remove request," never "Delete"), interaction dedupe, the typed
+service contracts and error shape, and how the `prayerService` seam maps onto Firestore.
+Handle config with safe environment patterns (never hardcoded secrets). No Firebase
+project, EAS project, or secrets are created until that plan is approved. See
+`prototype-roadmap.md` Phases H–K and `implementation-plan.md` Section 11.

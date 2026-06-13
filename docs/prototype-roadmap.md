@@ -205,3 +205,54 @@ Create an **implementation plan** before generating the Expo app. The plan shoul
 sequence the screens, define the mock data module, and outline navigation, so that
 app generation follows a clear blueprint rather than starting ad hoc. Only after the
 plan is agreed should the Expo project be created.
+
+> The implementation plan (`implementation-plan.md`) now exists and the local
+> prototype build phases (A–H) have been carried out. The phase map below picks up
+> from there and sequences the remaining work from local polish through an internal
+> Firebase-backed beta.
+
+---
+
+## 11. Upcoming Phases (H–K): From Local Polish to Internal Beta
+
+These phases sequence the move from the local prototype to a Firebase-backed internal
+beta. The local prototype phases (A–H in `implementation-plan.md`) build the experience
+against mock data; the phases below close out local readiness and then introduce the
+backend and distribution work.
+
+### Phase H — Local polish / demo readiness
+Final close-out of the **local prototype**: empty/loading/error states, accessibility
+labels and tap-target sizing, optional local persistence, a **full visual QA pass**,
+and demo/portfolio capture (screenshots + screen recording). Still **local/mock data —
+no Firebase**. This is the last phase before any backend work begins.
+
+### Phase I — Firebase MVP planning (Plan Mode)
+**Plan only — no implementation.** Design the Firebase-backed MVP in **Plan Mode**: the
+Firestore data model and indexes; security-rule intent (auth-gated reads, owner-only
+writes, no `userId` spoofing, restricted `status` transitions); the typed service
+contracts and error-handling shape (see `implementation-plan.md` Section 11); the data
+migration/versioning approach; and the configuration/secret-handling plan (env
+patterns, never hardcoded). **The Backend Engineer and Systems Admin / DevOps Engineer
+participate from this phase onward.** No Firebase project, EAS project, secrets, or
+config values are created here.
+
+### Phase J — Firebase MVP implementation
+Implement the approved Phase I plan behind the existing `src/services/` seam: real
+Firebase Auth, Firestore persistence, security rules, real reporting/moderation data,
+and durable prayer counts — **without changing the screens or shared types**. Includes
+the automated service tests and Firebase security-rule (emulator) tests required before
+any external sharing. Config is handled through safe environment patterns; no secrets
+are committed.
+
+### Phase K — Internal beta distribution
+Make the app installable by real testers **without the developer's machine**: Expo/EAS
+build setup and an internal beta channel (TestFlight for iOS and/or Google Play
+internal testing for Android, Android-first where it lowers cost/risk). Gated on a
+passing secret scan and deployed security rules. The **Systems Admin / DevOps
+Engineer** owns the build, distribution, deployment checklist, and cost monitoring; the
+**Backend Engineer** confirms data, contracts, and rule tests are ready.
+
+### Future features (not part of the immediate Firebase migration)
+**Voice input** and **AI prayer assistance** are **future features**, not part of the
+immediate Firebase migration (Phases I–K) unless deliberately reprioritized. They are
+noted here so they are not assumed into the backend beta scope by default.

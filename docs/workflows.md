@@ -110,3 +110,72 @@ changed.
 - Push to `origin`.
 - Report the final branch status (branch name and whether it is in sync with the
   remote).
+
+---
+
+## 6. Firebase Planning Workflow (Plan Mode)
+
+**Purpose:** Design the Firebase-backed MVP safely **before** any backend code is
+written (roadmap Phase I). Planning only — no implementation, no project/account
+creation, no secrets.
+
+**Steps:**
+
+- Confirm the local prototype is closed out (Phase H: polish, full visual QA, demo
+  readiness) before opening backend planning.
+- Enter **Plan Mode**. Include the **Backend Engineer** and **Systems Admin / DevOps
+  Engineer** roles on the panel from this point onward.
+- Plan, do not build: the Firestore data model and indexes; security-rule intent
+  (auth-gated reads, owner-only writes, no `userId` spoofing, restricted `status`
+  transitions); the typed service contracts and predictable error shape; the data
+  migration/versioning approach; and the config/secret-handling plan (env patterns,
+  never hardcoded).
+- Decide how each prototype service maps onto Firebase through the existing
+  `src/services/` seam, with no screen changes.
+- Output a plan that a go/no-go review (including both new roles) can approve before any
+  implementation begins. No Firebase project, EAS project, secrets, or config values are
+  created in this workflow.
+
+---
+
+## 7. Backend Implementation Review Workflow
+
+**Purpose:** Review Firebase-backed implementation work (roadmap Phase J) before it is
+committed.
+
+**Steps:**
+
+- Confirm the work follows the **approved Phase I plan** and stays behind the
+  `src/services/` seam (screens and shared types unchanged).
+- **Backend Engineer** reviews: typed service contracts, ownership/permission checks,
+  validation-before-writes, soft-remove behavior ("Remove request," not "Delete"),
+  interaction dedupe / no count inflation, report rules (others-only, no self-report),
+  email privacy in backend data, cost-aware reads/writes, and error handling.
+- Confirm the required **automated tests** pass: service-level tests **and** Firebase
+  security-rule emulator tests (see `implementation-plan.md` Section 11 and
+  `product-requirements.md` Section 19).
+- **Security Reviewer** confirms no secrets and that rules avoid the legacy open-rules
+  mistake; **Systems Admin / DevOps Engineer** confirms config comes from env patterns.
+- Record a go/no-go decision in `docs/reviews/`.
+
+---
+
+## 8. Beta Distribution Readiness Workflow
+
+**Purpose:** Verify an internal beta build is safe and installable before sharing
+(roadmap Phase K).
+
+**Steps:**
+
+- **Systems Admin / DevOps Engineer** owns this workflow: confirm the build path
+  (local vs. EAS cloud), SDK/version, and that testers can install **without the
+  developer's machine** (TestFlight / Play internal-test link).
+- Run the **pre-beta checklist**: secret scan passes; Firebase security rules are
+  deployed; config is injected from env (not hardcoded); monitoring/logging basics are
+  in place; cost/free-tier headroom is checked.
+- **Backend Engineer** confirms data, contracts, and rule tests are ready for real
+  testers.
+- Confirm Apple/Google developer accounts are in place only where actually required for
+  the chosen distribution path.
+- Share the build only after the checklist passes; record readiness (and a go/no-go) per
+  the Release Notes and Git Commit workflows above.

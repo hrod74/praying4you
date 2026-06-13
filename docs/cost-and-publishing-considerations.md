@@ -181,3 +181,40 @@ The following is a clear, direct recommendation for how to proceed:
 **Consider an Android-first release when MVP quality is reached.** The $25 Google Play Console fee vs. the $99/year Apple Developer fee makes Android the lower-risk first public release. An Android launch also provides real user feedback and the opportunity to refine the app before investing in the iOS review process.
 
 **Revisit this document before each phase transition** to confirm that cost assumptions are still accurate. Firebase pricing, Expo EAS tiers, and App Store fees are subject to change. The estimates in this document reflect publicly known pricing as of early 2026.
+
+---
+
+## 8. Beta Distribution Considerations (Internal Beta)
+
+When the project moves from the local prototype to an **internal Firebase-backed beta**
+(roadmap Phases I–K), distribution introduces a few new cost and configuration
+considerations. These are owned by the **Systems Admin / DevOps Engineer**
+(`agents/systems-admin.md`), with the **Backend Engineer** confirming the backend side.
+
+- **Firebase at beta scale.** Firebase may remain **low cost — realistically $0 or near
+  $0** — at small internal-beta scale on the Spark free tier, but it **needs
+  monitoring**. Watch Firestore reads/writes and Auth volume against the free-tier
+  limits, and know how to read usage in the Firebase console before, not after, costs
+  appear. Upgrading to Blaze (pay-as-you-go) is only needed if Cloud Functions are
+  introduced.
+
+- **Apple Developer Program (iOS).** Distributing an installable iOS build to testers
+  beyond local Expo Go workflows (for example, via **TestFlight**) **likely requires the
+  Apple Developer Program** (~$99/year). Local Expo Go on a personal device does not
+  require it; an installable/shareable beta build does.
+
+- **Google Play Console (Android).** Android **Play testing** (internal/closed testing
+  tracks) **requires the Google Play Console** ($25 one-time). This is the lower-cost
+  path and a strong candidate for the **first** installable beta.
+
+- **Expo / EAS for installable builds.** Getting a build that testers can install
+  **without the developer's machine** may require **Expo/EAS** (EAS Build for cloud
+  binaries). The free EAS tier is likely sufficient for an infrequent solo/small-team
+  beta; paid tiers are only needed for high build volume or priority queuing.
+
+- **Repeatable setup and cost checklist.** The **Systems Admin / DevOps Engineer**
+  maintains a **repeatable setup checklist** (Firebase + Expo/EAS) and a **cost
+  checklist** (current tier, free-tier headroom, where charges begin, how to monitor
+  usage), so beta setup can be reproduced from scratch and costs stay visible and under
+  control. A beta build is shared only after the secret scan passes and Firebase
+  security rules are deployed.

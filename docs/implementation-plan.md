@@ -369,3 +369,75 @@ After the app exists and runs, the project advances to **milestone 2: the
 Firebase-backed MVP** (auth, Firestore, security rules, reporting) using the same
 typed models and the `services/` seam — and only later to **milestone 3: the
 app-store-ready release**.
+
+---
+
+## 11. Future Firebase / Backend Implementation (Milestone 2 Preview)
+
+This section is a **forward-looking preview**, not part of the prototype build above.
+It is **not** implemented in this milestone. Firebase migration is **planned in Plan
+Mode first** — with the **Backend Engineer** and **Systems Admin / DevOps Engineer**
+roles (`agents/backend-engineer.md`, `agents/systems-admin.md`) on the review panel —
+and only then implemented. No Firebase project, EAS project, secrets, or config values
+are created until that plan is approved. See `prototype-roadmap.md` Phases I–K.
+
+### Migration through the existing seam
+
+All data access already funnels through `src/services/`. The migration replaces the
+mock implementations behind those services with Firebase-backed ones **without changing
+the screens or the shared types** in `src/models/types.ts`. The typed models are the
+contract that carries forward.
+
+### Expected service boundaries
+
+One service per concern, mapping the prototype's contexts/services onto Firebase:
+
+- **Auth service** — registration, sign in/out, session persistence, email-in-use
+  handling (`auth/email-already-in-use`), password reset. Replaces the simulated
+  `AuthContext` profile with real Firebase Auth accounts.
+- **Prayer request service** — create, **owner-only edit**, **owner-only remove**
+  (soft remove: `status: "removed"` / `removedByOwner`, never a user-facing "delete"),
+  and paginated feed reads (`status == "active"`, newest first).
+- **Prayer interaction service** — record "I prayed for this" exactly once per
+  `{userId}_{requestId}`; atomic, non-inflatable `prayerCount`; no self-prayer.
+- **Report service** — create a report on another user's request; block self-reports;
+  store `reports` records; increment `reportCount`.
+- **Verse service** — serve the daily verse from a single low-cost read (curated
+  `verses` collection / `config/verseOfTheDay` doc), replacing the bundled local verses.
+
+### API / data contract expectations
+
+- Every service method has **explicit, typed inputs and outputs** reusing
+  `src/models/types.ts` — no untyped blobs.
+- The **server is the source of truth** for `userId` (`request.auth.uid`), server
+  timestamps, and atomic counters; these are never trusted from the client payload.
+- Each method documents what it reads/writes, what it validates before a write, what it
+  returns on success, and the **finite, predictable set of error outcomes** it can
+  return (mapped to calm UI messaging, not raw exceptions).
+- Business rules (ownership, dedupe, validation) are expressed **once** in the service
+  layer and **mirrored** by Firebase security rules — never re-implemented per screen.
+- Contracts are **versionable**: documents carry enough shape/version information that a
+  later change does not silently break older clients or stored data.
+
+### Automated test expectations (services + security rules)
+
+Before the app is shared with external beta testers, automated tests must cover:
+
+- **Service-level:** creating prayer requests; editing only owner-created requests;
+  removing only owner-created requests; anonymous display behavior; email never
+  appearing in public prayer data; preventing duplicate prayed interactions; preventing
+  prayer count inflation; reporting someone else's request; blocking reports on the
+  user's own request; signed-out users blocked from protected writes.
+- **Firebase security rules:** the same ownership/permission/validation guarantees
+  tested with the **Firebase emulator suite** — auth-gated reads, owner-only writes,
+  no `userId` spoofing, restricted `status` transitions — before any external tester
+  receives a build.
+
+### Plan Mode before implementation
+
+The Firebase migration must be **designed in Plan Mode before any backend code is
+written**: the Firestore data model and indexes, security-rule intent, the service
+contracts above, the error-handling shape, the data migration/versioning approach, and
+the configuration/secret-handling plan (env patterns, never hardcoded). Implementation
+follows only after that plan passes a go/no-go review that includes the Backend
+Engineer and Systems Admin / DevOps Engineer.

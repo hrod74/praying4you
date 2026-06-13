@@ -2,8 +2,16 @@
 
 This folder stores **review outputs** produced by the AI development team defined in
 `../agents/`. Each review applies one or more of the role lenses (Product Owner,
-React Native Engineer, Code Reviewer, Security Reviewer, Test Engineer, Release
-Manager) to a piece of work and records a clear decision.
+UI/UX Designer, React Native Engineer, Code Reviewer, Security Reviewer, Test Engineer,
+QA Engineer, Release Manager) to a piece of work and records a clear decision.
+
+From the **Firebase / backend / beta-distribution phases onward** (roadmap Phase I and
+later), the review panel also includes the **Backend Engineer** (Firebase Auth &
+Firestore data model, service boundaries, API/data contracts, ownership/permissions,
+validation, soft-remove behavior, backend & security-rule testing) and the **Systems
+Admin / DevOps Engineer** (Firebase/Expo/EAS setup, config & secret safety, builds, and
+beta distribution). Those phases' go/no-go checklists **must** include both new roles,
+and Firebase migration is planned in **Plan Mode** before implementation.
 
 ## How reviews are organized
 

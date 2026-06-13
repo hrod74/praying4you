@@ -31,6 +31,8 @@ clear remit, checklist, and output format.
 | [Product Owner](product-owner.md) | PRD alignment, MVP scope, user & portfolio value, scope creep | New features, scope decisions, milestone boundaries |
 | [UI/UX Designer](ui-ux-designer.md) | Mobile-first experience, screen hierarchy, navigation clarity, visual consistency, accessibility basics, forms, empty/error states, calm/respectful tone, trust & privacy cues, demo polish, anti-clutter & anti-dark-patterns | New screens/flows, layout & tone, before screenshots/demo capture |
 | [React Native Engineer](react-native-engineer.md) | Expo architecture, TypeScript, navigation, folder structure, state, Firebase seam | App scaffolding, component/architecture choices |
+| [Backend Engineer](backend-engineer.md) | Firebase Auth & Firestore data modeling, service boundaries, API/data contracts, ownership/permissions, validation, soft-remove behavior, cost-aware reads/writes, backend & security-rule testing | Firebase planning, data model, service contracts, local→backend migration |
+| [Systems Admin / DevOps Engineer](systems-admin.md) | Firebase/Expo/EAS setup, config & secret safety, env vars, local vs. cloud builds, iOS/Android beta distribution, deployment/cost checklists, repeatable setup | Backend/beta setup, build & distribution, deployment readiness |
 | [Code Reviewer](code-reviewer.md) | Correctness, readability, maintainability, simplicity, plan adherence | Any code change or PR/diff |
 | [Security Reviewer](security-reviewer.md) | No secrets, safe auth assumptions, UGC & prayer-content privacy, moderation, future Firebase rules | Anything touching data, auth, config, or user content |
 | [Test Engineer](test-engineer.md) | Test *strategy*: manual test plans, future automated tests, regression, local-run verification | Each build phase and feature flow |
@@ -51,6 +53,31 @@ clear remit, checklist, and output format.
 > who validates that the built result actually works and is bug-free for a demo — design
 > sets the target, QA verifies the outcome. Design intent lives in
 > [`../design-direction.md`](../design-direction.md).
+
+> **When to use the Backend Engineer and the Systems Admin / DevOps Engineer:** these
+> two roles join the panel as the project moves **beyond the local mock prototype**
+> toward a Firebase-backed beta. They are **not** needed for local prototype phases
+> (mock data, no backend), but they are **required reviewers** from **Firebase MVP
+> planning onward** (roadmap Phase I and later). Bring in the **Backend Engineer** when
+> planning Firebase Auth, the Firestore data model, service boundaries, API/data
+> contracts, ownership/permission rules, soft-remove behavior, and the backend/security-
+> rule test plan — i.e., the Firebase planning and implementation phases. Bring in the
+> **Systems Admin / DevOps Engineer** when planning Firebase/Expo/EAS setup, config and
+> secret safety, builds, and how a real beta build reaches testers — i.e., the Firebase
+> setup and beta-distribution phases. Both should review **in Plan Mode first**, before
+> any backend code or project/account is created.
+
+## Which agents belong in which review
+
+- **Local prototype phases (mock data, no backend):** the original eight roles —
+  Product Owner, UI/UX Designer, React Native Engineer, Code Reviewer, Security
+  Reviewer, Test Engineer, QA Engineer, Release Manager.
+- **Firebase / backend / beta-distribution phases (roadmap Phase I onward):** the
+  original eight **plus** the **Backend Engineer** (data model, contracts, validation,
+  ownership, backend & security-rule testing) and the **Systems Admin / DevOps
+  Engineer** (Firebase/Expo/EAS setup, config/secret safety, builds, beta
+  distribution). The go/no-go review checklist for these phases **must** include both
+  new roles. Firebase migration is planned in **Plan Mode** before implementation.
 
 ## How reviews are produced
 

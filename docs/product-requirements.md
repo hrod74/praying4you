@@ -50,7 +50,7 @@ Users should be able to post a prayer request in under sixty seconds from openin
 The core loop of the app — post a request, pray for someone else's — must work reliably. Prayer counts must reflect real interactions and persist correctly. Users should feel that their request was seen and prayed over by other real people.
 
 ### User Trust and Safety
-Every user must have an authenticated account. Anonymous posting is a display-layer option, not an absence of identity. All posts must be reportable. Content that violates community standards must be removable. Users must be able to delete their own requests. No one's email address should appear publicly.
+Every user must have an authenticated account. Anonymous posting is a display-layer option, not an absence of identity. All posts must be reportable. Content that violates community standards must be removable. Users must be able to **remove their own requests** (the user-facing control is "Remove request," implemented as a soft remove — see Section 19). No one's email address should appear publicly.
 
 ### Mobile-First Usability
 The app is designed for phone use. Navigation, card sizing, tap targets, scroll behavior, and typography must all be optimized for mobile screens. The app should feel native and fast, not like a web page inside a shell.
@@ -123,7 +123,7 @@ The following features are explicitly excluded from version 1. They should be de
 
 **Complex social features.** Following other users, liking profiles, leaderboards, or any social graph features are not part of v1.
 
-**Editing submitted prayer requests.** Allowing users to edit a posted request after submission adds version-control complexity. Users can delete and repost in v1.
+**Editing submitted prayer requests.** Allowing users to edit a posted request after submission adds version-control complexity. Users can remove (the "Remove request" control) and repost in v1. Owner-only editing is captured as a future backend requirement in Section 19.
 
 ---
 
@@ -289,8 +289,8 @@ All four of these requirements must be met before submission. The reporting syst
 Prayer requests frequently contain sensitive personal information: health diagnoses, family conflict, grief, mental health struggles, financial hardship. The app's design must treat this data with care:
 - Prayer requests are readable only to authenticated users.
 - Unauthenticated users cannot access the feed.
-- The privacy policy must disclose that prayer requests are stored, who can see them, and how users can delete their content.
-- Users can delete their own prayer requests (v1 requirement).
+- The privacy policy must disclose that prayer requests are stored, who can see them, and how users can remove their content (the "Remove request" control) and delete their account.
+- Users can remove their own prayer requests via the "Remove request" control (v1 requirement; implemented as a soft remove — see Section 19).
 - Account deletion must offer to remove or anonymize the user's prayer requests.
 
 ---
@@ -463,7 +463,7 @@ Initialize the Expo project with Expo Router for file-based navigation. Configur
 Build the prayer request feed screen with Firestore pagination and card layout. Build the prayer request detail screen. Build the prayer request submission form with validation, character counter, anonymous toggle, and success screen. Implement the "I prayed for this" interaction with `FieldValue.increment()` and duplicate prevention. Add the Verse of the Day card. Test all screens for correct data binding, pagination behavior, and offline states.
 
 ### Phase 3 — Trust, Safety, and Analytics
-Implement the report content flow (reason picker, note field, Firestore write). Implement content deletion (user deletes their own prayer request). Implement account deletion with data anonymization. Wire up Firebase Analytics events from Section 12. Write and deploy updated Firestore security rules that enforce `status` write restrictions. Review all screens for accessibility issues (label associations, tap targets, contrast). Add offline error states.
+Implement the report content flow (reason picker, note field, Firestore write). Implement the owner-only "Remove request" flow (the user removes their own prayer request — a soft remove; see Section 19). Implement account deletion with data anonymization. Wire up Firebase Analytics events from Section 12. Write and deploy updated Firestore security rules that enforce `status` write restrictions. Review all screens for accessibility issues (label associations, tap targets, contrast). Add offline error states.
 
 ### Phase 4 — Ads and Release Readiness
 Confirm AdMob content policy eligibility for the app category. If approved, integrate `react-native-google-mobile-ads` with a banner ad unit in the feed. Enforce the placement rules from Section 13. Write or finalize the Privacy Policy and Terms of Service. Link them from the settings screen. Prepare App Store and Google Play assets: icon, screenshots for multiple device sizes, app description, keywords, age rating. Review all screens against App Store Human Interface Guidelines and Google Play Material Design expectations.
@@ -489,3 +489,72 @@ The following checklist should be completed after this PRD is reviewed and appro
 - [ ] Draft the Privacy Policy before Phase 3 work begins, so it is ready to link before beta testing.
 - [ ] Review AdMob content policy for religion-category apps before beginning Phase 4.
 - [ ] Create App Store Connect and Google Play Console accounts (if not already active) and reserve the app name and bundle identifier.
+
+---
+
+## 19. Future Backend Requirements (Local Prototype → Firebase Beta)
+
+The local prototype validates the experience against mock/local data. Before the app
+is shared with **external beta testers**, the following backend requirements must be
+designed (in Plan Mode) and then implemented and tested. These are owned by the
+**Backend Engineer** and **Systems Admin / DevOps Engineer** roles (see
+`agents/backend-engineer.md` and `agents/systems-admin.md`). Nothing here is built in
+the prototype milestone; this section records the bar for the Firebase-backed beta.
+
+### Real Authentication
+- Real Firebase Authentication (email/password) replaces the prototype's simulated
+  local profile. Sessions persist across restarts; password reset is available.
+- The local "Already have a profile? Sign in" placeholder becomes a real sign-in path.
+
+### Email-In-Use Handling
+- Registration must check whether the entered email is already in use. If it is, do not
+  create a duplicate account; surface a calm message and route the user to sign in
+  (Firebase Auth returns `auth/email-already-in-use`, handled this way in the UI).
+
+### Private Email
+- Email is stored only on the `users` document and in Firebase Auth. It is **never**
+  written into `prayerRequests`, `prayerInteractions`, `reports`, or any public surface,
+  and never displayed in the app.
+
+### Owner-Only Edit
+- Only the authenticated owner of a prayer request may edit it. Edit attempts by any
+  other user must be rejected by backend validation **and** Firebase security rules.
+
+### Owner-Only Remove ("Remove request")
+- The user-facing control is **"Remove request,"** never "Delete." Only the owner may
+  remove their own request.
+- Removal is a **soft remove** (`status: "removed"` / a `removedByOwner` marker), not a
+  hard delete: the request drops out of the public feed but the record is preserved for
+  moderation history and integrity. A true hard delete, if ever needed, is a separate,
+  deliberate decision.
+
+### Prayer Interaction Deduplication
+- A user may register **at most one** "I prayed for this" interaction per request
+  (one `prayerInteractions` document per `{userId}_{requestId}`).
+- `prayerCount` is an atomic, server-maintained counter that cannot be inflated or
+  double-counted, including across retries, refreshes, or app restarts.
+- A user cannot pray for their own request.
+
+### Report Request Behavior
+- Any authenticated user may report a request they **did not** author; reporting your
+  **own** request is blocked.
+- A report writes a `reports` record and increments `reportCount`; no automated hiding
+  occurs on report (manual moderation in MVP).
+
+### Backend Validation Expectations
+- All writes are validated **server-side** before being accepted: required fields,
+  body length (10–500), allowed `category` set, allowed `status` transitions, and
+  types. `userId` is always taken from `request.auth.uid` — never trusted from the
+  client payload (no `userId` spoofing).
+- Errors are surfaced to the app in a consistent, predictable shape that the UI maps to
+  calm messaging, rather than leaking raw backend exceptions.
+
+### Automated Testing Expectations (before external beta)
+- Automated tests must cover, at minimum: creating prayer requests; editing only
+  owner-created requests; removing only owner-created requests; anonymous display
+  behavior; email never appearing in public prayer data; preventing duplicate prayed
+  interactions; preventing prayer count inflation; reporting someone else's request;
+  blocking reports on the user's own request; and signed-out users being blocked from
+  protected writes.
+- Once Firebase is introduced, **Firebase security rules** must be tested with the
+  emulator suite before any external tester receives a build.
