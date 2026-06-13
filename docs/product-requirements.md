@@ -363,6 +363,17 @@ Monetization in a prayer app requires a careful approach. The product's emotiona
 
 **Future ad-free option.** The architecture must not preclude adding a paid tier or a one-time purchase in the future that removes ads. No hardcoded ad unit placement should be buried in shared layout components in a way that makes removal difficult.
 
+**Future cosmetic theme packs (optional, not built).** Different color themes could be a
+future personalization and, optionally, a light monetization opportunity (see
+`design-direction.md` §16). This is explicitly **not** built now: no theme switching, paid
+themes, in-app purchases, subscriptions, or marketplace. If ever explored, the rules are
+firm: optional theme packs must be **cosmetic only** (color, never feature availability) and
+never required for usability; **accessibility themes — High Contrast and Large Text Friendly
+— must never be paywalled or monetized**; and any theme upsell must **never interrupt prayer
+moments** (no upsell on submission, detail, the "I prayed for this" action, or any emotional
+moment), the same guardrail as ads. The prototype keeps a clean, centralized theme-token
+foundation so themes can be added later without rework.
+
 ---
 
 ## 14. Non-Functional Requirements
@@ -377,7 +388,13 @@ The feed must scroll smoothly at 60 fps on mid-range devices. Firestore paginati
 - All interactive elements must have accessible labels readable by VoiceOver (iOS) and TalkBack (Android).
 - Tap targets must meet the minimum size of 44x44 points.
 - Color contrast ratios must meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text).
-- Dynamic text size changes (user font size preferences) must not break layouts.
+- Dynamic text size changes (user font size preferences) must not break layouts. The app
+  must support **Dynamic Type / larger device font sizes** — important for accessibility and
+  for older users. Text scales with the OS setting, explicit line heights scale with it so
+  text never clips, screens grow or scroll rather than truncate, and buttons/inputs stay
+  usable. Tight chrome (nav labels, tags, banners) may cap its scaling, but readable content
+  is not capped. (The local prototype implements this baseline in Phase H.3; see
+  `design-direction.md` §15.)
 - The prayer feed must use an `aria-live` equivalent (accessibility announcements) when new content loads.
 - Form inputs must have properly associated labels — a specific failure in the legacy app.
 

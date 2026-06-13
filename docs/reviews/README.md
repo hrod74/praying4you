@@ -71,3 +71,7 @@ and Firebase migration is planned in **Plan Mode** before implementation.
 - [Phase H.2 Mobile UX Fix Review](phase-h2-mobile-ux-fix-review.md) — go/no-go to commit
   the mobile UX fix pass (iOS keyboard behavior, post-submit navigation to Feed, local edit
   profile, larger bottom nav) and proceed to Firebase MVP planning in Plan Mode.
+- [Phase H.3 Accessibility & Theme Foundation Review](phase-h3-accessibility-theme-foundation-review.md)
+  — go/no-go to commit the accessibility/theme-foundation pass (Dynamic Type / larger text
+  support, centralized theme tokens, documented future themes) and proceed to Firebase MVP
+  planning in Plan Mode.

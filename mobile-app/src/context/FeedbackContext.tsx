@@ -159,7 +159,9 @@ function Toast({
         >
           {isError ? '!' : '✓'}
         </Text>
-        <Text style={styles.message}>{toast.message}</Text>
+        <Text style={styles.message} maxFontSizeMultiplier={1.6}>
+          {toast.message}
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     // Gentle, low shadow — paper resting on paper, consistent with the cards.
-    shadowColor: '#3A2E20',
+    shadowColor: colors.shadow,
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },

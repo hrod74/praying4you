@@ -333,6 +333,21 @@ Sequenced so the app runs end-to-end as early as possible, then gains depth.
   (Feed | Pray | Verse | Settings) stay balanced.
 - Still local/mock only.
 
+**Phase H.3 — Accessibility & theme foundation pass** (family/friend feedback, before Firebase planning)
+- **Dynamic Type / larger text:** text scales with the OS font setting; explicit line
+  heights scale with it (`scaleLineHeight` in `theme.ts`) so text never clips; the Welcome
+  and Sign In screens scroll when content grows; tight chrome (nav labels, category chip,
+  verse quote mark, confirmation banner) caps its scaling with `maxFontSizeMultiplier` and
+  stays on one line, while readable content is uncapped. No fixed heights around text. See
+  `product-requirements.md` §14 and `design-direction.md` §15.
+- **Theme foundation:** all colors stay centralized as tokens in `theme.ts` (added a
+  `shadow` token; removed the remaining hardcoded hex from screens), so a future theme is a
+  palette swap with no component changes. No theme switching, paid themes, IAP, or
+  subscriptions are built — foundation and documentation only (`design-direction.md` §16).
+  Accessibility themes must never be paywalled; theme monetization must never interrupt
+  prayer moments.
+- Still local/mock only.
+
 ---
 
 ## 8. Validation Plan

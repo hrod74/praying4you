@@ -29,7 +29,7 @@ create-profile + sign-in, `(app)/` = tabs Feed/Verse/Settings with a `feed/` sta
 CategoryTag, EmptyState), `theme/`, `utils/` (validation, format). Feed stack also holds
 `edit`, `my-requests`, and `prayed-for` routes (Phase H.1).
 
-## App status: runs in public iOS Expo Go; local mock data only. Phase H.1 + H.2 (mobile UX fixes) complete.
+## App status: runs in public iOS Expo Go; local mock data only. Phase H.1 + H.2 + H.3 (accessibility/theme foundation) complete.
 
 ## Completed phases
 
@@ -100,6 +100,20 @@ CategoryTag, EmptyState), `theme/`, `utils/` (validation, format). Feed stack al
   stays on-device and private (duplicate-email/verification deferred to the future Auth
   layer, documented in PRD §19). (4) **Bottom nav:** slightly larger tab icons/labels;
   the four tabs stay balanced. Still local/mock — no Firebase.
+- **Phase H.3 — Accessibility & theme foundation pass:** family/friend feedback.
+  (1) **Dynamic Type / larger text:** text scales with the OS font size and explicit line
+  heights scale with it (`scaleLineHeight` in `theme.ts`) so text never clips; **Welcome
+  and Sign In now scroll** when content grows; tight chrome (bottom-nav labels, category
+  chip, decorative verse quote mark, confirmation banner) caps its scaling
+  (`maxFontSizeMultiplier`) and stays on one line, while readable content (prayer text,
+  body, headings, inputs) is uncapped. No fixed heights around text.
+  (2) **Theme foundation:** colors stay centralized as tokens in `theme.ts` (added a
+  `shadow` token; removed the last hardcoded hex from screens), so a future theme is a
+  palette swap with no component changes. **No theme switching or paid themes were built**
+  — future themes (Classic Prayer Journal, Soft Morning Light, Night Prayer, High Contrast,
+  Large Text Friendly) and the rules that **accessibility themes are never paywalled** and
+  **theme monetization never interrupts prayer moments** are documented
+  (`design-direction.md` §16). Still local/mock — no Firebase.
 
 ## Design direction
 
@@ -148,7 +162,9 @@ requests** and **Prayers I've prayed for** lists · **owner Edit request / Remov
 (soft remove, confirmed) shown only on your own posts · **local Edit profile** (display
 name + email, validated, private email) · **sharing a request returns to the Feed** (new
 request at top) · **iOS keyboard behavior** (no accidental submit on return; drag to
-dismiss; next-field focus) · **larger bottom-nav icons/labels**.
+dismiss; next-field focus) · **larger bottom-nav icons/labels** · **Dynamic Type / larger
+text support** (scaled line heights, scrollable Welcome/Sign In, bounded chrome) ·
+**centralized theme tokens** ready for future themes.
 
 ## Next phase
 

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '../../src/components/Screen';
 import { getVerseOfTheDay } from '../../src/services/verseService';
-import { colors, radius, spacing, typography } from '../../src/theme/theme';
+import { colors, radius, scaleLineHeight, spacing, typography } from '../../src/theme/theme';
 import { formatLongDate } from '../../src/utils/format';
 
 /**
@@ -29,7 +29,10 @@ export default function VerseScreen() {
 
       {/* Scripture (the Word) — the primary parchment "page". */}
       <View style={styles.page} accessibilityLabel={`${verse.reference}. ${verse.text}`}>
-        <Text style={styles.quoteMark}>“</Text>
+        {/* Decorative quote mark: cap its scaling so it never dominates the page. */}
+        <Text style={styles.quoteMark} maxFontSizeMultiplier={1.3} accessibilityElementsHidden importantForAccessibility="no">
+          “
+        </Text>
         <Text style={styles.verseText}>{verse.text}</Text>
         <Text style={styles.reference}>
           {verse.reference} · {verse.translation}
@@ -65,7 +68,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.xl,
     gap: spacing.md,
-    shadowColor: '#3A2E20',
+    shadowColor: colors.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
   verseText: {
     ...typography.prayerBody,
     fontSize: 20,
-    lineHeight: 32,
+    lineHeight: scaleLineHeight(32),
   },
   reference: {
     ...typography.muted,

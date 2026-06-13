@@ -58,6 +58,13 @@ Then open the project in **Expo Go** on an iPhone (scan the QR code). Use
 > well with the iOS keyboard (drag to dismiss; the name field's "next" key moves to email;
 > the email "done" key just closes the keyboard).
 
+> Phase H.3 accessibility note: to show larger-text support, set a larger system text size
+> (iOS: Settings > Accessibility > Display & Text Size > Larger Text) and relaunch the app.
+> The feed, prayer detail, forms, and screens stay readable and scroll instead of clipping;
+> the bottom-nav labels stay on one line. Color themes are not built yet, but the theme is
+> token-based so future themes (including accessibility themes that are never paywalled) can
+> be added cleanly. See `design-direction.md` §15–§16.
+
 > Tip: to show persistence, submit a request and tap "I prayed for this," then fully close
 > and reopen the app. Your submitted request and prayed mark are still there. Editing and
 > removing a request also persist across restarts. Use "Reset prototype data" in Settings to

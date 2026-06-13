@@ -1,5 +1,5 @@
 import { Redirect, useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '../src/components/Button';
@@ -23,30 +23,36 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <View style={styles.hero}>
-        <Text style={styles.title}>Praying For You</Text>
-        <Text style={styles.subtitle}>
-          Share a prayer request, or pick one up and pray for someone else.
-        </Text>
-        <Text style={styles.supporting}>
-          A calm, supportive space. You stay in control of what you share.
-        </Text>
-      </View>
+      {/* Scrolls when larger text makes the content taller than the screen. */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.hero}>
+          <Text style={styles.title}>Praying For You</Text>
+          <Text style={styles.subtitle}>
+            Share a prayer request, or pick one up and pray for someone else.
+          </Text>
+          <Text style={styles.supporting}>
+            A calm, supportive space. You stay in control of what you share.
+          </Text>
+        </View>
 
-      <View style={styles.actions}>
-        <Button
-          label="Get started"
-          onPress={() => router.push('/(auth)/create-profile')}
-          accessibilityHint="Create your local profile"
-        />
-        <Button
-          label="I already have a profile"
-          variant="secondary"
-          onPress={() => router.push('/(auth)/sign-in')}
-          accessibilityHint="Sign in to your existing local profile"
-        />
-        <Text style={styles.footnote}>A local prototype. Your profile stays on this device.</Text>
-      </View>
+        <View style={styles.actions}>
+          <Button
+            label="Get started"
+            onPress={() => router.push('/(auth)/create-profile')}
+            accessibilityHint="Create your local profile"
+          />
+          <Button
+            label="I already have a profile"
+            variant="secondary"
+            onPress={() => router.push('/(auth)/sign-in')}
+            accessibilityHint="Sign in to your existing local profile"
+          />
+          <Text style={styles.footnote}>A local prototype. Your profile stays on this device.</Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -54,9 +60,12 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    flexGrow: 1,
     padding: spacing.lg,
     justifyContent: 'space-between',
-    backgroundColor: colors.background,
   },
   hero: {
     marginTop: spacing.xl,

@@ -235,6 +235,20 @@ Remove request** controls (a confirmed local **soft remove**, "Remove" not "Dele
 shown only on the user's own requests. Still local/mock only. See
 `reviews/phase-h1-visual-qa-polish-review.md`.
 
+**Phase H.2 — Mobile UX fix pass (complete).** Owner on-device iOS QA fixes: iOS keyboard
+behavior (no accidental submit on return, drag to dismiss, next-field focus), returning to
+the Feed after sharing a request (new request at top), a local **Edit profile** flow (name +
+email, validated, email private), and slightly larger bottom-nav icons/labels. Still
+local/mock only. See `reviews/phase-h2-mobile-ux-fix-review.md`.
+
+**Phase H.3 — Accessibility & theme foundation pass (complete).** Family/friend feedback:
+better **Dynamic Type / larger text** support (scaled line heights so text does not clip,
+scrollable Welcome/Sign In, bounded chrome with uncapped content) and a clean, centralized
+**theme-token foundation** so future color themes can be added without rework. No theme
+switching or paid themes are built; future themes and the rule that **accessibility themes
+are never paywalled** (and theme monetization never interrupts prayer moments) are
+documented. Still local/mock only. See `reviews/phase-h3-accessibility-theme-foundation-review.md`.
+
 ### Phase I — Firebase MVP planning (Plan Mode)
 **Plan only — no implementation.** Design the Firebase-backed MVP in **Plan Mode**: the
 Firestore data model and indexes; security-rule intent (auth-gated reads, owner-only

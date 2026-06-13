@@ -13,7 +13,7 @@ import { colors, radius, spacing } from '../theme/theme';
 export function CategoryTag({ category }: { category: PrayerCategory }) {
   return (
     <View style={styles.tag}>
-      <Text style={styles.label} numberOfLines={1}>
+      <Text style={styles.label} numberOfLines={1} maxFontSizeMultiplier={1.4}>
         {PRAYER_CATEGORY_LABELS[category]}
       </Text>
     </View>

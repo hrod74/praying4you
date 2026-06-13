@@ -29,7 +29,7 @@ export default function SignInScreen() {
 
   if (!profile) {
     return (
-      <Screen>
+      <Screen scroll>
         <View style={styles.block}>
           <Text style={styles.heading}>No profile yet</Text>
           <Text style={styles.muted}>

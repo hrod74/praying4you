@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.sm,
     // Gentle, low shadow — paper resting on paper, not a glossy elevated card.
-    shadowColor: '#3A2E20',
+    shadowColor: colors.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },

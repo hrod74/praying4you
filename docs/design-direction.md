@@ -327,3 +327,67 @@ phase; these are the principles to build against now.)
 - **Overall** — nothing should make prayer feel like social-media engagement. Favor
   stillness and legibility over density, motion, or visual noise. Empty/loading states
   stay warm and calm (a quiet line on parchment, not a spinner-heavy screen).
+
+## 15. Accessibility: Dynamic Type / Larger Text (Phase H.3)
+
+The app is used by people of all ages, including older family members, often in a tender
+moment. It must remain readable and usable when the device is set to a larger system text
+size (iOS Dynamic Type / Android font scale). Direction and the implemented baseline:
+
+- **Text scales with the OS setting.** React Native scales font sizes by the user's font
+  setting by default; the app keeps this on for content. Do not disable font scaling on
+  readable content.
+- **Line height tracks the text size.** Where an explicit line height is set (body and
+  prayer text), it is scaled with the user's font setting (`scaleLineHeight` in
+  `theme.ts`) so lines never overlap or clip at larger sizes. Titles/headings/metadata use
+  proportional defaults that already scale.
+- **No fixed heights that clip text.** Use `minHeight` (which grows), generous padding, and
+  scrolling containers; never a fixed `height` around text. Buttons and inputs grow with
+  the text; cards and detail screens grow vertically.
+- **Screens grow or scroll.** The Welcome and Sign In screens scroll when larger text makes
+  their content taller than the screen, so nothing is cut off.
+- **Chrome is bounded, content is not.** Tight "chrome" (bottom-nav labels, the category
+  chip, the decorative verse quote mark, the confirmation banner) caps its scaling with a
+  reasonable `maxFontSizeMultiplier` and stays on one line so the layout does not break.
+  Readable content (prayer text, headings, body, form fields) is **not** capped, so users
+  who need very large text still get it.
+- **Tap targets** stay at least ~44pt and remain comfortably tappable as text grows.
+
+> Note: the prototype reads the font scale at app start; changing the OS text size while the
+> app is open takes effect on the next launch. This is acceptable for the local prototype.
+
+## 16. Theme Foundation and Future Themes (Phase H.3)
+
+Color drew positive comments, and a tester suggested that different color themes could be a
+future personalization (and, optionally, monetization) opportunity. This phase does **not**
+build theme switching, paid themes, in-app purchases, subscriptions, or a marketplace — it
+only keeps the foundation clean so themes can be added later without rework.
+
+**Foundation (today).** All colors live as named tokens in `mobile-app/src/theme/theme.ts`
+(`colors`, plus `spacing`, `radius`, `typography`), every component reads from these tokens,
+and there are no hardcoded hex values in screens (the one shared shadow color is now a
+`shadow` token). Because the palette is a single object, a future theme is essentially a
+**swap of the palette** (for example via a `ThemeProvider` that supplies the active palette),
+with **no component changes**.
+
+**Possible future themes** (illustrative, not built):
+
+- **Classic Prayer Journal** — the current warm parchment / ink / muted-gold heritage look.
+- **Soft Morning Light** — a lighter, airier warm palette for daytime reading.
+- **Night Prayer** — a calm dark theme (warm dark surfaces, gentle ink-on-dark contrast) for
+  low-light/bedtime use.
+- **High Contrast** — an accessibility theme that maximizes contrast for low vision.
+- **Large Text Friendly** — an accessibility-oriented preset pairing the Dynamic Type
+  support above with generous spacing.
+
+**Future monetization note (rules, not a plan):**
+
+- Optional **cosmetic** theme packs *could* be explored later, but they are strictly
+  optional and never required for usability.
+- **Accessibility themes — High Contrast and Large Text Friendly — must never be paywalled
+  or monetized.** Accessibility is a right, not an upsell.
+- Any monetization must **never interrupt prayer moments**: no theme upsell on the prayer
+  submission, prayer detail, the "I prayed for this" action, or any emotional moment. The
+  same guardrails as ads (see §10) apply.
+- Theming must stay cosmetic: a theme changes colors only, never the availability of core
+  prayer features.
