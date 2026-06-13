@@ -123,7 +123,7 @@ The following features are explicitly excluded from version 1. They should be de
 
 **Complex social features.** Following other users, liking profiles, leaderboards, or any social graph features are not part of v1.
 
-**Editing submitted prayer requests.** Allowing users to edit a posted request after submission adds version-control complexity. Users can remove (the "Remove request" control) and repost in v1. Owner-only editing is captured as a future backend requirement in Section 19.
+**Editing submitted prayer requests.** Allowing users to edit a posted request after submission adds version-control complexity. Users can remove (the "Remove request" control) and repost in v1. Owner-only editing is captured as a future backend requirement in Section 19. (The local prototype now demonstrates a lightweight owner **Edit request** and **Remove request** experience on-device as a Phase H.1 polish; the production scoping and backend enforcement of owner-only edit/remove remain as described in Section 19.)
 
 ---
 

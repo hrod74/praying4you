@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { FeedbackProvider } from '../src/context/FeedbackContext';
 import { colors, spacing, typography } from '../src/theme/theme';
 
 /**
@@ -46,9 +47,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <FeedbackProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </FeedbackProvider>
     </SafeAreaProvider>
   );
 }

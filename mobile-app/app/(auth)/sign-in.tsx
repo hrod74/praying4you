@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/context/AuthContext';
+import { useFeedback } from '../../src/context/FeedbackContext';
 import { spacing, typography } from '../../src/theme/theme';
 
 /**
@@ -16,10 +17,12 @@ import { spacing, typography } from '../../src/theme/theme';
 export default function SignInScreen() {
   const router = useRouter();
   const { profile, signIn } = useAuth();
+  const { showSuccess } = useFeedback();
 
   const handleContinue = async () => {
     const ok = await signIn();
     if (ok) {
+      showSuccess('You’re signed in.');
       router.replace('/(app)/feed');
     }
   };

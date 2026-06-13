@@ -35,13 +35,24 @@ Then open the project in **Expo Go** on an iPhone (scan the QR code). Use
    reflection.
 9. **Open Settings / About.** Tap the **Settings** tab to show the profile, the privacy
    language, and the About section.
-10. **Explain privacy and prototype limits.** Point out that the email is never shown
+10. **Notice the confirmation feedback.** Each key action (creating the profile, signing
+    in, sharing a request, praying, resetting data) shows a quiet confirmation banner near
+    the top, so nothing completes silently.
+11. **Show Your prayer activity.** In Settings, the "Your prayer activity" section shows
+    "Requests shared" and "Prayers lifted." Tap into **My prayer requests** and **Prayers
+    I've prayed for** to see those lists; open any card to read its detail.
+12. **Show owner controls.** Open one of your own requests (for example from My prayer
+    requests). On the detail you can **Edit request** (update the text, category, or
+    named/anonymous choice) and **Remove request** (a calm confirmation, then it leaves the
+    feed). These controls appear only on requests you created.
+13. **Explain privacy and prototype limits.** Point out that the email is never shown
     publicly, that anonymous posting is a per-request choice, and that this is a local
     prototype (see limitations below). Optional: show "Reset prototype data" in Settings.
 
 > Tip: to show persistence, submit a request and tap "I prayed for this," then fully close
-> and reopen the app. Your submitted request and prayed mark are still there. Use "Reset
-> prototype data" in Settings to return to a clean starting state before a fresh run.
+> and reopen the app. Your submitted request and prayed mark are still there. Editing and
+> removing a request also persist across restarts. Use "Reset prototype data" in Settings to
+> return to a clean starting state before a fresh run.
 
 ## Screenshots to capture for portfolio
 
@@ -50,7 +61,9 @@ Then open the project in **Expo Go** on an iPhone (scan the QR code). Use
 - **Prayer detail** (with the "I prayed for this" action or the "You prayed" state)
 - **Submit Prayer** (the Share form)
 - **Verse of the Day**
-- **Settings / About**
+- **Settings / About** (including the "Your prayer activity" summary)
+- **My prayer requests** list (with the owner Edit / Remove controls visible on a detail)
+- A **confirmation banner** after an action (for example "Prayer request shared.")
 
 ## Known prototype limitations
 

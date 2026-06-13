@@ -1,37 +1,51 @@
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/context/AuthContext';
+import { useFeedback } from '../../src/context/FeedbackContext';
 import { usePrayers } from '../../src/context/PrayerContext';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
 
 /**
- * Settings / Profile / About (Phase G, polished in Phase H).
+ * Settings / Profile / About (Phase G, polished in Phase H, Phase H.1).
  *
  * An intentional settings screen: the local profile (display name + email clearly marked
- * private), plain-language privacy guidance, a sincere About section, a way to reset local
- * prototype activity, and sign-out. Email appears only here, on the owner's own private
- * screen — never on any public prayer surface. This is a local prototype, not a production
- * account system.
+ * private), a quiet "Your prayer activity" summary with links to the user's own requests and
+ * the prayers they have lifted up, plain-language privacy guidance, a sincere About section, a
+ * way to reset local prototype activity, and sign-out. Email appears only here, on the owner's
+ * own private screen — never on any public prayer surface. This is a local prototype, not a
+ * production account system.
  */
 export default function SettingsScreen() {
+  const router = useRouter();
   const { profile, signOut } = useAuth();
-  const { resetLocalData } = usePrayers();
+  const { resetLocalData, getMyRequests, getPrayedRequests } = usePrayers();
+  const { showSuccess } = useFeedback();
 
-  // Reset clears local prototype activity (submitted requests, prayed marks, reports) but
-  // keeps the profile. A confirmation guards against an accidental tap.
+  // A quiet record of the user's own prayer activity — companionship, not a score.
+  const sharedCount = profile ? getMyRequests(profile.id).length : 0;
+  const liftedCount = profile ? getPrayedRequests(profile.id).length : 0;
+
+  const handleSignOut = async () => {
+    await signOut();
+    showSuccess('You’re signed out.');
+  };
+
+  // Reset clears local prototype activity (submitted requests, prayed marks, reports, owner
+  // edits, and removals) but keeps the profile. A confirmation guards against an accidental tap.
   const confirmReset = () => {
     Alert.alert(
       'Reset prototype data?',
-      'This clears prayer requests you have submitted, your prayed marks, and any reports on this device. Your profile stays signed in. The starter prayers return to how they began.',
+      'This clears prayer requests you have submitted, your prayed marks, any reports, and any edits or removals on this device. Your profile stays signed in. The starter prayers return to how they began.',
       [
         { text: 'Keep my data', style: 'cancel' },
         {
           text: 'Reset',
           style: 'destructive',
           onPress: () => {
-            void resetLocalData();
+            void resetLocalData().then(() => showSuccess('Local prototype data reset.'));
           },
         },
       ],
@@ -57,6 +71,51 @@ export default function SettingsScreen() {
             🔒 Private — only you can see your email. It is never shown on prayer requests.
           </Text>
         </View>
+      </View>
+
+      {/* Your prayer activity */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Your prayer activity</Text>
+        <View style={styles.card}>
+          <Pressable
+            style={styles.activityRow}
+            onPress={() => router.push('/(app)/feed/my-requests')}
+            accessibilityRole="button"
+            accessibilityLabel={`My prayer requests. ${sharedCount} shared.`}
+            accessibilityHint="Opens the requests you have shared"
+          >
+            <View style={styles.activityText}>
+              <Text style={styles.activityLabel}>Requests shared</Text>
+              <Text style={styles.activitySub}>Prayer requests you have shared</Text>
+            </View>
+            <View style={styles.activityEnd}>
+              <Text style={styles.activityCount}>{sharedCount}</Text>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          </Pressable>
+
+          <View style={styles.divider} />
+
+          <Pressable
+            style={styles.activityRow}
+            onPress={() => router.push('/(app)/feed/prayed-for')}
+            accessibilityRole="button"
+            accessibilityLabel={`Prayers I have prayed for. ${liftedCount} lifted.`}
+            accessibilityHint="Opens the requests you have prayed for"
+          >
+            <View style={styles.activityText}>
+              <Text style={styles.activityLabel}>Prayers lifted</Text>
+              <Text style={styles.activitySub}>Requests you have prayed for</Text>
+            </View>
+            <View style={styles.activityEnd}>
+              <Text style={styles.activityCount}>{liftedCount}</Text>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          </Pressable>
+        </View>
+        <Text style={styles.activityNote}>
+          A quiet record of your own prayers, not a score.
+        </Text>
       </View>
 
       {/* Privacy */}
@@ -128,7 +187,7 @@ export default function SettingsScreen() {
       <Button
         label="Sign out"
         variant="secondary"
-        onPress={signOut}
+        onPress={handleSignOut}
         accessibilityHint="Signs you out and returns to the welcome screen"
       />
 
@@ -174,6 +233,40 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: colors.border,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 44,
+  },
+  activityText: {
+    flexShrink: 1,
+    gap: 2,
+  },
+  activityLabel: {
+    ...typography.body,
+    fontWeight: '600',
+  },
+  activitySub: typography.muted,
+  activityEnd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  activityCount: {
+    ...typography.heading,
+    color: colors.gold,
+  },
+  chevron: {
+    ...typography.heading,
+    color: colors.textMuted,
+    fontWeight: '400',
+  },
+  activityNote: {
+    ...typography.muted,
+    marginTop: spacing.xs,
   },
   privateNote: {
     ...typography.muted,

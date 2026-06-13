@@ -1,11 +1,20 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { Button } from '../../../src/components/Button';
 import { CategoryTag } from '../../../src/components/CategoryTag';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useFeedback } from '../../../src/context/FeedbackContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
 import type { PrayerRequest } from '../../../src/models/types';
 import { getPrayerById } from '../../../src/services/prayerService';
@@ -28,7 +37,8 @@ export default function PrayerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuth();
-  const { getById, hasPrayed, pray, hasReported } = usePrayers();
+  const { getById, hasPrayed, pray, hasReported, removePrayer } = usePrayers();
+  const { showSuccess, showError } = useFeedback();
   const fromContext = getById(id);
 
   const [pending, setPending] = useState(false);
@@ -78,9 +88,38 @@ export default function PrayerDetailScreen() {
     setPending(true);
     try {
       await pray(prayer.id, profile.id);
+      showSuccess('You prayed for this.');
+    } catch {
+      showError('We could not record that just now. Please try again.');
     } finally {
       setPending(false);
     }
+  };
+
+  const handleRemove = () => {
+    if (!profile) return;
+    Alert.alert(
+      'Remove this prayer request?',
+      'This will remove it from your prayer feed in this local prototype.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove request',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              try {
+                await removePrayer(prayer.id, profile.id);
+                showSuccess('Prayer request removed.');
+                router.replace('/(app)/feed');
+              } catch {
+                showError('We could not remove it just now. Please try again.');
+              }
+            })();
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -100,7 +139,21 @@ export default function PrayerDetailScreen() {
         <Text style={styles.count}>{formatPrayerCount(prayer.prayerCount)}</Text>
 
         {isOwnRequest ? (
-          <Text style={styles.ownNote}>This is your request.</Text>
+          <View style={styles.ownerBlock}>
+            <Text style={styles.ownNote}>This is your request.</Text>
+            <Button
+              label="Edit request"
+              variant="secondary"
+              onPress={() => router.push(`/(app)/feed/edit?id=${prayer.id}`)}
+              accessibilityHint="Change the text, category, or name shown on your request"
+            />
+            <Button
+              label="Remove request"
+              variant="secondary"
+              onPress={handleRemove}
+              accessibilityHint="Removes your request from the feed"
+            />
+          </View>
         ) : alreadyPrayed ? (
           <View style={styles.prayedConfirm} accessibilityRole="text">
             <Text style={styles.prayedConfirmText}>🙏 You prayed for this</Text>
@@ -174,6 +227,9 @@ const styles = StyleSheet.create({
   count: {
     ...typography.muted,
     color: colors.gold,
+  },
+  ownerBlock: {
+    gap: spacing.sm,
   },
   ownNote: {
     ...typography.muted,

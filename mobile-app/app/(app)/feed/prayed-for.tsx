@@ -1,0 +1,74 @@
+import { useRouter } from 'expo-router';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+
+import { EmptyState } from '../../../src/components/EmptyState';
+import { PrayerCard } from '../../../src/components/PrayerCard';
+import { useAuth } from '../../../src/context/AuthContext';
+import { usePrayers } from '../../../src/context/PrayerContext';
+import { spacing, typography } from '../../../src/theme/theme';
+
+/**
+ * Prayers I've prayed for (Phase H.1).
+ *
+ * Reached from "Your prayer activity" in Settings. Shows the requests the current local user
+ * has prayed for, as the same calm journal cards used in the feed. Tapping a card opens its
+ * detail. A warm empty state invites the user to pray for someone. Local/mock only.
+ */
+export default function PrayedForScreen() {
+  const router = useRouter();
+  const { profile } = useAuth();
+  const { getPrayedRequests, hasPrayed } = usePrayers();
+
+  const prayedFor = profile ? getPrayedRequests(profile.id) : [];
+
+  return (
+    <FlatList
+      data={prayedFor}
+      keyExtractor={(item) => item.id}
+      style={styles.list}
+      contentContainerStyle={styles.content}
+      ListHeaderComponent={
+        <View style={styles.header}>
+          <Text style={styles.title}>Prayers I’ve prayed for</Text>
+          <Text style={styles.subtitle}>
+            Requests you have lifted up. Open one to read it again.
+          </Text>
+        </View>
+      }
+      renderItem={({ item }) => (
+        <PrayerCard
+          prayer={item}
+          prayed={profile ? hasPrayed(item.id, profile.id) : false}
+          onPress={() => router.push(`/(app)/feed/${item.id}`)}
+        />
+      )}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
+      ListEmptyComponent={
+        <EmptyState
+          title="No prayers yet"
+          message="When you pray for a request, it will appear here."
+        />
+      }
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  list: {
+    flex: 1,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+    flexGrow: 1,
+  },
+  header: {
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  title: typography.title,
+  subtitle: typography.muted,
+  separator: {
+    height: spacing.md,
+  },
+});

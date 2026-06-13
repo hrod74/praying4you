@@ -6,6 +6,7 @@ import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
+import { useFeedback } from '../../src/context/FeedbackContext';
 import { colors, spacing, typography } from '../../src/theme/theme';
 import {
   DISPLAY_NAME_MAX,
@@ -23,6 +24,7 @@ import {
 export default function CreateProfileScreen() {
   const router = useRouter();
   const { createProfile } = useAuth();
+  const { showSuccess, showError } = useFeedback();
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,8 +42,14 @@ export default function CreateProfileScreen() {
       return;
     }
     setSaving(true);
-    await createProfile({ displayName, email });
-    router.replace('/(app)/feed');
+    try {
+      await createProfile({ displayName, email });
+      showSuccess('Profile created.');
+      router.replace('/(app)/feed');
+    } catch {
+      setSaving(false);
+      showError('We could not create your profile. Please try again.');
+    }
   };
 
   return (

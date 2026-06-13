@@ -298,6 +298,23 @@ Sequenced so the app runs end-to-end as early as possible, then gains depth.
 - Optional AsyncStorage persistence for profile + submitted requests.
 - Capture screenshots and a screen recording; write the `mobile-app/README.md`.
 
+**Phase H.1 — Visual QA polish pass** (owner-identified follow-up before Firebase planning)
+- **Confirmation feedback:** a shared, calm `FeedbackContext` (a quiet top banner)
+  confirms success (profile created, signed in/out, request shared, prayed, report
+  received, data reset) and surfaces gentle errors instead of failing silently. One
+  reusable pattern, reused by edit/remove too; never gamified, auto-dismisses.
+- **Personal prayer activity:** a "Your prayer activity" summary in Settings (Requests
+  shared / Prayers lifted — calm, not a scoreboard) linking to two lists, **My prayer
+  requests** and **Prayers I've prayed for**, derived from `PrayerContext`
+  (`getMyRequests` / `getPrayedRequests`).
+- **Owner controls:** on a request's detail, **Edit request** and **Remove request**
+  shown only on the owner's own posts. Edit reuses a shared `PrayerForm` (extracted from
+  the submit screen) in a new `feed/edit` screen; Remove is a confirmed local **soft
+  remove** ("Remove," never "Delete"). Edits/removals persist behind the `prayerService`
+  seam (`p4u.overrides` / `p4u.removed`); the future Firebase recommendation is a
+  `removedByOwner` status rather than a hard delete.
+- Still local/mock only — no Firebase, networking, ads, or app-store config.
+
 ---
 
 ## 8. Validation Plan

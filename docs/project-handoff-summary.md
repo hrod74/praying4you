@@ -23,12 +23,13 @@ praying4you/
 
 `mobile-app/` layout: `app/` (Expo Router routes: `index` welcome, `(auth)/` =
 create-profile + sign-in, `(app)/` = tabs Feed/Verse/Settings with a `feed/` stack);
-`src/` = `context/` (AuthContext, PrayerContext), `services/` (prayerService — the
-Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
-(Button, TextField, Screen, PrayerCard, CategoryTag, EmptyState), `theme/`, `utils/`
-(validation, format).
+`src/` = `context/` (AuthContext, PrayerContext, FeedbackContext), `services/`
+(prayerService — the Firebase-swap seam), `data/` (mockPrayers), `models/` (types),
+`components/` (Button, TextField, Screen, PrayerCard, PrayerForm, CategorySelect,
+CategoryTag, EmptyState), `theme/`, `utils/` (validation, format). Feed stack also holds
+`edit`, `my-requests`, and `prayed-for` routes (Phase H.1).
 
-## App status: runs in public iOS Expo Go; local mock data only.
+## App status: runs in public iOS Expo Go; local mock data only. Phase H.1 visual QA polish complete.
 
 ## Completed phases
 
@@ -72,6 +73,20 @@ Firebase-swap seam), `data/` (mockPrayers), `models/` (types), `components/`
   lists (no double-counting on refresh/restart). **Reset prototype data** in Settings clears
   local activity but keeps the profile. Email is never stored in prayer/interaction/report
   data. Added `docs/demo-readiness-checklist.md`. Still local/mock — no Firebase.
+- **Phase H.1 — Visual QA polish pass:** owner-identified follow-up polish to make the
+  prototype feel more complete and trustworthy before Firebase planning. (1) A shared,
+  calm **confirmation feedback** pattern (`src/context/FeedbackContext.tsx`, a quiet
+  top banner) confirms profile created, signed in/out, request shared, prayed, report
+  received, and data reset, and shows gentle errors instead of failing silently.
+  (2) A **Your prayer activity** summary in Settings ("Requests shared" / "Prayers
+  lifted," calm not scoreboard) links to two new lists — **My prayer requests** and
+  **Prayers I've prayed for** (`feed/my-requests`, `feed/prayed-for`). (3) **Owner
+  controls** on a request's detail: **Edit request** (reuses the shared `PrayerForm` in
+  an `feed/edit` screen) and **Remove request** (a confirmed local **soft remove**;
+  user-facing word is "Remove," never "Delete"), both shown only on the owner's own
+  requests. Soft remove + edit are persisted as `p4u.removed` / `p4u.overrides` behind
+  the `prayerService` seam (future Firebase recommendation: a `removedByOwner` status).
+  Still local/mock — no Firebase.
 
 ## Design direction
 
@@ -114,7 +129,10 @@ for this" works · **Verse of the day works** · **Settings shows profile + priv
 · **Report request works locally** on others' posts (hidden on own) · **submitted requests,
 prayed marks, and reports persist across app restarts** (AsyncStorage; counts derived, no
 double-count) · **Reset prototype data** in Settings (keeps profile) · **email is never
-shown publicly**.
+shown publicly** · **calm confirmation feedback** on key actions (and gentle errors) ·
+**Your prayer activity** in Settings (Requests shared / Prayers lifted) with **My prayer
+requests** and **Prayers I've prayed for** lists · **owner Edit request / Remove request**
+(soft remove, confirmed) shown only on your own posts.
 
 ## Next phase
 

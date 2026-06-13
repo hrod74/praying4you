@@ -65,3 +65,6 @@ and Firebase migration is planned in **Plan Mode** before implementation.
 - [Phase H Completion Review](phase-h-completion-review.md) — go/no-go to commit the
   final prototype polish + local persistence + demo readiness, and proceed to Firebase
   MVP planning.
+- [Phase H.1 Visual QA Polish Review](phase-h1-visual-qa-polish-review.md) — go/no-go to
+  commit the visual QA polish pass (confirmation feedback, personal prayer activity, owner
+  edit/remove controls) and proceed to Firebase MVP planning in Plan Mode.

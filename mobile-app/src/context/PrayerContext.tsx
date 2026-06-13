@@ -15,15 +15,25 @@ import {
   interactionKey,
   listActivePrayers,
   loadInteractions,
+  loadOverrides,
+  loadRemovedIds,
   loadReports,
   recordPrayerInteraction,
   recordReport,
   saveInteractions,
+  saveOverrides,
+  saveRemovedIds,
   saveReports,
   saveSubmittedPrayers,
   type NewPrayerInput,
 } from '../services/prayerService';
-import type { PrayerInteraction, PrayerRequest, Report, ReportReason } from '../models/types';
+import type {
+  PrayerCategory,
+  PrayerInteraction,
+  PrayerRequest,
+  Report,
+  ReportReason,
+} from '../models/types';
 
 /**
  * PrayerContext — prayer-request state for the signed-in app, with local persistence.
@@ -52,6 +62,15 @@ import type { PrayerInteraction, PrayerRequest, Report, ReportReason } from '../
  * never stored in or derived from any of this data.
  */
 
+/** Fields an owner may change when editing their own request. */
+export interface EditPrayerInput {
+  body: string;
+  category: PrayerCategory;
+  isAnonymous: boolean;
+  /** The owner's real display name, used when the request is not anonymous. */
+  ownerDisplayName: string;
+}
+
 interface PrayerContextValue {
   /** Active prayer requests, newest first (with derived live counts). */
   prayers: PrayerRequest[];
@@ -65,6 +84,14 @@ interface PrayerContextValue {
   getById: (id: string) => PrayerRequest | undefined;
   /** Create a new prayer request locally; returns its new id. */
   addPrayer: (input: NewPrayerInput) => Promise<string>;
+  /** Owner-only edit of a request (body/category/anonymous choice). No-op if not owner. */
+  editPrayer: (requestId: string, userId: string, input: EditPrayerInput) => Promise<void>;
+  /** Owner-only soft remove (hidden from feed/detail; never hard-deleted). No-op if not owner. */
+  removePrayer: (requestId: string, userId: string) => Promise<void>;
+  /** Active prayer requests created by the given user (for "My prayer requests" + counts). */
+  getMyRequests: (userId: string) => PrayerRequest[];
+  /** Active prayer requests the given user has prayed for (for "Prayers I've prayed for"). */
+  getPrayedRequests: (userId: string) => PrayerRequest[];
   /** Whether the given user has already prayed for the given request. */
   hasPrayed: (requestId: string, userId: string) => boolean;
   /** Record an "I prayed for this" interaction (idempotent per user+request). */
@@ -163,6 +190,64 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     return created.id;
   }, []);
 
+  // Owner-only edit. Persists a per-id override (so editing a seed request never mutates
+  // the seed) and updates the in-memory baseline so feed/detail reflect the change at once.
+  // The anonymity rule lives here, mirroring createPrayer: anonymous hides the name.
+  const editPrayer = useCallback(
+    async (requestId: string, userId: string, input: EditPrayerInput) => {
+      const target = baseline.find((p) => p.id === requestId);
+      if (!target || target.userId !== userId) return; // owner-only guard
+      const body = input.body.trim();
+      const displayName = input.isAnonymous ? 'Anonymous' : input.ownerDisplayName;
+      const overrides = await loadOverrides();
+      overrides[requestId] = {
+        body,
+        category: input.category,
+        isAnonymous: input.isAnonymous,
+        displayName,
+      };
+      await saveOverrides(overrides);
+      setBaseline((prev) =>
+        prev.map((p) =>
+          p.id === requestId
+            ? { ...p, body, category: input.category, isAnonymous: input.isAnonymous, displayName }
+            : p,
+        ),
+      );
+    },
+    [baseline],
+  );
+
+  // Owner-only soft remove. Adds the id to the removed-by-owner set (persisted) and drops it
+  // from the in-memory baseline so it leaves the feed/detail immediately. Never hard-deletes.
+  const removePrayer = useCallback(
+    async (requestId: string, userId: string) => {
+      const target = baseline.find((p) => p.id === requestId);
+      if (!target || target.userId !== userId) return; // owner-only guard
+      const removedIds = await loadRemovedIds();
+      if (!removedIds.includes(requestId)) {
+        await saveRemovedIds([...removedIds, requestId]);
+      }
+      setBaseline((prev) => prev.filter((p) => p.id !== requestId));
+    },
+    [baseline],
+  );
+
+  // Active requests created by the user (derived, so removed/edited state is always current).
+  const getMyRequests = useCallback(
+    (userId: string) => prayers.filter((p) => p.userId === userId),
+    [prayers],
+  );
+
+  // Active requests the user has prayed for (from the deduped interaction list).
+  const getPrayedRequests = useCallback(
+    (userId: string) =>
+      prayers.filter((p) =>
+        interactions.some((i) => i.requestId === p.id && i.userId === userId),
+      ),
+    [prayers, interactions],
+  );
+
   const hasPrayed = useCallback(
     (requestId: string, userId: string) =>
       interactions.some((i) => i.requestId === requestId && i.userId === userId),
@@ -224,6 +309,10 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       refresh: load,
       getById,
       addPrayer,
+      editPrayer,
+      removePrayer,
+      getMyRequests,
+      getPrayedRequests,
       hasPrayed,
       pray,
       hasReported,
@@ -237,6 +326,10 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       load,
       getById,
       addPrayer,
+      editPrayer,
+      removePrayer,
+      getMyRequests,
+      getPrayedRequests,
       hasPrayed,
       pray,
       hasReported,

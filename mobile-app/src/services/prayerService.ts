@@ -31,12 +31,21 @@ import type {
  * never double-count. Storage is best-effort: a failure degrades to seed-only, never a
  * crash. Nothing private is stored here — no email ever touches prayer/interaction/report
  * data. Keys are namespaced `p4u.*`, matching the local profile keys in AuthContext.
+ *
+ * Owner controls (Phase H.1): the owner of a request can edit or remove it.
+ *   - Edits are stored as per-id OVERRIDES (body/category/anonymous + cached name) layered
+ *     on top of the base record, so editing a seed request works without mutating the seed.
+ *   - Remove is a SOFT remove: the id is added to a removed-by-owner set and filtered out of
+ *     feeds and detail. Records are never hard-deleted, mirroring the future Firebase
+ *     `removedByOwner` status. Reset clears overrides and removals back to the seed.
  */
 
 // On-device storage keys (local prototype only; no secrets, no email).
 const SUBMITTED_KEY = 'p4u.prayers'; // locally-submitted requests (base records)
 const INTERACTIONS_KEY = 'p4u.interactions'; // "I prayed for this" records
 const REPORTS_KEY = 'p4u.reports'; // local report records
+const OVERRIDES_KEY = 'p4u.overrides'; // owner edits, keyed by request id
+const REMOVED_KEY = 'p4u.removed'; // request ids soft-removed by their owner
 
 /** Parse a stored JSON array, returning [] on any absence/corruption (best-effort). */
 async function readArray<T>(key: string): Promise<T[]> {
@@ -93,12 +102,76 @@ export async function saveReports(list: Report[]): Promise<void> {
 }
 
 /**
- * Clear all locally-stored prototype activity (submitted requests, interactions, reports).
- * The local profile is owned by AuthContext and is intentionally left untouched.
+ * An owner's edit to a single request, layered over the base record by id. Stored
+ * separately so editing a seed request never mutates the bundled seed data.
+ */
+export interface PrayerOverride {
+  body?: string;
+  category?: PrayerCategory;
+  isAnonymous?: boolean;
+  /** Cached display name, recomputed on edit ("Anonymous" when posting anonymously). */
+  displayName?: string;
+}
+
+/** Stored owner edits, keyed by request id (best-effort; {} on absence/corruption). */
+export async function loadOverrides(): Promise<Record<string, PrayerOverride>> {
+  try {
+    const raw = await AsyncStorage.getItem(OVERRIDES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, PrayerOverride>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Replace the stored map of owner edits. */
+export async function saveOverrides(map: Record<string, PrayerOverride>): Promise<void> {
+  try {
+    await AsyncStorage.setItem(OVERRIDES_KEY, JSON.stringify(map));
+  } catch {
+    // Non-fatal.
+  }
+}
+
+/** Request ids the owner has soft-removed (hidden from feeds/detail, never hard-deleted). */
+export async function loadRemovedIds(): Promise<string[]> {
+  return readArray<string>(REMOVED_KEY);
+}
+
+/** Replace the stored set of owner-removed request ids. */
+export async function saveRemovedIds(ids: string[]): Promise<void> {
+  await writeArray(REMOVED_KEY, ids);
+}
+
+/** Layer an owner edit onto a base record (only the edited fields change). */
+function applyOverride(p: PrayerRequest, override?: PrayerOverride): PrayerRequest {
+  if (!override) return p;
+  return {
+    ...p,
+    body: override.body ?? p.body,
+    category: override.category ?? p.category,
+    isAnonymous: override.isAnonymous ?? p.isAnonymous,
+    displayName: override.displayName ?? p.displayName,
+  };
+}
+
+/**
+ * Clear all locally-stored prototype activity (submitted requests, interactions, reports,
+ * owner edits, and soft-removals). The local profile is owned by AuthContext and is
+ * intentionally left untouched, so a reset returns the feed to the original seed.
  */
 export async function clearLocalPrayerData(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([SUBMITTED_KEY, INTERACTIONS_KEY, REPORTS_KEY]);
+    await AsyncStorage.multiRemove([
+      SUBMITTED_KEY,
+      INTERACTIONS_KEY,
+      REPORTS_KEY,
+      OVERRIDES_KEY,
+      REMOVED_KEY,
+    ]);
   } catch {
     // Non-fatal.
   }
@@ -107,32 +180,43 @@ export async function clearLocalPrayerData(): Promise<void> {
 /**
  * Active prayer requests, newest first. Mirrors the prayer feed query, layering any
  * locally-submitted requests on top of the bundled seed. Submitted requests win on id
- * collision (defensive dedupe), so a refresh/restart never produces duplicate rows.
+ * collision (defensive dedupe), so a refresh/restart never produces duplicate rows. Owner
+ * edits are applied per id, and owner-removed ids are filtered out (soft remove).
  */
 export async function listActivePrayers(): Promise<PrayerRequest[]> {
-  const submitted = await loadSubmittedPrayers();
+  const [submitted, overrides, removedIds] = await Promise.all([
+    loadSubmittedPrayers(),
+    loadOverrides(),
+    loadRemovedIds(),
+  ]);
+  const removed = new Set(removedIds);
   const seen = new Set<string>();
   const merged: PrayerRequest[] = [];
   for (const p of [...submitted, ...mockPrayers]) {
-    if (seen.has(p.id) || p.status === 'removed') continue;
+    if (seen.has(p.id) || p.status === 'removed' || removed.has(p.id)) continue;
     seen.add(p.id);
-    merged.push({ ...p });
+    merged.push(applyOverride({ ...p }, overrides[p.id]));
   }
   return merged.sort(byNewestFirst);
 }
 
 /**
- * A single prayer request by id, or null if it does not exist / is removed. Checks
- * locally-submitted requests first, then the seed (a self-sufficient fallback for the
- * detail screen on a direct link). Returns a BASE record; live counts are derived in
- * PrayerContext.
+ * A single prayer request by id, or null if it does not exist / is removed (including a
+ * soft remove by its owner). Checks locally-submitted requests first, then the seed (a
+ * self-sufficient fallback for the detail screen on a direct link). Owner edits are applied;
+ * returns a BASE record otherwise — live counts are derived in PrayerContext.
  */
 export async function getPrayerById(id: string): Promise<PrayerRequest | null> {
-  const submitted = await loadSubmittedPrayers();
+  const [submitted, overrides, removedIds] = await Promise.all([
+    loadSubmittedPrayers(),
+    loadOverrides(),
+    loadRemovedIds(),
+  ]);
+  if (removedIds.includes(id)) return null;
   const found =
     submitted.find((p) => p.id === id) ??
     mockPrayers.find((p) => p.id === id && p.status === 'active');
-  return found ? { ...found } : null;
+  return found ? applyOverride({ ...found }, overrides[id]) : null;
 }
 
 /**

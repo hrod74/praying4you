@@ -5,9 +5,11 @@ import { colors } from '../../../src/theme/theme';
 /**
  * Feed stack (lives inside the Feed tab).
  *
- * Routes: index (the prayer feed), [id] (prayer detail), and report (a modal to report a
- * request, Phase G). Composing a new request now lives in its own persistent tab
- * (app/(app)/submit.tsx), so it is always reachable from the bottom navigation.
+ * Routes: index (the prayer feed), [id] (prayer detail), report (a modal to report a
+ * request, Phase G), edit (owner-only edit of a request, Phase H.1), and the two personal
+ * lists reachable from Settings — my-requests and prayed-for (Phase H.1). Composing a new
+ * request lives in its own persistent tab (app/(app)/submit.tsx), always reachable from the
+ * bottom navigation.
  */
 export default function FeedStackLayout() {
   return (
@@ -25,6 +27,9 @@ export default function FeedStackLayout() {
         name="report"
         options={{ title: 'Report request', presentation: 'modal' }}
       />
+      <Stack.Screen name="edit" options={{ title: 'Edit request' }} />
+      <Stack.Screen name="my-requests" options={{ title: 'My prayer requests' }} />
+      <Stack.Screen name="prayed-for" options={{ title: 'Prayers I’ve prayed for' }} />
     </Stack>
   );
 }

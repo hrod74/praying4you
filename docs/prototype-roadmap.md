@@ -226,6 +226,15 @@ labels and tap-target sizing, optional local persistence, a **full visual QA pas
 and demo/portfolio capture (screenshots + screen recording). Still **local/mock data —
 no Firebase**. This is the last phase before any backend work begins.
 
+**Phase H.1 — Visual QA polish pass (complete).** An owner-identified follow-up polish
+pass within Phase H, addressing demo-readiness gaps before Firebase planning: a shared,
+calm **confirmation feedback** pattern for successful actions (with gentle errors); a
+**Your prayer activity** summary in Settings (Requests shared / Prayers lifted) with
+**My prayer requests** and **Prayers I've prayed for** lists; and owner **Edit request /
+Remove request** controls (a confirmed local **soft remove**, "Remove" not "Delete")
+shown only on the user's own requests. Still local/mock only. See
+`reviews/phase-h1-visual-qa-polish-review.md`.
+
 ### Phase I — Firebase MVP planning (Plan Mode)
 **Plan only — no implementation.** Design the Firebase-backed MVP in **Plan Mode**: the
 Firestore data model and indexes; security-rule intent (auth-gated reads, owner-only
