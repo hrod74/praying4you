@@ -29,7 +29,7 @@ create-profile + sign-in, `(app)/` = tabs Feed/Verse/Settings with a `feed/` sta
 CategoryTag, EmptyState), `theme/`, `utils/` (validation, format). Feed stack also holds
 `edit`, `my-requests`, and `prayed-for` routes (Phase H.1).
 
-## App status: runs in public iOS Expo Go; local mock data only. Phase H.1 visual QA polish complete.
+## App status: runs in public iOS Expo Go; local mock data only. Phase H.1 + H.2 (mobile UX fixes) complete.
 
 ## Completed phases
 
@@ -87,6 +87,19 @@ CategoryTag, EmptyState), `theme/`, `utils/` (validation, format). Feed stack al
   requests. Soft remove + edit are persisted as `p4u.removed` / `p4u.overrides` behind
   the `prayerService` seam (future Firebase recommendation: a `removedByOwner` status).
   Still local/mock — no Firebase.
+- **Phase H.2 — Mobile UX fix pass:** owner on-device iOS QA fixes before Firebase
+  planning. (1) **Keyboard behavior:** `Screen` dismisses the keyboard on drag and
+  `TextField` forwards a ref for next-field focus; **Create Profile no longer submits on
+  the keyboard return/done key** (it only dismisses) — the profile is created only by an
+  intentional CTA tap; same for the new Edit Profile; multiline prayer/report inputs keep
+  return as a newline. (2) **Submit navigation:** after sharing a request the user returns
+  to the **Feed** (new request at top) with a confirmation, instead of the request's
+  detail/owner screen; editing an existing request still returns to its detail.
+  (3) **Local profile editing:** `AuthContext.updateProfile` + an inline Edit Profile
+  section in Settings (display name + email, validated, confirmation feedback); email
+  stays on-device and private (duplicate-email/verification deferred to the future Auth
+  layer, documented in PRD §19). (4) **Bottom nav:** slightly larger tab icons/labels;
+  the four tabs stay balanced. Still local/mock — no Firebase.
 
 ## Design direction
 
@@ -132,7 +145,10 @@ double-count) · **Reset prototype data** in Settings (keeps profile) · **email
 shown publicly** · **calm confirmation feedback** on key actions (and gentle errors) ·
 **Your prayer activity** in Settings (Requests shared / Prayers lifted) with **My prayer
 requests** and **Prayers I've prayed for** lists · **owner Edit request / Remove request**
-(soft remove, confirmed) shown only on your own posts.
+(soft remove, confirmed) shown only on your own posts · **local Edit profile** (display
+name + email, validated, private email) · **sharing a request returns to the Feed** (new
+request at top) · **iOS keyboard behavior** (no accidental submit on return; drag to
+dismiss; next-field focus) · **larger bottom-nav icons/labels**.
 
 ## Next phase
 

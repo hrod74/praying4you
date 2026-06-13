@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
@@ -20,11 +20,18 @@ import {
  * Phase B: collects a display name (shown publicly) and an email (kept private). On
  * submit it creates the local profile and enters the app. No backend, no password —
  * this is a simulated local profile only.
+ *
+ * Keyboard behavior (Phase H.2): the profile is created only by an intentional tap on the
+ * "Create profile" button. The keyboard "next" key on the name field moves focus to email;
+ * the email "done" key only dismisses the keyboard (it does not submit the form), so a
+ * sensitive account is never created by an accidental return tap.
  */
 export default function CreateProfileScreen() {
   const router = useRouter();
   const { createProfile } = useAuth();
   const { showSuccess, showError } = useFeedback();
+
+  const emailRef = useRef<TextInput>(null);
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -72,26 +79,29 @@ export default function CreateProfileScreen() {
         autoCapitalize="words"
         maxLength={DISPLAY_NAME_MAX}
         returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => emailRef.current?.focus()}
       />
 
       <TextField
+        ref={emailRef}
         label="Email"
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
-        helperText="Private — kept on your device and never shown publicly."
+        helperText="Private. Kept on your device and never shown publicly."
         errorText={emailError}
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
         returnKeyType="done"
-        onSubmitEditing={handleSubmit}
+        onSubmitEditing={() => Keyboard.dismiss()}
       />
 
       <View style={styles.privacyNote}>
         <Text style={styles.privacyText}>
-          🔒 Your email stays private. Prayer requests only ever show your display name —
-          or "Anonymous" if you choose.
+          🔒 Your email stays private. Prayer requests only ever show your display name, or
+          "Anonymous" if you choose.
         </Text>
       </View>
 

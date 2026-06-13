@@ -315,6 +315,24 @@ Sequenced so the app runs end-to-end as early as possible, then gains depth.
   `removedByOwner` status rather than a hard delete.
 - Still local/mock only — no Firebase, networking, ads, or app-store config.
 
+**Phase H.2 — Mobile UX fix pass** (owner on-device iOS QA findings, before Firebase planning)
+- **Keyboard behavior:** shared fixes so forms behave well on iOS — `Screen` dismisses the
+  keyboard on drag (`keyboardDismissMode="on-drag"`) while keeping taps working; `TextField`
+  forwards a ref so multi-field forms move focus on the "next" key. Create Profile (and the
+  new Edit Profile) create/save **only** on an intentional CTA tap — the email "done" key
+  dismisses the keyboard and never submits the form. Multiline prayer/report inputs keep
+  return as a newline.
+- **Submit navigation:** after creating a prayer request the user returns to the **Feed**
+  (new request at the top) with a confirmation, instead of landing on the request's
+  detail/owner screen. Editing an existing request still returns to its detail.
+- **Local profile editing:** `AuthContext.updateProfile` + an inline Edit Profile section in
+  Settings (display name + email, validated, with confirmation feedback). Email stays
+  on-device and private. No real auth; the duplicate-email/verification rules are documented
+  as future backend requirements (`product-requirements.md` §19).
+- **Bottom navigation:** slightly larger tab icons and labels for readability; the four tabs
+  (Feed | Pray | Verse | Settings) stay balanced.
+- Still local/mock only.
+
 ---
 
 ## 8. Validation Plan
@@ -410,8 +428,13 @@ contract that carries forward.
 One service per concern, mapping the prototype's contexts/services onto Firebase:
 
 - **Auth service** — registration, sign in/out, session persistence, email-in-use
-  handling (`auth/email-already-in-use`), password reset. Replaces the simulated
-  `AuthContext` profile with real Firebase Auth accounts.
+  handling (`auth/email-already-in-use`), password reset, and **profile/email editing**.
+  Replaces the simulated `AuthContext` profile (which already exposes `updateProfile` for
+  local name/email edits) with real Firebase Auth accounts. An email change must run through
+  Auth (not a plain document write): reject changing to an email already attached to another
+  account with a calm message, optionally require verification of the new address, and
+  protect account ownership so no user can take over another's email/profile (see
+  `product-requirements.md` §19).
 - **Prayer request service** — create, **owner-only edit**, **owner-only remove**
   (soft remove: `status: "removed"` / `removedByOwner`, never a user-facing "delete"),
   and paginated feed reads (`status == "active"`, newest first).

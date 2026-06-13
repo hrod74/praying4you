@@ -1,12 +1,19 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
+import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
 import { usePrayers } from '../../src/context/PrayerContext';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
+import {
+  DISPLAY_NAME_MAX,
+  validateDisplayName,
+  validateEmail,
+} from '../../src/utils/validation';
 
 /**
  * Settings / Profile / About (Phase G, polished in Phase H, Phase H.1).
@@ -20,13 +27,55 @@ import { colors, radius, spacing, typography } from '../../src/theme/theme';
  */
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, updateProfile } = useAuth();
   const { resetLocalData, getMyRequests, getPrayedRequests } = usePrayers();
-  const { showSuccess } = useFeedback();
+  const { showSuccess, showError } = useFeedback();
 
   // A quiet record of the user's own prayer activity — companionship, not a score.
   const sharedCount = profile ? getMyRequests(profile.id).length : 0;
   const liftedCount = profile ? getPrayedRequests(profile.id).length : 0;
+
+  // Inline local edit of the profile (display name + email). Saving requires an intentional
+  // tap on Save; the keyboard "next"/"done" keys move focus or dismiss, never save.
+  const emailRef = useRef<TextInput>(null);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const nameError = submitted ? validateDisplayName(name) : null;
+  const emailError = submitted ? validateEmail(email) : null;
+  const canSave = name.trim().length > 0 && email.trim().length > 0 && !saving;
+
+  const startEdit = () => {
+    setName(profile?.displayName ?? '');
+    setEmail(profile?.email ?? '');
+    setSubmitted(false);
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    Keyboard.dismiss();
+    setEditing(false);
+    setSubmitted(false);
+  };
+
+  const handleSaveProfile = async () => {
+    setSubmitted(true);
+    if (validateDisplayName(name) || validateEmail(email)) return;
+    setSaving(true);
+    try {
+      await updateProfile({ displayName: name, email });
+      Keyboard.dismiss();
+      setEditing(false);
+      setSaving(false);
+      showSuccess('Profile updated.');
+    } catch {
+      setSaving(false);
+      showError('We could not save your profile just now. Please try again.');
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,20 +106,65 @@ export default function SettingsScreen() {
       {/* Profile */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your profile</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Display name</Text>
-            <Text style={styles.rowValue}>{profile?.displayName ?? '—'}</Text>
+        {editing ? (
+          <View style={styles.card}>
+            <TextField
+              label="Display name"
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g. Jordan"
+              helperText={`Shown publicly on your prayer requests. Up to ${DISPLAY_NAME_MAX} characters.`}
+              errorText={nameError}
+              autoCapitalize="words"
+              maxLength={DISPLAY_NAME_MAX}
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => emailRef.current?.focus()}
+            />
+            <TextField
+              ref={emailRef}
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              helperText="Private. Kept on your device and never shown publicly."
+              errorText={emailError}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
+            <Button
+              label="Save profile"
+              onPress={handleSaveProfile}
+              disabled={!canSave}
+              accessibilityHint="Saves your display name and email on this device"
+            />
+            <Button label="Cancel" variant="secondary" onPress={cancelEdit} />
           </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Email</Text>
-            <Text style={styles.rowValue}>{profile?.email ?? '—'}</Text>
+        ) : (
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>Display name</Text>
+              <Text style={styles.rowValue}>{profile?.displayName ?? '—'}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>Email</Text>
+              <Text style={styles.rowValue}>{profile?.email ?? '—'}</Text>
+            </View>
+            <Text style={styles.privateNote}>
+              🔒 Private. Only you can see your email. It is never shown on prayer requests.
+            </Text>
+            <Button
+              label="Edit profile"
+              variant="secondary"
+              onPress={startEdit}
+              accessibilityHint="Edit your display name and email on this device"
+            />
           </View>
-          <Text style={styles.privateNote}>
-            🔒 Private — only you can see your email. It is never shown on prayer requests.
-          </Text>
-        </View>
+        )}
       </View>
 
       {/* Your prayer activity */}

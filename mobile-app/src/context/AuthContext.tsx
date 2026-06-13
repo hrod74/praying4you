@@ -46,6 +46,8 @@ interface AuthContextValue {
   isHydrating: boolean;
   /** Create the local profile and enter the app (simulated sign-in). */
   createProfile: (input: CreateProfileInput) => Promise<void>;
+  /** Update the local profile's display name + email (local prototype only). No-op if none. */
+  updateProfile: (input: CreateProfileInput) => Promise<void>;
   /** Simulate signing in an existing local profile. Returns false if none exists. */
   signIn: () => Promise<boolean>;
   /** Simulate signing out. Keeps the stored profile so the user can sign back in. */
@@ -104,6 +106,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Local profile edit (display name + email). In-memory first so the UI is correct even if
+  // storage fails; persistence is best-effort. Email stays on-device and is never public.
+  // No real auth: there is no duplicate-email check here — that belongs to the future
+  // Firebase/Auth layer (see docs/product-requirements.md §19 and implementation-plan.md §11).
+  const updateProfile = useCallback(
+    async ({ displayName, email }: CreateProfileInput) => {
+      if (!profile) return;
+      const next: UserProfile = {
+        ...profile,
+        displayName: displayName.trim(),
+        email: email.trim(),
+      };
+      setProfile(next);
+      try {
+        await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
+      } catch {
+        // Non-fatal: the session still reflects the change, just not across restarts.
+      }
+    },
+    [profile],
+  );
+
   const signIn = useCallback(async () => {
     if (!profile) return false;
     setIsSignedIn(true);
@@ -125,8 +149,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ profile, isSignedIn, isHydrating, createProfile, signIn, signOut }),
-    [profile, isSignedIn, isHydrating, createProfile, signIn, signOut],
+    () => ({
+      profile,
+      isSignedIn,
+      isHydrating,
+      createProfile,
+      updateProfile,
+      signIn,
+      signOut,
+    }),
+    [profile, isSignedIn, isHydrating, createProfile, updateProfile, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -45,9 +45,18 @@ Then open the project in **Expo Go** on an iPhone (scan the QR code). Use
     requests). On the detail you can **Edit request** (update the text, category, or
     named/anonymous choice) and **Remove request** (a calm confirmation, then it leaves the
     feed). These controls appear only on requests you created.
-13. **Explain privacy and prototype limits.** Point out that the email is never shown
+13. **Edit your profile.** In Settings, tap "Edit profile" to change your display name or
+    email, then "Save profile." A confirmation banner appears. The email stays private and is
+    never shown publicly. (On iOS, the keyboard return/done key does not save the form; saving
+    is always an intentional tap on the button.)
+14. **Explain privacy and prototype limits.** Point out that the email is never shown
     publicly, that anonymous posting is a per-request choice, and that this is a local
     prototype (see limitations below). Optional: show "Reset prototype data" in Settings.
+
+> Phase H.2 mobile UX notes: sharing a prayer request returns you to the Feed (with your new
+> request at the top), the bottom-nav icons and labels are a little larger, and forms behave
+> well with the iOS keyboard (drag to dismiss; the name field's "next" key moves to email;
+> the email "done" key just closes the keyboard).
 
 > Tip: to show persistence, submit a request and tap "I prayed for this," then fully close
 > and reopen the app. Your submitted request and prayed mark are still there. Editing and

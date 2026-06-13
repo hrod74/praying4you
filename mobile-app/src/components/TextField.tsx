@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,18 +15,18 @@ import { colors, radius, spacing, typography } from '../theme/theme';
  * Every field has a visible label (not placeholder-only), readable contrast, and a
  * calm error state conveyed by both color and text (never color alone), per
  * design-direction.md. The label doubles as the accessibility label.
+ *
+ * Forwards a ref to the underlying TextInput so multi-field forms can move focus to the
+ * next field on the keyboard "next" key (e.g. Create / Edit Profile).
  */
-export function TextField({
-  label,
-  helperText,
-  errorText,
-  style,
-  ...inputProps
-}: TextInputProps & {
-  label: string;
-  helperText?: string;
-  errorText?: string | null;
-}) {
+export const TextField = forwardRef<
+  TextInput,
+  TextInputProps & {
+    label: string;
+    helperText?: string;
+    errorText?: string | null;
+  }
+>(function TextField({ label, helperText, errorText, style, ...inputProps }, ref) {
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(errorText);
 
@@ -35,6 +35,7 @@ export function TextField({
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...inputProps}
+        ref={ref}
         accessibilityLabel={label}
         placeholderTextColor={colors.textMuted}
         onFocus={(e) => {
@@ -61,7 +62,7 @@ export function TextField({
       ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

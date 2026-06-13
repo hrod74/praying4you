@@ -17,13 +17,16 @@ import { colors } from '../../src/theme/theme';
  * social "sharing"), a Bible for the verse, and a person for settings. The compose tab is
  * labeled "Pray" and is persistent, so it is always reachable from the bottom bar, even
  * after scrolling the feed. The bar reads: Feed | Pray | Verse | Settings.
+ *
+ * Sizing (Phase H.2): icons and labels are slightly larger for readability and tap
+ * confidence on iPhone, while staying calm and not oversized; all four tabs still fit.
  */
 
 // Small helper: render a FontAwesome5 glyph tinted by the tab's active/inactive color.
 const tabIcon =
   (name: React.ComponentProps<typeof FontAwesome5>['name']) =>
   ({ color }: { color: string }) =>
-    <FontAwesome5 name={name} size={20} color={color} />;
+    <FontAwesome5 name={name} size={24} color={color} />;
 
 export default function AppTabsLayout() {
   const { isSignedIn } = useAuth();
@@ -41,7 +44,13 @@ export default function AppTabsLayout() {
           headerShadowVisible: false,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textMuted,
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+          tabBarStyle: {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            paddingTop: 6,
+          },
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+          tabBarIconStyle: { marginTop: 2 },
           sceneStyle: { backgroundColor: colors.background },
         }}
       >

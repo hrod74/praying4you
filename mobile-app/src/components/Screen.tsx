@@ -17,6 +17,10 @@ import { colors, spacing } from '../theme/theme';
  * Gives every screen the same warm background, soft padding, and keyboard-avoiding
  * behavior so forms stay usable on a phone. Keeps screens visually consistent per
  * design-direction.md (soft spacing, mobile-first).
+ *
+ * Keyboard behavior (Phase H.2): scrollable screens dismiss the keyboard on drag
+ * (`keyboardDismissMode="on-drag"`) so it goes away with a natural gesture, while taps on
+ * controls still work (`keyboardShouldPersistTaps="handled"`).
  */
 export function Screen({
   children,
@@ -37,6 +41,7 @@ export function Screen({
           style={styles.flex}
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {children}
         </ScrollView>

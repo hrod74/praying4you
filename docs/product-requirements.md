@@ -511,10 +511,27 @@ the prototype milestone; this section records the bar for the Firebase-backed be
   create a duplicate account; surface a calm message and route the user to sign in
   (Firebase Auth returns `auth/email-already-in-use`, handled this way in the UI).
 
+### Profile Editing and Email-Change Handling (future backend)
+- The local prototype lets a user edit their display name and email **on-device only**
+  (Phase H.2), with no real authentication and no duplicate-email detection (a single
+  local profile). When Firebase/Auth is added, **profile and email changes must be handled
+  through real authentication rules**, not a plain document write:
+  - A user **must not** be able to change their email to an address already attached to
+    another profile/account. The backend/Auth must detect the duplicate-email conflict and
+    return a **safe, calm user-facing message**, suggested:
+    *"That email is already connected to another profile. Please use a different email or
+    sign in."* (Firebase Auth surfaces `auth/email-already-in-use`.)
+  - An email change **may require verification** before it becomes active (verify the new
+    address before it replaces the old one).
+  - The backend must **protect account ownership** and prevent one user from taking over
+    another user's email or profile (changes are authenticated as the owner; `userId` comes
+    from `request.auth.uid`, never the client). Display-name changes follow the existing
+    rule that existing requests keep the name cached at post time.
+
 ### Private Email
 - Email is stored only on the `users` document and in Firebase Auth. It is **never**
   written into `prayerRequests`, `prayerInteractions`, `reports`, or any public surface,
-  and never displayed in the app.
+  and never displayed in the app. This holds before and after a local profile edit.
 
 ### Owner-Only Edit
 - Only the authenticated owner of a prayer request may edit it. Edit attempts by any

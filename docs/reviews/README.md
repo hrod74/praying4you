@@ -68,3 +68,6 @@ and Firebase migration is planned in **Plan Mode** before implementation.
 - [Phase H.1 Visual QA Polish Review](phase-h1-visual-qa-polish-review.md) — go/no-go to
   commit the visual QA polish pass (confirmation feedback, personal prayer activity, owner
   edit/remove controls) and proceed to Firebase MVP planning in Plan Mode.
+- [Phase H.2 Mobile UX Fix Review](phase-h2-mobile-ux-fix-review.md) — go/no-go to commit
+  the mobile UX fix pass (iOS keyboard behavior, post-submit navigation to Feed, local edit
+  profile, larger bottom nav) and proceed to Firebase MVP planning in Plan Mode.
