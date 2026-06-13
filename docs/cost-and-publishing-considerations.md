@@ -163,6 +163,7 @@ The following questions should be decided by the developer or team before or dur
 - **Firebase free tier headroom for MVP:** How much Firebase usage can realistically stay within the Spark plan's free tier given the expected MVP user base? For a small launch, the answer is almost certainly "all of it," but this should be monitored after public launch and the team should know how to read Firebase usage in the console.
 - **Legacy data migration:** Should existing prayer requests from the legacy Firebase Realtime Database be migrated to the new Firestore data model, or should the mobile app start fresh with a clean database? Migration requires data transformation, decisions about handling anonymous records with no user ID, and sanitization of potentially unsafe legacy content (the legacy app had a stored XSS vulnerability). Starting fresh is simpler and avoids inheriting the legacy app's data quality problems.
 - **Cloud Functions and Blaze upgrade timing:** If Cloud Functions are needed (for Verse of the Day scheduling, moderation triggers, or atomic operations), when is the right time to upgrade from Spark to Blaze? This is low-stakes — the upgrade is free and pay-as-you-go — but it should be a deliberate decision, not a surprise.
+- **Individual developer vs. LLC/company account (decide before public launch — owner decision):** Should the Apple/Google developer accounts, the Firebase project, and the app's store identity be registered under an **individual developer** or an **LLC/company**? This affects liability, the public store-listing identity, payments/tax handling, and ownership of the project. By owner decision this is a **before-public-launch** decision and **not a blocker for Firebase planning or the internal beta** — the internal beta can proceed under an individual identity. It is flagged for the **Legal / Compliance Advisor** (`agents/legal-compliance-advisor.md`, which is *not legal advice*) and, where appropriate, a real attorney/accountant. Note: switching identities later (e.g., transferring a published app from an individual to an LLC) is possible but adds friction, so decide deliberately before public launch.
 
 ---
 
@@ -190,6 +191,17 @@ When the project moves from the local prototype to an **internal Firebase-backed
 (roadmap Phases I–K), distribution introduces a few new cost and configuration
 considerations. These are owned by the **Systems Admin / DevOps Engineer**
 (`agents/systems-admin.md`), with the **Backend Engineer** confirming the backend side.
+
+**Owner decision — the beta plans for BOTH iOS and Android.** Budget for **Google Play Console
+($25 one-time)** and **Apple Developer (~$99/yr)**, paying each only when that platform's
+installable beta is actually shared. Android-first sequencing remains the cheaper way to
+*start*, but both platforms are in scope. **Account deletion is required before the beta is
+shared with real testers** (a store requirement for public launch and an owner decision — see
+`firebase-mvp-plan.md` §5/§16). Pre-beta legal/compliance items (privacy policy, account
+deletion, report handling, public-domain/licensed Bible text) are flagged by the **Legal /
+Compliance Advisor** (`agents/legal-compliance-advisor.md` — *not legal advice*), and the
+**Growth / Beta Research Advisor** (`agents/growth-beta-research-advisor.md`) helps plan tester
+selection and what the beta should learn.
 
 - **Firebase at beta scale.** Firebase may remain **low cost — realistically $0 or near
   $0** — at small internal-beta scale on the Spark free tier, but it **needs

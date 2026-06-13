@@ -38,6 +38,8 @@ clear remit, checklist, and output format.
 | [Test Engineer](test-engineer.md) | Test *strategy*: manual test plans, future automated tests, regression, local-run verification | Each build phase and feature flow |
 | [QA Engineer](qa-engineer.md) | User-facing *quality*: acceptance criteria, end-to-end flow, mobile usability, edge cases, accessibility basics, visual/demo & portfolio readiness | Before a phase/feature is demo-ready or shown |
 | [Release Manager](release-manager.md) | Git status, expected changed files, run commands, validation, commit quality, push readiness | Every commit / phase wrap-up |
+| [Legal / Compliance Advisor](legal-compliance-advisor.md) *(advisory — not legal advice)* | Privacy policy & terms needs, account deletion, app-store/UGC compliance, sensitive-content & report risk, Bible-translation licensing & verse sourcing, AI-content disclaimers, monetization compliance, individual-vs-LLC account, data retention/deletion | Firebase / beta / public-launch planning; anything touching policies, privacy, content licensing, or monetization compliance |
+| [Growth / Beta Research Advisor](growth-beta-research-advisor.md) | Beta tester selection, feedback goals, survey/interview questions, feature prioritization from feedback, onboarding clarity, positioning, monetization *hypotheses* (no premature growth/monetization) | Beta-readiness & feedback planning; positioning / store-description drafts (later) |
 
 > **Test Engineer vs. QA Engineer:** the Test Engineer decides *how* quality is
 > verified (test plans, regression, automation); the QA Engineer decides *whether the
@@ -67,6 +69,20 @@ clear remit, checklist, and output format.
 > setup and beta-distribution phases. Both should review **in Plan Mode first**, before
 > any backend code or project/account is created.
 
+> **When to use the advisory roles (Legal / Compliance and Growth / Beta Research):**
+> these two roles were added (at the owner's request) to participate **before Firebase
+> implementation** and through beta/public-launch planning. They are **advisory** — they
+> identify issues, ask the right questions, and recommend (the Legal / Compliance Advisor
+> explicitly recommends a **qualified attorney** for anything needing a legal opinion and
+> **does not provide legal advice**); they do not implement and do not gate code the way the
+> engineering roles do. Bring in the **Legal / Compliance Advisor** for Firebase, beta, and
+> public-launch planning — privacy policy/terms, account deletion, app-store/UGC compliance,
+> Bible-translation licensing & verse sourcing, AI-content disclaimers (if AI is added later),
+> monetization compliance, and the individual-vs-LLC account question. Bring in the **Growth /
+> Beta Research Advisor** for **beta-readiness and feedback planning** — tester selection,
+> what to learn, the questions to ask, must-have-vs-can-wait features, onboarding clarity,
+> positioning, and monetization *hypotheses* (without pushing premature growth/monetization).
+
 ## Which agents belong in which review
 
 - **Local prototype phases (mock data, no backend):** the original eight roles —
@@ -78,6 +94,17 @@ clear remit, checklist, and output format.
   Engineer** (Firebase/Expo/EAS setup, config/secret safety, builds, beta
   distribution). The go/no-go review checklist for these phases **must** include both
   new roles. Firebase migration is planned in **Plan Mode** before implementation.
+- **Advisory participation (Firebase / beta / public-launch planning):** the **Legal /
+  Compliance Advisor** participates in **Firebase, beta, and public-launch planning** views,
+  and the **Growth / Beta Research Advisor** participates in **beta-readiness and
+  feedback-planning** reviews. They advise rather than gate code, but their flagged items
+  (e.g., account deletion before beta, privacy policy, content licensing) should be tracked to
+  resolution.
+- **Sequencing note:** Firebase implementation should **not begin** until the Phase I plan is
+  **committed and reviewed**, and **Phase J.1 produces step-by-step Firebase setup
+  instructions before implementation**. Beta distribution plans for **both iOS and Android**;
+  **account deletion is required before beta with real testers**; and **push notifications are
+  a documented future post-MVP phase** unless explicitly reprioritized.
 
 ## How reviews are produced
 

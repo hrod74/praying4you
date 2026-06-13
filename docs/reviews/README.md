@@ -13,6 +13,18 @@ Admin / DevOps Engineer** (Firebase/Expo/EAS setup, config & secret safety, buil
 beta distribution). Those phases' go/no-go checklists **must** include both new roles,
 and Firebase migration is planned in **Plan Mode** before implementation.
 
+Two **advisory** roles also participate in these planning views (added at the owner's
+request, before Firebase implementation): the **Legal / Compliance Advisor**
+(`../agents/legal-compliance-advisor.md` — *not legal advice; recommends a qualified
+attorney where appropriate*) in **Firebase / beta / public-launch** planning, and the
+**Growth / Beta Research Advisor** (`../agents/growth-beta-research-advisor.md`) in
+**beta-readiness and feedback-planning** reviews. They advise (identify issues, ask the
+right questions) rather than gate code. **Firebase implementation should not begin until
+the Phase I plan is committed and reviewed, and Phase J.1 produces step-by-step Firebase
+setup instructions before implementation.** Beta distribution plans for **both iOS and
+Android**, **account deletion is required before beta with real testers**, and **push
+notifications are a documented future post-MVP phase** unless explicitly reprioritized.
+
 ## How reviews are organized
 
 - Reviews are organized **by build phase**, following the phases in
@@ -75,3 +87,7 @@ and Firebase migration is planned in **Plan Mode** before implementation.
   — go/no-go to commit the accessibility/theme-foundation pass (Dynamic Type / larger text
   support, centralized theme tokens, documented future themes) and proceed to Firebase MVP
   planning in Plan Mode.
+- [Phase I Firebase MVP Plan Review](phase-i-firebase-mvp-plan-review.md) — go/no-go to approve
+  the Firebase MVP plan (planning only; no implementation) and proceed to Phase J under
+  per-phase gates. Reflects the owner's resolved decisions and the two new advisory roles
+  (Legal / Compliance, Growth / Beta Research).

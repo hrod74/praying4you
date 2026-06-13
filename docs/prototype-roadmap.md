@@ -259,13 +259,32 @@ patterns, never hardcoded). **The Backend Engineer and Systems Admin / DevOps En
 participate from this phase onward.** No Firebase project, EAS project, secrets, or
 config values are created here.
 
+**Status — plan written; owner decisions captured.** The plan
+(`firebase-mvp-plan.md`) and its review (`reviews/phase-i-firebase-mvp-plan-review.md`)
+exist and reflect the owner's decisions: **sign-in required to read the feed; account
+deletion required before the real-tester beta; manual Firebase console report review;
+prevent duplicate reports; no admin dashboard for the first beta; both iOS and Android;
+verses stay local/curated; AI verse matching is future-only with approved-source text (no
+AI-generated Scripture); avatars out of scope; push notifications deferred to a documented
+post-MVP phase; step-by-step Firebase setup instructions (J.1) before implementation; and
+individual-vs-LLC account is a before-public-launch decision (not a Firebase blocker).** Two
+**advisory** roles now participate before implementation: the **Legal / Compliance Advisor**
+(`agents/legal-compliance-advisor.md` — *not legal advice*) in Firebase / beta / public-launch
+planning, and the **Growth / Beta Research Advisor** (`agents/growth-beta-research-advisor.md`)
+in beta-readiness and feedback planning. **Firebase implementation must not begin until this
+plan is committed/reviewed and Phase J.1 produces the step-by-step setup instructions.**
+
 ### Phase J — Firebase MVP implementation
 Implement the approved Phase I plan behind the existing `src/services/` seam: real
-Firebase Auth, Firestore persistence, security rules, real reporting/moderation data,
-and durable prayer counts — **without changing the screens or shared types**. Includes
-the automated service tests and Firebase security-rule (emulator) tests required before
-any external sharing. Config is handled through safe environment patterns; no secrets
-are committed.
+Firebase Auth (incl. **user-initiated account deletion — required before the real-tester
+beta**), Firestore persistence, security rules, real reporting/moderation data (with
+**duplicate-report prevention**), and durable prayer counts — **without changing the screens or
+shared types**. **Phase J.1 first produces step-by-step, owner-followable Firebase setup
+instructions (docs only) before any implementation begins.** Includes the automated service
+tests and Firebase security-rule (emulator) tests required before any external sharing. Config
+is handled through safe environment patterns; no secrets are committed. **Push notifications
+and AI verse matching are NOT part of Phase J** — they are documented future post-MVP phases
+(see below) unless explicitly reprioritized.
 
 ### Phase K — Internal beta distribution
 Make the app installable by real testers **without the developer's machine**: Expo/EAS
@@ -276,6 +295,19 @@ Engineer** owns the build, distribution, deployment checklist, and cost monitori
 **Backend Engineer** confirms data, contracts, and rule tests are ready.
 
 ### Future features (not part of the immediate Firebase migration)
-**Voice input** and **AI prayer assistance** are **future features**, not part of the
-immediate Firebase migration (Phases I–K) unless deliberately reprioritized. They are
-noted here so they are not assumed into the backend beta scope by default.
+**Voice input**, **AI prayer assistance**, **push notifications**, and **AI verse matching**
+are **future features**, not part of the immediate Firebase migration (Phases I–K) unless
+deliberately reprioritized. They are noted here so they are not assumed into the backend beta
+scope by default.
+
+- **Push notifications** (e.g., "someone prayed for your request") are a **desired future
+  post-MVP feature**, deferred because of their added complexity — OS permissions, device
+  tokens, a Cloud Function + Blaze + FCM backend trigger, iOS/Android push credentials,
+  per-user notification preferences, rate limiting/batching, and privacy-safe payloads (see
+  `firebase-mvp-plan.md` §9.5). Plan them **after the core Firebase MVP is stable**, with the
+  Growth / Beta Research Advisor assessing user value/risk and the Legal / Compliance Advisor
+  reviewing notification privacy.
+- **AI verse matching** may **later** help match a user's expressed need to a verse, but the
+  **verse text must always come from an approved (licensed/public-domain) source — never
+  AI-generated or hallucinated Scripture** (see `firebase-mvp-plan.md` §8). Any AI assistance
+  also carries an appropriate disclaimer (Legal / Compliance Advisor review).

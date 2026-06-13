@@ -139,6 +139,18 @@ beta distribution, repeatable setup & cost checklists). Both are **required revi
 from Firebase MVP planning (roadmap Phase I) onward**, joining in Plan Mode before any
 backend code is written.
 
+**Two advisory roles (added at owner request, before Firebase implementation):** **Legal /
+Compliance Advisor** (`agents/legal-compliance-advisor.md` — privacy policy/terms needs,
+account deletion, app-store/UGC compliance, sensitive-content & report risk, Bible-translation
+licensing & verse sourcing, AI-content disclaimers, monetization compliance, individual-vs-LLC
+account, data retention/deletion; **not a lawyer / not legal advice — recommends a qualified
+attorney**) and **Growth / Beta Research Advisor** (`agents/growth-beta-research-advisor.md` —
+tester selection, feedback goals, survey/interview questions, feature prioritization,
+onboarding clarity, positioning, and monetization *hypotheses* without pushing premature
+growth/monetization). The **Legal / Compliance Advisor participates in Firebase / beta /
+public-launch planning**; the **Growth / Beta Research Advisor participates in beta-readiness
+and feedback-planning** reviews. They advise rather than gate code.
+
 ## Technical approach
 
 React Native / **Expo SDK 54** · TypeScript · Expo Router · React Context + hooks ·
@@ -186,3 +198,17 @@ service contracts and error shape, and how the `prayerService` seam maps onto Fi
 Handle config with safe environment patterns (never hardcoded secrets). No Firebase
 project, EAS project, or secrets are created until that plan is approved. See
 `prototype-roadmap.md` Phases H–K and `implementation-plan.md` Section 11.
+
+**Status update — Phase I plan exists and owner decisions are captured.** The Firebase MVP
+plan (`docs/firebase-mvp-plan.md`) and its review
+(`docs/reviews/phase-i-firebase-mvp-plan-review.md`) are written and reflect the owner's
+decisions: **sign-in required to read the feed; account deletion required before the
+real-tester beta; manual Firebase console report review; prevent duplicate reports; no admin
+dashboard for the first beta; both iOS and Android; verses stay local/curated; AI verse
+matching is future-only with approved-source text (no AI-generated Scripture); avatars out of
+scope; push notifications deferred to a documented post-MVP phase; step-by-step Firebase setup
+instructions (J.1) before implementation; and individual-vs-LLC account is a before-public-
+launch decision (not a Firebase blocker).** Two advisory roles (Legal / Compliance, Growth /
+Beta Research) now participate in planning. **Firebase implementation must not begin until this
+Phase I plan is committed/reviewed and Phase J.1 produces the step-by-step Firebase setup
+instructions (docs only).** Still no Firebase project, EAS project, config, or secrets.

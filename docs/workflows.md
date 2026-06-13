@@ -124,7 +124,12 @@ creation, no secrets.
 - Confirm the local prototype is closed out (Phase H: polish, full visual QA, demo
   readiness) before opening backend planning.
 - Enter **Plan Mode**. Include the **Backend Engineer** and **Systems Admin / DevOps
-  Engineer** roles on the panel from this point onward.
+  Engineer** roles on the panel from this point onward, plus the two **advisory** roles —
+  **Legal / Compliance Advisor** (`agents/legal-compliance-advisor.md` — *not legal advice*)
+  for privacy/terms, account deletion, app-store/UGC compliance, Bible-licensing, AI-content
+  disclaimers, monetization compliance, and individual-vs-LLC account, and **Growth / Beta
+  Research Advisor** (`agents/growth-beta-research-advisor.md`) for tester selection, feedback
+  goals, and monetization hypotheses.
 - Plan, do not build: the Firestore data model and indexes; security-rule intent
   (auth-gated reads, owner-only writes, no `userId` spoofing, restricted `status`
   transitions); the typed service contracts and predictable error shape; the data
@@ -135,6 +140,11 @@ creation, no secrets.
 - Output a plan that a go/no-go review (including both new roles) can approve before any
   implementation begins. No Firebase project, EAS project, secrets, or config values are
   created in this workflow.
+- **Gate before implementation:** Firebase implementation must not begin until the Phase I
+  plan is **committed and reviewed**, and **Phase J.1 produces step-by-step, owner-followable
+  Firebase setup instructions (docs only)**. Beta distribution plans for **both iOS and
+  Android**; **account deletion is required before beta with real testers**; and **push
+  notifications are a documented future post-MVP phase** unless explicitly reprioritized.
 
 ---
 
@@ -172,10 +182,16 @@ committed.
   developer's machine** (TestFlight / Play internal-test link).
 - Run the **pre-beta checklist**: secret scan passes; Firebase security rules are
   deployed; config is injected from env (not hardcoded); monitoring/logging basics are
-  in place; cost/free-tier headroom is checked.
+  in place; cost/free-tier headroom is checked; **user-initiated account deletion works
+  (required before real testers)**; duplicate-report prevention verified.
 - **Backend Engineer** confirms data, contracts, and rule tests are ready for real
   testers.
 - Confirm Apple/Google developer accounts are in place only where actually required for
-  the chosen distribution path.
+  the chosen distribution path — the beta plans for **both iOS and Android** (owner
+  decision; Android-first sequencing is fine for cost).
+- **Advisory checks:** the **Legal / Compliance Advisor** confirms pre-beta items (privacy
+  policy, account deletion, report handling, public-domain/licensed Bible text) are addressed
+  (*not legal advice — recommends an attorney where appropriate*); the **Growth / Beta Research
+  Advisor** confirms tester selection and feedback goals are set.
 - Share the build only after the checklist passes; record readiness (and a go/no-go) per
   the Release Notes and Git Commit workflows above.
