@@ -267,7 +267,12 @@ prevent duplicate reports; no admin dashboard for the first beta; both iOS and A
 verses stay local/curated; AI verse matching is future-only with approved-source text (no
 AI-generated Scripture); avatars out of scope; push notifications deferred to a documented
 post-MVP phase; step-by-step Firebase setup instructions (J.1) before implementation; and
-individual-vs-LLC account is a before-public-launch decision (not a Firebase blocker).** Two
+individual-vs-LLC account is a before-public-launch decision (not a Firebase blocker, and
+individual ownership is confirmed fine for early setup).** **Firebase account & project
+(confirmed): use the existing Firebase/Google account but create a NEW project ("Praying For
+You") for the rebuilt mobile MVP — not the legacy `praying4you` project, which stays untouched —
+so the MVP starts on a clean backend** (see `firebase-mvp-plan.md` §18.1 #13 and
+`firebase-setup-checklist.md`). Two
 **advisory** roles now participate before implementation: the **Legal / Compliance Advisor**
 (`agents/legal-compliance-advisor.md` — *not legal advice*) in Firebase / beta / public-launch
 planning, and the **Growth / Beta Research Advisor** (`agents/growth-beta-research-advisor.md`)

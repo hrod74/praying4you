@@ -31,35 +31,63 @@ technical detail to be useful during implementation.
 
 ## 2. Pre-setup decisions (confirm before creating anything)
 
-Confirm each of these before any project is created. Current direction is noted where a decision
-already exists in the plan.
+Confirm each of these before any project is created. Most are now **confirmed by the owner**
+(marked CONFIRMED below); the remaining open items are noted.
 
-- [ ] **Firebase project name** chosen (for example, a clear internal name; can differ from the
-      app's display name).
-- [ ] **Google account that will own the Firebase project** chosen. Use an account the owner
-      controls long-term, not a throwaway.
-- [ ] **Individual vs. business/company ownership** considered. This affects liability, store
-      identity, payments/tax, and who owns the project. It is a **before-public-launch**
-      decision, not a blocker for Firebase planning. Flag for Legal / Compliance review.
-- [ ] **Both iOS and Android beta builds planned?** Currently **yes** (both platforms). Android
-      first is acceptable for cost sequencing.
-- [ ] **Account deletion required before inviting beta testers?** Currently **yes** (required).
-- [ ] **Email verification required for beta?** Currently **encouraged but not gating** for beta;
-      revisit before public launch.
-- [ ] **Does the feed require sign-in to read?** Currently **yes** (no public/anonymous feed
+**Firebase account and project (CONFIRMED).** The owner reviewed the Firebase console and already
+has an existing Firebase/Google account that owns the original app, including a legacy
+`praying4you` project.
+
+- [x] **Firebase account — CONFIRMED: use the existing Firebase/Google account** that already
+      owns the original app. No new account is needed.
+- [x] **Firebase project — CONFIRMED: create a NEW Firebase project** for the rebuilt Praying
+      For You mobile MVP. **Do not reuse the old `praying4you` legacy project** unless there is a
+      deliberate future migration/archive decision.
+- [x] **Firebase project display name — CONFIRMED: "Praying For You".**
+- [ ] **Firebase project ID** chosen at setup time. **TBD**, but should be clean and
+      mobile/MVP-oriented if available (for example `praying-for-you-mobile` or similar). Record
+      the final ID privately, never in this repo.
+- [x] **Owning Google account — CONFIRMED:** an account the owner controls long-term (the
+      existing account above).
+- [x] **Individual vs. business/company ownership — CONFIRMED for now: individual is okay** for
+      planning and early setup. **Revisit LLC/company ownership before public launch** (affects
+      liability, store identity, payments/tax, project ownership). Flag for Legal / Compliance
+      review.
+
+**Why a new project instead of reusing the legacy one (CONFIRMED rationale):** reusing the old
+`praying4you` Firebase project carries real risk — old security rules, old data, old config, old
+security assumptions, and the chance of accidentally breaking the legacy app. A new project gives
+the mobile MVP a **clean backend foundation** with rules, data, and config built fresh for this
+app. The old project is **left untouched for now**; any reuse, migration, or archive of it would
+be a separate, deliberate decision.
+
+**Other confirmed product/scope decisions:**
+
+- [x] **Both iOS and Android beta builds — CONFIRMED: yes** (both platforms). Android first is
+      acceptable for cost sequencing.
+- [x] **Account deletion before inviting beta testers — CONFIRMED: yes, required.**
+- [ ] **Email verification — CONFIRMED recommended;** decide later whether it **blocks beta
+      access** or is only required before wider/public launch (open sub-decision).
+- [x] **Feed access — CONFIRMED: sign-in required to read the prayer feed** (no public/anonymous
       read).
-- [ ] **Are push notifications out of scope for the first Firebase MVP?** Currently **yes**
-      (deferred to a documented post-MVP phase).
-- [ ] **Do verses remain local?** Currently **yes** (bundled, public-domain KJV, deterministic
-      by day).
-- [ ] **Are reports manually reviewed in the Firebase console for early beta?** Currently
-      **yes** (no admin dashboard for the first beta).
+- [x] **Push notifications — CONFIRMED: out of scope for the first Firebase MVP** (future phase).
+- [x] **Verses — CONFIRMED: keep local for the Firebase MVP** (bundled, public-domain KJV,
+      deterministic by day).
+- [x] **Reports — CONFIRMED: manual Firebase console review for early beta.**
+- [x] **Duplicate reports — CONFIRMED: prevent** duplicate reports by the same user on the same
+      request.
+- [x] **Admin dashboard — CONFIRMED: do not build for the first beta.**
 
 ---
 
 ## 3. Firebase project creation checklist (future tasks)
 
-- [ ] Create the Firebase project (owner action, following these steps).
+- [ ] **Sign in with the existing Firebase/Google account** (confirmed). Do not create a new
+      account.
+- [ ] Create a **new Firebase project** for the rebuilt MVP (confirmed). **Do not open or modify
+      the legacy `praying4you` project**; leave it untouched.
+- [ ] Set the **display name to "Praying For You"** (confirmed) and choose a clean,
+      mobile/MVP-oriented **project ID** (for example `praying-for-you-mobile` if available).
 - [ ] Choose the project name (from section 2).
 - [ ] **Disable Google Analytics initially**, or decide intentionally if Analytics is needed.
       Analytics is not required for the backend MVP and can be added at the beta-build phase.
@@ -343,17 +371,26 @@ on a Firestore query for uniqueness (racy and would expose emails).
 A short version for the owner, in everyday language.
 
 **What account do I need?**
-- A Google account you control long-term to own the Firebase project.
+- You already have it. Use your **existing Firebase/Google account** (the one that owns the
+  original app). No new account is needed.
+- Inside that account, create a **brand-new Firebase project** named **"Praying For You"** for
+  the rebuilt mobile MVP. **Leave your old `praying4you` project alone** for now.
 - Later, for the beta: an Apple Developer account (about $99/year) for iOS TestFlight and a
   Google Play Console account ($25 one-time) for Android internal testing. Pay each only when you
   actually distribute on that platform.
 
 **What decisions do I need to make?**
-- The project name and who owns it (you as an individual vs. a company; the company question can
-  wait until before public launch).
-- Confirm the direction already set: sign-in required to read the feed, account deletion before
-  beta, email verification encouraged but not required, push notifications out of scope for now,
-  verses stay local, reports reviewed manually in the console.
+- Most are already made (see below). The remaining small one is the **project ID** at creation
+  time (something clean like `praying-for-you-mobile` if it is available) and whether **email
+  verification blocks beta access** or is only required before wider/public launch.
+- Confirmed direction: existing account, new project (not the legacy one), display name "Praying
+  For You", individual ownership for now (revisit company/LLC before public launch), both iOS and
+  Android, sign-in required to read the feed, account deletion before beta, email verification
+  recommended, push notifications out of scope for now, verses stay local, reports reviewed
+  manually in the console, duplicate reports prevented, no admin dashboard for the first beta.
+- **Why a new project, not the old one:** the legacy project has old rules, old data, old config,
+  and old security assumptions, and reusing it risks accidentally breaking the original app. A
+  new project gives the rebuilt MVP a clean, safe starting point.
 
 **What should I not copy into ChatGPT or GitHub?**
 - Never paste or commit: API keys, the Firebase config block, database URLs, bucket names,

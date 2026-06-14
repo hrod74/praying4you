@@ -39,6 +39,7 @@ All of the above is local/mock today. No network, no accounts, no backend.
 
 ## 4. Proposed Firebase architecture
 
+- **Account and project (confirmed):** use the owner's existing Firebase/Google account, but create a **new Firebase project** ("Praying For You") for this rebuilt mobile MVP. The old legacy `praying4you` project is left untouched, so the MVP starts on a clean backend without inheriting old rules, data, config, or security assumptions.
 - **Firebase Authentication** (email/password) replaces the simulated profile.
 - **Cloud Firestore** holds the shared data.
 - **Firebase Security Rules** are the core safety layer: auth-gated reads, owner-only writes, no userId spoofing, email privacy, interaction dedupe. Validated with the **Firebase Emulator Suite** (rules unit tests).

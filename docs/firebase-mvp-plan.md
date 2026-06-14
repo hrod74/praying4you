@@ -77,7 +77,10 @@ possible future feature but verse **text** must come from approved sources (no A
 Scripture); avatars/profile photos out of scope; push notifications deferred to a documented
 later phase; **step-by-step Firebase setup instructions must be produced (J.1) before any
 implementation**; and individual-developer vs. LLC/company account is a decision **before
-public launch**, not a blocker for Firebase planning (see §15 and the cost doc).
+public launch**, not a blocker for Firebase planning (see §15 and the cost doc). **Firebase
+account & project: use the existing Firebase/Google account but create a NEW project (display
+name "Praying For You") for the rebuilt mobile MVP — not the legacy `praying4you` project, which
+stays untouched** (see §18.1 #13).
 
 **What must still happen before external beta distribution (after this plan + Phase J):**
 - Security rules written and **passing emulator tests** before any external user.
@@ -670,10 +673,18 @@ secrets, suitable for CI.
   ($25 one-time)** and **Apple Developer (~$99/yr)** since the beta targets both platforms; pay
   each only when that platform's installable beta is actually shared (cost doc §8). Android-
   first sequencing remains the cheaper starting point.
+- **Firebase account & project (owner decision — confirmed):** use the **existing Firebase/Google
+  account** (which already owns the original app and a legacy `praying4you` project) and create a
+  **new Firebase project** for the rebuilt mobile MVP (display name **"Praying For You"**, clean
+  mobile/MVP-oriented project ID at setup). The legacy project is **left untouched**; reusing it
+  is avoided because of old rules/data/config/security assumptions and accidental-breakage risk
+  (see §18.1 #13 and `firebase-setup-checklist.md`).
 - **Business entity — individual vs. LLC/company account (decide before public launch, NOT a
   Firebase-planning blocker — owner decision):** whether the developer/store/Firebase accounts
   are registered under an **individual developer** identity or an **LLC/company** affects
-  liability, store listing identity, payments/tax, and ownership of the project. This is a
+  liability, store listing identity, payments/tax, and ownership of the project. **The owner has
+  confirmed individual ownership is fine for planning and early setup;** the LLC/company question
+  is revisited before public launch. This is a
   **before-public-launch** decision; it does **not** block Firebase MVP planning or the
   internal beta. Flagged for the **Legal / Compliance Advisor** (and a real attorney/accountant
   where appropriate) — see §16.5 and the cost doc.
@@ -858,7 +869,18 @@ plan (sections noted).
     must be produced (J.1) BEFORE any implementation** (§16, §17 J.1).
 12. **Business entity — DECIDED framing: individual-developer vs. LLC/company account is a
     decision to make BEFORE public launch, NOT a blocker for Firebase planning** (§15, §16.5,
-    cost doc).
+    cost doc). The owner has **confirmed individual ownership is okay for planning and early
+    setup**, with the LLC/company question revisited before public launch.
+13. **Firebase account & project — DECIDED: use the EXISTING Firebase/Google account, but create
+    a NEW Firebase project for the rebuilt mobile MVP.** The owner already has a Firebase account
+    that owns the original app (including a legacy `praying4you` project). The rebuilt MVP gets a
+    **new project** (display name **"Praying For You"**, project ID TBD at setup, clean and
+    mobile/MVP-oriented such as `praying-for-you-mobile`), **not** the legacy project. **Do not
+    reuse the old `praying4you` project** unless a deliberate future migration/archive is decided;
+    leave it untouched for now. Rationale: reusing the legacy project risks old rules, old data,
+    old config, old security assumptions, and accidental breakage of the original app; a new
+    project gives the mobile MVP a **clean backend foundation**. (See `firebase-setup-checklist.md`
+    §2–§3 and the cost doc.)
 
 ### 18.2 Remaining questions (recommended defaults; resolve during Phase J)
 

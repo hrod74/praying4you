@@ -149,6 +149,10 @@ creation, no secrets.
   `firebase-setup-checklist.md` (pre-setup decisions, project/auth/Firestore/rules/testing
   task lists, secrets handling, and the before-implementation and before-beta gates). It
   creates nothing and holds no secrets.
+- **Account & project decision (confirmed):** the rebuilt mobile MVP uses the owner's
+  **existing Firebase/Google account** but a **new Firebase project** ("Praying For You"), not
+  the legacy `praying4you` project (which stays untouched), so the MVP starts on a clean
+  backend (`firebase-mvp-plan.md` §18.1 #13, `firebase-setup-checklist.md` §2–§3).
 
 ---
 
