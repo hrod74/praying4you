@@ -145,6 +145,10 @@ creation, no secrets.
   Firebase setup instructions (docs only)**. Beta distribution plans for **both iOS and
   Android**; **account deletion is required before beta with real testers**; and **push
   notifications are a documented future post-MVP phase** unless explicitly reprioritized.
+- The owner-followable setup steps and go/no-go gates live in
+  `firebase-setup-checklist.md` (pre-setup decisions, project/auth/Firestore/rules/testing
+  task lists, secrets handling, and the before-implementation and before-beta gates). It
+  creates nothing and holds no secrets.
 
 ---
 

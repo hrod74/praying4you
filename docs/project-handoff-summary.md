@@ -213,10 +213,13 @@ Beta Research) now participate in planning. **Firebase implementation must not b
 Phase I plan is committed/reviewed and Phase J.1 produces the step-by-step Firebase setup
 instructions (docs only).** Still no Firebase project, EAS project, config, or secrets.
 
-**Supporting planning docs (Phase I.1, docs only).** Three reviewer- and beta-facing docs now
-support the Firebase plan: `docs/firebase-review-brief.md` (a concise brief for developer
-friends and CTO-level reviewers), `docs/beta-feedback-plan.md` (how to collect useful feedback
-once a real-tester beta exists, Growth / Beta Research lens), and `docs/privacy-safety-copy.md`
+**Supporting planning docs (Phase I.1, docs only).** Four reviewer-, beta-, and setup-facing
+docs now support the Firebase plan: `docs/firebase-review-brief.md` (a concise brief for
+developer friends and CTO-level reviewers), `docs/beta-feedback-plan.md` (how to collect useful
+feedback once a real-tester beta exists, Growth / Beta Research lens), `docs/privacy-safety-copy.md`
 (plain-language privacy and safety product copy with an appended Legal / Compliance Advisor
 review — product copy only, not a legal policy; full public-launch policies need attorney
-review). No code, Firebase project, EAS project, config, or secrets were added.
+review), and `docs/firebase-setup-checklist.md` (a step-by-step, owner-followable Firebase setup
+checklist with pre-setup decisions, per-area task lists, go/no-go gates, and a plain-English
+owner section — creates nothing and holds no secrets). No code, Firebase project, EAS project,
+config, or secrets were added.
