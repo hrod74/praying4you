@@ -153,6 +153,10 @@ creation, no secrets.
   **existing Firebase/Google account** but a **new Firebase project** ("Praying For You"), not
   the legacy `praying4you` project (which stays untouched), so the MVP starts on a clean
   backend (`firebase-mvp-plan.md` §18.1 #13, `firebase-setup-checklist.md` §2–§3).
+- **Concrete owner instructions (J.1, docs only):** `firebase-setup-instructions.md` is the
+  step-by-step, non-developer-friendly guide the owner follows to create the new project later
+  (console steps, safety rules, stop points, owner and developer-handoff checklists). It creates
+  nothing and holds no secrets; implementation (J.2+) begins only after its go/no-go gate.
 
 ---
 

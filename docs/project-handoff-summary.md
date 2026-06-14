@@ -230,3 +230,12 @@ review), and `docs/firebase-setup-checklist.md` (a step-by-step, owner-followabl
 checklist with pre-setup decisions, per-area task lists, go/no-go gates, and a plain-English
 owner section — creates nothing and holds no secrets). No code, Firebase project, EAS project,
 config, or secrets were added.
+
+**Phase J.1 (docs only) — concrete setup instructions.** `docs/firebase-setup-instructions.md`
+gives the owner concrete, step-by-step, non-developer-friendly instructions to create the **new**
+Firebase project later (use the existing account, new project "Praying For You", not the legacy
+project), with safety rules, per-area console steps (project creation, Auth, Firestore, rules,
+emulator, platform registration, config/secrets handling, account deletion, reports, beta path,
+cost), explicit **stop points**, an owner checklist, and a developer-handoff checklist. It
+creates nothing, adds no config, and holds no secrets. **Firebase implementation (J.2+) still has
+not begun.**
