@@ -212,3 +212,11 @@ launch decision (not a Firebase blocker).** Two advisory roles (Legal / Complian
 Beta Research) now participate in planning. **Firebase implementation must not begin until this
 Phase I plan is committed/reviewed and Phase J.1 produces the step-by-step Firebase setup
 instructions (docs only).** Still no Firebase project, EAS project, config, or secrets.
+
+**Supporting planning docs (Phase I.1, docs only).** Three reviewer- and beta-facing docs now
+support the Firebase plan: `docs/firebase-review-brief.md` (a concise brief for developer
+friends and CTO-level reviewers), `docs/beta-feedback-plan.md` (how to collect useful feedback
+once a real-tester beta exists, Growth / Beta Research lens), and `docs/privacy-safety-copy.md`
+(plain-language privacy and safety product copy with an appended Legal / Compliance Advisor
+review — product copy only, not a legal policy; full public-launch policies need attorney
+review). No code, Firebase project, EAS project, config, or secrets were added.
