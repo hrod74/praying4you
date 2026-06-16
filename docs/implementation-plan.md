@@ -444,6 +444,10 @@ One service per concern, mapping the prototype's contexts/services onto Firebase
 
 - **Auth service** — registration, sign in/out, session persistence, email-in-use
   handling (`auth/email-already-in-use`), password reset, and **profile/email editing**.
+  Use Firebase Auth **"by the book"** — **do not custom-build auth logic**; lean on the Auth
+  SDK flows, which already cover credential storage, sessions, email uniqueness, reset, and
+  verification (CTO feedback incorporated). **Email/password is the MVP method; anonymous
+  Firebase auth is a future option only, not built now.**
   Replaces the simulated `AuthContext` profile (which already exposes `updateProfile` for
   local name/email edits) with real Firebase Auth accounts. An email change must run through
   Auth (not a plain document write): reject changing to an email already attached to another
@@ -455,8 +459,13 @@ One service per concern, mapping the prototype's contexts/services onto Firebase
   and paginated feed reads (`status == "active"`, newest first).
 - **Prayer interaction service** — record "I prayed for this" exactly once per
   `{userId}_{requestId}`; atomic, non-inflatable `prayerCount`; no self-prayer.
+  **Aggregate-only to other users (CTO feedback incorporated):** other users see the
+  `prayerCount` only — never who prayed; individual interaction records are owner-private and
+  never exposed to other users.
 - **Report service** — create a report on another user's request; block self-reports;
-  store `reports` records; increment `reportCount`.
+  **prevent duplicate reports by the same user on the same request**; store `reports` records
+  for **manual Firebase console review**; increment `reportCount`. Kept lightweight for MVP:
+  **no admin dashboard**; optional alerting is a later enhancement (CTO feedback incorporated).
 - **Verse service** — serve the daily verse from a single low-cost read (curated
   `verses` collection / `config/verseOfTheDay` doc), replacing the bundled local verses.
 
@@ -466,6 +475,10 @@ One service per concern, mapping the prototype's contexts/services onto Firebase
   `src/models/types.ts` — no untyped blobs.
 - The **server is the source of truth** for `userId` (`request.auth.uid`), server
   timestamps, and atomic counters; these are never trusted from the client payload.
+- **Public data minimization (CTO feedback incorporated):** feed/detail reads return **only
+  what the UX needs** and **avoid exposing raw user IDs or unnecessary owner identifiers** to
+  other users (so different prayers cannot be linked to the same user). Ownership checks compare
+  against the caller's own UID without leaking the owner's identifier in the payload.
 - Each method documents what it reads/writes, what it validates before a write, what it
   returns on success, and the **finite, predictable set of error outcomes** it can
   return (mapped to calm UI messaging, not raw exceptions).
@@ -487,6 +500,12 @@ Before the app is shared with external beta testers, automated tests must cover:
   tested with the **Firebase emulator suite** — auth-gated reads, owner-only writes,
   no `userId` spoofing, restricted `status` transitions — before any external tester
   receives a build.
+- **Alpha testing before external beta (CTO feedback incorporated):** after automated tests
+  pass, run a controlled alpha with **3 to 4 known test accounts** and manually validate the
+  end-to-end scenarios (requester/owner, another user praying, reporting, anonymous and named
+  requests, edit/remove own request, blocked edit/remove on others', duplicate prayed
+  interaction blocked, duplicate report blocked, aggregate-only counts, no identifier leaks)
+  before inviting external testers. See `beta-feedback-plan.md` §1.5.
 
 ### Plan Mode before implementation
 

@@ -31,8 +31,16 @@ accessibility themes are never paywalled; monetization never interrupts prayer m
 (Phases A–H.3). Everything lives on one device: a simulated profile and prayer data in
 AsyncStorage, no real accounts, no shared data, no moderation backend. To share with real
 testers, the app needs real authentication, durable shared storage, and enforced security.
-This plan defines that move without changing the product's calm, private, prayer-journal
-character.
+This plan defines that move without changing the product's calm, reverent character.
+
+> **Positioning / privacy note (CTO feedback incorporated).** This is **not** a fully
+> private, single-user prayer journal. The prayer feed is **shared**: prayer requests are
+> visible to other signed-in users. The app is calm and trustworthy, but we deliberately
+> avoid any "private prayer-journal app" wording that could imply the feed is private to
+> the author. Preferred positioning: *"A calm prayer app where you can share requests, post
+> anonymously, pray for others, and receive encouragement."* What stays private is the
+> user's **email** and the **identity behind an anonymous post** (see §3 and
+> `privacy-safety-copy.md`).
 
 **What is local today (to be replaced):**
 - Simulated auth: a single local profile (`AuthContext`, keys `p4u.profile` / `p4u.signedIn`,
@@ -117,9 +125,23 @@ Messaging (push), Remote Config, App Check (consider later for abuse hardening),
 
 ## 3. Authentication Plan
 
+**Principle — use Firebase Auth "by the book" (CTO feedback incorporated).** Lean on Firebase
+Authentication as designed and do **not** custom-build auth logic. Firebase Auth already covers
+a large set of security concerns (credential storage and hashing, session/token management,
+email uniqueness, password reset, email verification). The app's job is to call the Auth SDK
+flows correctly and let Auth be the source of truth — not to reimplement any of it.
+
 **Method (MVP):** **Email/password** via Firebase Authentication. Rationale: lowest setup,
 no third-party provider configuration, aligns with the existing name+email profile and PRD.
 (Apple/Google sign-in can be added later; not required for MVP.)
+
+**Anonymous Firebase auth (future option, not MVP — CTO feedback incorporated).** Firebase
+supports **anonymous accounts** if the app later wants to let people in without forcing
+username/password. This is documented as a **future option only**; the **first MVP path stays
+email/password**. Note this is distinct from the app's existing "post as Anonymous" display
+feature: "post as Anonymous" only hides the display name from other users and still requires a
+signed-in (email/password) account, whereas Firebase **anonymous auth** would be a different,
+future sign-in method. Anonymous auth is **not implemented** in this phase.
 
 **Mapping the current local flow:**
 - `AuthContext.createProfile` → **sign up** (create Auth user) + create the `users/{uid}`
@@ -221,6 +243,14 @@ Firestore auto-IDs except `prayerInteractions` (deterministic composite id).
 - **Public vs private:** body, category, createdAt, prayerCount, status, and the **display
   name or "Anonymous"** are visible to authenticated users. `userId` is present for
   moderation/ownership but is not shown in the UI. **No email field exists here.**
+- **Public data minimization (CTO feedback incorporated):** feed and detail responses should
+  return **only what the user experience needs** and must **avoid exposing raw user IDs or
+  unnecessary owner identifiers** to other users. The raw `userId` is kept for
+  ownership/moderation but should not be sent to or rendered for other users — otherwise people
+  could link different prayers back to the same user. Ownership checks ("is this mine?") should
+  be handled safely (compare against the caller's own `request.auth.uid`) **without leaking the
+  owner's identifier** in the payload. When a request is anonymous, no owner identifier (raw
+  `userId` or otherwise) should be exposed that would let other users de-anonymize it.
 - **Indexes:** composite index on `status (==) + createdAt (desc)` for the feed; optional
   `userId + createdAt` for "My prayer requests"; optional `category + createdAt` for future
   filtering.
@@ -234,9 +264,15 @@ Firestore auto-IDs except `prayerInteractions` (deterministic composite id).
 - **Owner field:** `userId` (== `request.auth.uid`).
 - **Public vs private:** an interaction doc is private to its owner (a user may read/write
   only their own). Aggregate effect is the denormalized `prayerCount` on the request.
+- **Aggregate-only to other users (CTO feedback incorporated):** other users see the
+  **aggregate prayer count only** — never a list of *who* prayed for a request. Individual
+  `prayerInteractions` records are **not exposed to other users** and are **not publicly
+  listable**; the only cross-user signal is the numeric `prayerCount`. Duplicate prevention
+  (one interaction per user/request via the deterministic id) is unchanged.
 - **Indexes:** none required for MVP (looked up by deterministic id; "Prayers I've prayed
   for" can query `userId ==` with `prayedAt desc`, which needs a simple index).
-- **Privacy:** reveals who prayed for what; kept owner-private (not publicly listable).
+- **Privacy:** reveals who prayed for what; kept owner-private (not publicly listable). No
+  feature surfaces "who prayed" to anyone other than the interaction's own owner.
 
 ### `reports/{reportId}`
 - **Purpose:** a report filed against a request; manual moderation input.

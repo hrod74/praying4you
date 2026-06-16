@@ -9,7 +9,21 @@
 
 **Tone:** calm, plain, sincere, faith-aware without being heavy-handed, not corporate, not legalistic in app-facing copy. No social-media wording.
 
+**Positioning (CTO feedback incorporated):** describe the app as *"a calm prayer app where you can share requests, post anonymously, pray for others, and receive encouragement."* Do **not** call it a "private prayer-journal app" or otherwise imply the feed is private to the author — the prayer feed is **shared** with other signed-in users. What is private is the user's **email** and the **identity behind an anonymous post**. Communicate calm and trust without overstating privacy.
+
 ---
+
+## 0. What others can see (feed visibility)
+
+> Praying For You has a **shared** prayer feed. When you post a prayer request, other signed-in people can see it and pray for it — that is the point of the app.
+>
+> Other people can see your request text, its category, when it was posted, and your display name (or "Anonymous"). They can also see how many people prayed for it.
+>
+> Other people **cannot** see your email, and they **cannot** see a list of who prayed for a request. The prayer count is a number only — it never shows names.
+>
+> If you would rather not show your name, you can post as Anonymous (see below).
+
+*(Design/data note: feed and detail views show only what the experience needs. Raw account identifiers — such as the internal user ID — are never shown to other users, so different prayers cannot be linked back to the same person. Prayer interactions are aggregate-only to other users: others see the prayer count, never the individual records of who prayed.)*
 
 ## 1. Email privacy
 

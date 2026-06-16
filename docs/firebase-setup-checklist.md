@@ -103,10 +103,16 @@ be a separate, deliberate decision.
 
 ## 4. Firebase Authentication setup checklist
 
+- [ ] Use Firebase Auth **"by the book"** — rely on the Auth SDK flows, **do not custom-build
+      auth logic** (Auth already covers credential storage, sessions, email uniqueness, reset,
+      and verification).
 - [ ] Enable Firebase Authentication.
 - [ ] Choose **email/password** auth for the MVP (unless changed). Apple/Google sign-in can be
       added later.
 - [ ] Configure the email/password sign-in method.
+- [ ] Note **anonymous Firebase auth as a future option only** — do **not** enable it for the
+      MVP. (Distinct from the app's "post as Anonymous" display feature, which still requires an
+      email/password account.)
 - [ ] Plan **email verification behavior** (send on sign up; encourage but do not gate sign-in
       for beta).
 - [ ] Define **sign-up error handling** with calm, non-leaky messages.
@@ -142,6 +148,13 @@ on a Firestore query for uniqueness (racy and would expose emails).
   - [ ] `appConfig` / `themes` (later if needed; not for MVP)
 - [ ] Confirm **public vs. private fields** per collection (email private; `userId` stored but not
       shown; no email in any shared doc).
+- [ ] Confirm **public data minimization**: feed/detail responses return **only what the UX needs**
+      and **avoid exposing raw user IDs or unnecessary owner identifiers** to other users (so
+      different prayers cannot be linked back to the same user); ownership checks compare against
+      the caller's own uid without leaking the owner's id.
+- [ ] Confirm **prayer interactions are aggregate-only to other users**: others see the
+      `prayerCount` only — **never who prayed**; individual `prayerInteractions` records are never
+      exposed to other users.
 - [ ] Confirm the **timestamp strategy** (Firestore server timestamps for `createdAt` /
       `updatedAt`).
 - [ ] Confirm **status fields for soft remove** (`status: active | flagged | removed`,
@@ -352,6 +365,23 @@ on a Firestore query for uniqueness (racy and would expose emails).
 ---
 
 ## 17. Go/no-go checklist before external beta
+
+**Alpha testing first (CTO feedback incorporated).** Before inviting external beta testers, run
+a controlled **alpha** with **3 to 4 known test accounts** the owner controls, then begin with
+people the owner knows.
+
+- [ ] Create **3 to 4 controlled test accounts**.
+- [ ] Validate **owner / requester** scenario (post, see own request).
+- [ ] Validate **another signed-in user prays** for a request (count increments; aggregate-only,
+      no "who prayed" shown to others).
+- [ ] Validate a **user reporting** a request (report stored; appears in console).
+- [ ] Validate an **anonymous request** (display name hidden from others; still owned in backend).
+- [ ] Validate a **named request**.
+- [ ] Validate **edit/remove own request** works.
+- [ ] Validate **edit/remove on others' requests is blocked**.
+- [ ] Validate **duplicate prayed interaction is blocked**.
+- [ ] Validate **duplicate report is blocked**.
+- [ ] Confirm **no raw user IDs / owner identifiers leak** in feed/detail to other users.
 
 - [ ] Auth works (sign up/in/out, edit name/email, email-in-use handling).
 - [ ] Account deletion works (verified).

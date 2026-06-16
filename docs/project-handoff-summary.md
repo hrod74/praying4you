@@ -239,3 +239,23 @@ emulator, platform registration, config/secrets handling, account deletion, repo
 cost), explicit **stop points**, an owner checklist, and a developer-handoff checklist. It
 creates nothing, adds no config, and holds no secrets. **Firebase implementation (J.2+) still has
 not begun.**
+
+**Phase I.1d (docs only) — CTO Firebase feedback incorporated.** Backend/Firebase feedback from a
+CTO friend was folded into the planning docs (no implementation): **use Firebase Auth "by the
+book"** (no custom auth logic), keep **email/password for MVP**, and document **anonymous Firebase
+auth as a future option** (distinct from the "post as Anonymous" display feature); keep the
+**fresh Firebase project**; keep reporting **lightweight** (store reports for **manual console
+review**, **prevent duplicate reports**, **no admin dashboard**, optional alerting later); make
+prayer interactions **aggregate-only to other users** (**prayer counts only, never who prayed**,
+individual interaction records not exposed to others); add **public data minimization** (feed/
+detail must not expose raw user IDs or unnecessary owner identifiers); **revise the misleading
+"private prayer-journal app" positioning** — the feed is **shared** with signed-in users, while
+email and the identity behind an anonymous post stay private, positioned as *"a calm prayer app
+where you can share requests, post anonymously, pray for others, and receive encouragement"*; and
+add an **alpha-testing step with 3–4 controlled accounts** (validate owner, non-owner praying,
+reporter, and prayed-interaction scenarios) before broader beta with people the owner knows.
+Updated `firebase-mvp-plan.md`, `firebase-review-brief.md`, `firebase-setup-checklist.md`,
+`firebase-setup-instructions.md`, `privacy-safety-copy.md`, `beta-feedback-plan.md`,
+`product-requirements.md`, `implementation-plan.md`, `prototype-roadmap.md`, `workflows.md`,
+`reviews/phase-i-firebase-mvp-plan-review.md`, and this summary. No code, Firebase project, EAS
+project, config, or secrets were added.

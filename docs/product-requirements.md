@@ -17,6 +17,8 @@ This rebuild targets iOS and Android as a React Native mobile app built with Exp
 
 The mobile app will support email-based accounts, public and anonymous posting, a community prayer feed, prayer interaction tracking, a Verse of the Day feature, and basic content reporting. It will be built with a clean Firebase Firestore backend, strict security rules, and an architecture that can support ongoing improvements without a rewrite.
 
+**Positioning (CTO feedback incorporated).** Describe the product as *"a calm prayer app where you can share requests, post anonymously, pray for others, and receive encouragement."* The prayer feed is **shared** with other signed-in users; avoid any "private prayer-journal app" wording that could imply the feed is private to the author. What stays private is the user's **email** and the **identity behind an anonymous post** — not the requests themselves, which are visible to other signed-in users.
+
 ---
 
 ## 2. Problem Statement
@@ -164,7 +166,10 @@ As a user who forgot their password, I want to request a password reset email, s
 ## 8. Functional Requirements
 
 ### Authentication
-- Email and password registration using Firebase Authentication.
+- **Use Firebase Auth "by the book" (CTO feedback incorporated):** rely on Firebase Authentication's built-in flows and **do not custom-build auth logic**. Firebase Auth already covers credential storage, session management, email uniqueness, password reset, and verification, which removes a large class of security concerns.
+- Email and password registration using Firebase Authentication. **Email/password is the MVP method.**
+- **Duplicate email handling relies on Firebase Auth** — Auth owns email uniqueness and returns `auth/email-already-in-use`; do not enforce uniqueness with a Firestore query (racy and would expose emails).
+- **Anonymous Firebase auth is a documented future option, not the first MVP path.** It is distinct from the app's "post as Anonymous" display feature (which hides the display name but still requires a signed-in email/password account). Anonymous auth is not implemented in the MVP.
 - Email verification sent on account creation. The app should communicate that verification improves account recovery.
 - Sign in with email and password. Session persists across app restarts using Firebase Auth's built-in persistence.
 - Password reset email triggered from the sign-in screen.
@@ -210,6 +215,7 @@ As a user who forgot their password, I want to request a password reset email, s
 - Before writing, the app checks whether a `prayerInteractions` record already exists for the current user and this request. If it does, the button is disabled and no write occurs.
 - The prayer count in the UI updates immediately (optimistic update), with error handling to revert if the write fails.
 - A user cannot pray for their own request. The button is hidden or disabled on posts the current user authored.
+- **Aggregate-only to other users (CTO feedback incorporated):** other users see the **aggregate `prayerCount` only** — never a list of *who* prayed. Individual `prayerInteractions` records are **not exposed to other users** (a user can read only their own). Duplicate prevention (one interaction per user/request) is unchanged.
 
 ### Verse of the Day
 - A single Bible verse is displayed daily to all users.
@@ -267,8 +273,11 @@ The user-facing language in the submission form should be clear: tapping "Post a
 ### No Public Email Display
 User email addresses are stored in Firebase Authentication and in the `users` Firestore document. They are never shown in the feed, on prayer cards, on the detail screen, in the settings screen display, or in any other public-facing location. Email is used only for authentication and account recovery.
 
+### Public Data Minimization (CTO feedback incorporated)
+Feed and detail responses must return **only what the user experience needs** and must **avoid exposing raw user IDs or unnecessary owner identifiers** to other users. The `userId` is retained on `prayerRequests` for ownership and moderation, but it is **not shown to or sent to other users** — otherwise people could link different prayers back to the same user (de-anonymizing or profiling them). Ownership checks ("is this my request?") are handled safely by comparing against the caller's own authenticated UID, **without leaking the owner's identifier** in the payload. For anonymous requests, no owner identifier may be exposed that would let other users de-anonymize the author.
+
 ### Report Content Flow
-Any authenticated user may report a prayer request. The flow is: tap report option → select a reason → optionally add a note → confirm. A `reports` document is created and the request's `reportCount` is incremented. The reporter receives a brief confirmation message. Reports are reviewed manually in MVP.
+Any authenticated user may report a prayer request they did not author. The flow is: tap report option → select a reason → optionally add a note → confirm. A `reports` document is created and the request's `reportCount` is incremented. The reporter receives a brief confirmation message. **Reporting is intentionally lightweight for MVP:** reports are simply stored in Firestore for **manual Firebase console review**, a **duplicate report by the same user on the same request is prevented**, there is **no admin dashboard** in the first beta, and **optional alerting is a later enhancement**. (Backend specifics, including the deterministic `reports/{uid}_{requestId}` id used for duplicate prevention, are in `firebase-mvp-plan.md` §7.)
 
 ### Content Removal
 A moderator can change a prayer request's `status` field to "removed" in the Firebase console. Removed requests are excluded from the public feed query (`status == "active"` filter). Removed requests are not deleted from Firestore, preserving a record for moderation purposes.
@@ -315,6 +324,8 @@ One document per unique user-request prayer interaction. Document ID convention:
 Fields: `userId` (string), `requestId` (string), `prayedAt` (timestamp).
 
 The existence of this document is the source of truth for whether a given user has prayed for a given request. The `prayerCount` on the parent `prayerRequests` document is a denormalized integer maintained by `FieldValue.increment()` for efficient display.
+
+**Aggregate-only to other users (CTO feedback incorporated):** individual `prayerInteractions` documents are owner-private — a user may read only their own. Other users see the aggregate `prayerCount` only and **never a list of who prayed** for a request. These records must not be publicly listable or exposed to other users.
 
 ### `reports`
 One document per report filed, stored at `reports/{reportId}` with an auto-generated ID.
@@ -484,6 +495,9 @@ Implement the report content flow (reason picker, note field, Firestore write). 
 
 ### Phase 4 — Ads and Release Readiness
 Confirm AdMob content policy eligibility for the app category. If approved, integrate `react-native-google-mobile-ads` with a banner ad unit in the feed. Enforce the placement rules from Section 13. Write or finalize the Privacy Policy and Terms of Service. Link them from the settings screen. Prepare App Store and Google Play assets: icon, screenshots for multiple device sizes, app description, keywords, age rating. Review all screens against App Store Human Interface Guidelines and Google Play Material Design expectations.
+
+### Phase 4.5 — Alpha Testing (controlled accounts before external beta) (CTO feedback incorporated)
+Before inviting any external testers, run a controlled **alpha** with **3 to 4 known test accounts** the owner controls. Validate the core scenarios across those accounts: requester/account owner, another signed-in user who prays for a request, a user reporting a request, an anonymous request, a named request, edit/remove own request, blocked edit/remove on others' requests, duplicate prayed interaction blocked, and duplicate report blocked. Confirm aggregate-only prayer counts (no "who prayed" shown to others) and that no raw user IDs or owner identifiers leak in feed/detail data. Then begin with people the owner knows before any broader beta. (Scenario detail in `beta-feedback-plan.md` §1.5.)
 
 ### Phase 5 — App Store and Google Play Submission
 Distribute a TestFlight beta to a small group of real users. Gather feedback on usability, tone, and performance. Fix critical issues from beta. Submit to Apple App Store review. Submit to Google Play review. Address any review feedback. Upon approval, release to public on both platforms. Monitor analytics and crash reporting in the first week.

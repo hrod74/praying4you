@@ -192,6 +192,12 @@ committed.
 - **Systems Admin / DevOps Engineer** owns this workflow: confirm the build path
   (local vs. EAS cloud), SDK/version, and that testers can install **without the
   developer's machine** (TestFlight / Play internal-test link).
+- Run a controlled **alpha first**: set up **3 to 4 known test accounts** and validate the
+  core scenarios (requester/owner, another signed-in user praying, reporting, anonymous and
+  named requests, edit/remove own request, blocked edit/remove on others', duplicate prayed
+  interaction blocked, duplicate report blocked, **aggregate-only prayer counts — never "who
+  prayed"**, and **no raw user IDs / owner identifiers leaking** in feed/detail) before any
+  external testers; then start with people the owner knows (`beta-feedback-plan.md` §1.5).
 - Run the **pre-beta checklist**: secret scan passes; Firebase security rules are
   deployed; config is injected from env (not hardcoded); monitoring/logging basics are
   in place; cost/free-tier headroom is checked; **user-initiated account deletion works

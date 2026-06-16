@@ -214,6 +214,42 @@ go/no-go reviews, with the Backend Engineer and Systems Admin / DevOps Engineer 
 planning), and only after security rules pass the emulator suite (J.6) — and account deletion
 is verified — before any external tester.
 
+## 7a. Addendum — CTO Firebase feedback incorporated (Phase I.1d, docs only)
+
+After this review, the owner received backend/Firebase feedback from a CTO friend, which was
+folded into the planning docs (planning only — no implementation). Incorporated:
+
+- **Auth by the book.** Use Firebase Authentication as designed; **do not custom-build auth
+  logic** (Auth covers credential storage, sessions, email uniqueness, reset, verification).
+  **Email/password remains the MVP method.** **Anonymous Firebase auth is documented as a future
+  option only**, distinct from the app's "post as Anonymous" display feature. Duplicate email
+  handling continues to rely on Firebase Auth (`auth/email-already-in-use`), not a Firestore
+  query.
+- **Fresh Firebase project** recommendation kept (new project, legacy `praying4you` untouched).
+- **Reporting stays lightweight for MVP.** Store reports in Firestore for **manual console
+  review**, **prevent duplicate reports** by the same user/request, **no admin dashboard** in the
+  first beta; optional alerting is a later enhancement.
+- **Prayer interactions are aggregate-only to other users.** Others see **prayer counts only —
+  never who prayed**; individual `prayerInteractions` records are not exposed to other users.
+  Duplicate prevention by user/request is unchanged.
+- **Public data minimization.** Feed/detail responses must **avoid exposing raw user IDs or
+  unnecessary owner identifiers**, returning only what the UX needs; ownership checks compare
+  against the caller's own UID without leaking the owner's identifier.
+- **Privacy/positioning language revised.** Remove misleading "private prayer-journal app"
+  wording — the prayer feed is **shared** and visible to signed-in users. Email is private, and
+  "Anonymous" hides the display name from other users without making the request unowned in the
+  backend. Preferred positioning: *"a calm prayer app where you can share requests, post
+  anonymously, pray for others, and receive encouragement."*
+- **Alpha testing before beta.** Add an alpha phase with **3 to 4 controlled test accounts** to
+  validate owner, non-owner-praying, reporter, anonymous/named, edit/remove, and duplicate-block
+  scenarios, starting with people the owner knows before broader beta.
+
+Docs updated in this addendum: `firebase-mvp-plan.md`, `firebase-review-brief.md`,
+`firebase-setup-checklist.md`, `firebase-setup-instructions.md`, `privacy-safety-copy.md`,
+`beta-feedback-plan.md`, `product-requirements.md`, `implementation-plan.md`,
+`prototype-roadmap.md`, `workflows.md`, `project-handoff-summary.md`, and this review. No code,
+Firebase project, EAS project, config, dependencies, or secrets were added.
+
 ## 8. Statement of No Implementation
 
 This phase produced **documentation only**. **No application code was written or changed; no

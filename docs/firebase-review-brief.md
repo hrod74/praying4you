@@ -8,7 +8,9 @@
 
 ## 1. App overview
 
-Praying For You is a calm, private prayer-journal app. People post a prayer request, others can read the shared feed and tap "I prayed for this," and anyone can report content that does not belong. It is intentionally not a social network: no comments, no DMs, no follower counts.
+Praying For You is *"a calm prayer app where you can share requests, post anonymously, pray for others, and receive encouragement."* People post a prayer request, others can read the **shared** feed and tap "I prayed for this," and anyone can report content that does not belong. It is intentionally not a social network: no comments, no DMs, no follower counts.
+
+**Privacy framing (CTO feedback incorporated):** this is **not** a fully private, single-user prayer journal — the feed is **shared** and prayer requests are visible to other signed-in users. We avoid any "private prayer-journal app" wording that could mislead. What stays private is the user's **email** and the **identity behind an anonymous post**.
 
 The current prototype is local only. Everything (profile, feed, interactions, reports) lives on one device in AsyncStorage behind a service seam. There are no real accounts and no shared data. To put it in front of real testers it needs real authentication, durable shared storage, and enforced security rules. This brief covers that move to a Firebase backend.
 
@@ -40,7 +42,7 @@ All of the above is local/mock today. No network, no accounts, no backend.
 ## 4. Proposed Firebase architecture
 
 - **Account and project (confirmed):** use the owner's existing Firebase/Google account, but create a **new Firebase project** ("Praying For You") for this rebuilt mobile MVP. The old legacy `praying4you` project is left untouched, so the MVP starts on a clean backend without inheriting old rules, data, config, or security assumptions.
-- **Firebase Authentication** (email/password) replaces the simulated profile.
+- **Firebase Authentication** (email/password) replaces the simulated profile. We use Firebase Auth **by the book** — no custom auth logic — because it already covers credential storage, sessions, email uniqueness, reset, and verification. **Anonymous Firebase auth** is noted as a **future option only**; the MVP path stays email/password.
 - **Cloud Firestore** holds the shared data.
 - **Firebase Security Rules** are the core safety layer: auth-gated reads, owner-only writes, no userId spoofing, email privacy, interaction dedupe. Validated with the **Firebase Emulator Suite** (rules unit tests).
 - **Crashlytics / Analytics**: deferred to the beta-build phase, optional. They add native modules and are not needed for the backend MVP.
@@ -50,8 +52,8 @@ All of the above is local/mock today. No network, no accounts, no backend.
 ## 5. Proposed Firestore collections
 
 - **`users/{uid}`** - account profile and private email. Key fields: `displayName` (public), `email` (private), `createdAt`. Entirely private: no other user may read a users doc. The public display name is cached onto each request so the feed never reads users.
-- **`prayerRequests/{requestId}`** - the feed unit. Key fields: `userId` (real uid, kept for ownership/moderation, never shown), `displayName` ("Anonymous" when anonymous), `body` (10 to 500 chars), `category`, `status` (active/flagged/removed), `prayerCount`, `reportCount`, `createdAt`. Readable by signed-in users. No email field.
-- **`prayerInteractions/{uid}_{requestId}`** - source of truth that a user prayed for a request, and the dedupe key. Fields: `userId`, `requestId`, `prayedAt`. Owner-private; not publicly listable.
+- **`prayerRequests/{requestId}`** - the feed unit. Key fields: `userId` (real uid, kept for ownership/moderation, **never shown and not sent to other users**), `displayName` ("Anonymous" when anonymous), `body` (10 to 500 chars), `category`, `status` (active/flagged/removed), `prayerCount`, `reportCount`, `createdAt`. Readable by signed-in users. No email field. **Public data minimization:** feed/detail responses return only what the UX needs and **avoid exposing raw user IDs or unnecessary owner identifiers**, so other users cannot link different prayers to the same user; ownership checks compare against the caller's own uid without leaking the owner's id.
+- **`prayerInteractions/{uid}_{requestId}`** - source of truth that a user prayed for a request, and the dedupe key. Fields: `userId`, `requestId`, `prayedAt`. Owner-private; not publicly listable. **Other users see the aggregate `prayerCount` only — never who prayed.** Individual interaction records are never exposed to other users.
 - **`reports/{uid}_{requestId}`** - a report filed against a request. Fields: `requestId`, `reportedBy`, `reason`, optional `notes`, `status`, `createdAt`. Private: regular users can create but cannot read reports; only the console (admin) reads them.
 - **`verses`** - not created for MVP. Verses stay local, curated, and bundled (public-domain KJV). Could move to Firestore later if content needs frequent updates.
 - **`auditLogs`** - optional. For the rules-only MVP, prefer Firebase built-in usage logs over a client-writable audit collection (a client-writable log is low-trust). A server-written audit log can come later with Cloud Functions.

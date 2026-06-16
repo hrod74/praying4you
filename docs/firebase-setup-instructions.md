@@ -83,10 +83,16 @@ Do this only when ready. Stop after creation and ask for review (see §16).
 
 ## 5. Authentication setup
 
+**Use Firebase Auth "by the book."** Rely on the built-in Authentication product and SDK flows;
+**do not custom-build auth logic.** Firebase Auth already handles credential storage, sessions,
+email uniqueness, password reset, and verification — that is the security benefit of using it.
+
 1. In the console, go to **Authentication**.
 2. Enable the **Email/Password** provider.
 3. **Keep all other sign-in providers disabled** for the MVP unless deliberately changed
-   (Apple/Google sign-in can be added later).
+   (Apple/Google sign-in can be added later). **Anonymous sign-in is a future option only — do
+   not enable it now.** (This is different from the app's "post as Anonymous" display feature,
+   which still uses an email/password account.)
 4. Review the **email verification** options. Verification is **recommended**; the decision on
    whether it **blocks beta access** or is only required before wider/public launch is still
    open and can be made later.
@@ -219,6 +225,13 @@ Strong rules. Read before any config touches your machine.
 ---
 
 ## 13. iOS and Android beta path planning
+
+**Alpha testing first (CTO feedback incorporated).** Before inviting external beta testers, set
+up **3 to 4 controlled test accounts** and validate the core scenarios yourself: requester/owner,
+another signed-in user who prays, a user reporting a request, an anonymous request, a named
+request, edit/remove own request, blocked edit/remove on others' requests, duplicate prayed
+interaction blocked, and duplicate report blocked. Then begin alpha with **people you know**
+before any broader beta. (Full scenario list in `beta-feedback-plan.md`.)
 
 - The beta should support **both iOS and Android**.
 - **iOS** likely requires the **Apple Developer Program (about $99/year)** and **TestFlight**.

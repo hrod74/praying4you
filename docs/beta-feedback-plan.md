@@ -18,6 +18,34 @@ The beta answers a small set of questions before more people are invited:
 
 If those are true, the core is trustworthy. Everything else (themes, notifications, AI assistance, monetization) is a later question.
 
+## 1.5 Alpha testing (controlled accounts) before beta
+
+**CTO feedback incorporated.** Before inviting any external beta testers, run a small **alpha**
+with controlled accounts the owner sets up, then start with people the owner personally knows.
+This catches broken flows and privacy leaks before anyone outside is involved.
+
+**Setup:**
+
+- Create **3 to 4 controlled test accounts** the owner owns and can sign into.
+- Run the scenarios below across those accounts.
+- Only after the alpha passes, begin with **people the owner knows**, then widen to the broader
+  beta in section 2.
+
+**Scenarios to validate (each should behave correctly):**
+
+1. **Requester / account owner** — sign up, post a request, see it in the feed and in "my requests."
+2. **Another signed-in user prays** for a request — the prayer count increments; the prayer is recorded once.
+3. **A user reports a request** — the report is stored for manual console review.
+4. **Anonymous request** — shows "Anonymous" to other users; the request is still owned by the account in the backend (editable/removable by its owner).
+5. **Named request** — shows the display name; email is still never shown.
+6. **Edit/remove own request** — the owner can edit and remove their own request.
+7. **Blocked edit/remove on others' requests** — a user cannot edit or remove someone else's request.
+8. **Duplicate prayed interaction blocked** — praying twice for the same request does not double-count.
+9. **Duplicate report blocked** — reporting the same request twice by the same user is prevented.
+10. **Aggregate-only / data minimization** — other users see prayer **counts** only (never who prayed), and no raw user IDs or owner identifiers leak in the feed/detail.
+
+A scenario failing here is a blocker: fix it before external testers are invited.
+
 ## 2. Ideal first beta testers
 
 A small, trusted group (roughly 8 to 15 people) who:

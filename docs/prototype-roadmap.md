@@ -279,6 +279,16 @@ planning, and the **Growth / Beta Research Advisor** (`agents/growth-beta-resear
 in beta-readiness and feedback planning. **Firebase implementation must not begin until this
 plan is committed/reviewed and Phase J.1 produces the step-by-step setup instructions.**
 
+**CTO feedback incorporated (planning docs only).** Backend/Firebase feedback from a CTO friend
+was folded into the planning docs: use **Firebase Auth "by the book"** (no custom auth logic),
+keep **email/password for MVP** with **anonymous Firebase auth documented as a future option**;
+keep the **fresh Firebase project**; keep reporting **lightweight** (store reports for manual
+console review, prevent duplicates, no admin dashboard, optional alerting later); make prayer
+interactions **aggregate-only to other users** (counts only, never who prayed); add **public
+data minimization** (no raw user IDs / unnecessary owner identifiers in feed/detail); revise
+**positioning** to avoid misleading "private prayer-journal app" wording (the feed is shared);
+and add an **alpha-testing step with 3–4 controlled accounts** before external beta.
+
 ### Phase J — Firebase MVP implementation
 Implement the approved Phase I plan behind the existing `src/services/` seam: real
 Firebase Auth (incl. **user-initiated account deletion — required before the real-tester
@@ -292,6 +302,13 @@ and AI verse matching are NOT part of Phase J** — they are documented future p
 (see below) unless explicitly reprioritized.
 
 ### Phase K — Internal beta distribution
+**Alpha first (CTO feedback incorporated).** Before any external testers, run a controlled
+**alpha** with **3 to 4 known test accounts** the owner controls and validate the core scenarios
+(requester/owner, another user praying, reporting, anonymous and named requests, edit/remove own
+request, blocked edit/remove on others', duplicate prayed interaction blocked, duplicate report
+blocked, aggregate-only counts, no identifier leaks), then start with people the owner knows. See
+`beta-feedback-plan.md` §1.5.
+
 Make the app installable by real testers **without the developer's machine**: Expo/EAS
 build setup and an internal beta channel (TestFlight for iOS and/or Google Play
 internal testing for Android, Android-first where it lowers cost/risk). Gated on a
