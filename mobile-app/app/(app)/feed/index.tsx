@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } f
 import { EmptyState } from '../../../src/components/EmptyState';
 import { PrayerCard } from '../../../src/components/PrayerCard';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useFeedback } from '../../../src/context/FeedbackContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
 import { colors, spacing, typography } from '../../../src/theme/theme';
 
@@ -19,7 +20,21 @@ import { colors, spacing, typography } from '../../../src/theme/theme';
 export default function FeedScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { prayers, isLoading, error, refresh, hasPrayed } = usePrayers();
+  const { prayers, isLoading, error, refresh, hasPrayed, pray } = usePrayers();
+  const { showSuccess, showError } = useFeedback();
+
+  // Pray directly from a feed card. Reuses the same idempotent PrayerContext action as the
+  // detail screen (no duplicated state logic): the count is derived in context, so the card
+  // re-renders into its "Prayed" state and "Prayers I've prayed for" updates automatically.
+  const handlePray = async (requestId: string) => {
+    if (!profile) return;
+    try {
+      await pray(requestId, profile.id);
+      showSuccess('You prayed for this.');
+    } catch {
+      showError('We could not record that just now. Please try again.');
+    }
+  };
 
   // First load (nothing to show yet): a quiet centered spinner.
   if (isLoading && prayers.length === 0) {
@@ -57,13 +72,19 @@ export default function FeedScreen() {
           </Text>
         </View>
       }
-      renderItem={({ item }) => (
-        <PrayerCard
-          prayer={item}
-          prayed={profile ? hasPrayed(item.id, profile.id) : false}
-          onPress={() => router.push(`/(app)/feed/${item.id}`)}
-        />
-      )}
+      renderItem={({ item }) => {
+        // You cannot pray for your own request (mirrors the detail screen), so the CTA is
+        // only offered on others' requests.
+        const isOwn = Boolean(profile && item.userId === profile.id);
+        return (
+          <PrayerCard
+            prayer={item}
+            prayed={profile ? hasPrayed(item.id, profile.id) : false}
+            onPress={() => router.push(`/(app)/feed/${item.id}`)}
+            onPray={isOwn ? undefined : () => handlePray(item.id)}
+          />
+        );
+      }}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListEmptyComponent={
         <EmptyState

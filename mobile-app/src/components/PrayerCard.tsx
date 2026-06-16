@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 import { PRAYER_CATEGORY_LABELS, type PrayerRequest } from '../models/types';
 import { colors, radius, spacing, typography } from '../theme/theme';
@@ -13,14 +14,28 @@ import { CategoryTag } from './CategoryTag';
  * gentle low shadow; reads like a prayer card / journal note, not a social-media row.
  * The poster's name (or "Anonymous") is quiet, understated metadata; the prayer count is
  * framed as encouragement, never a score. Email never appears here (the model has none).
+ *
+ * Layout note (Phase H.4): the card body (category, name, prayer text) is one Pressable
+ * that opens the detail screen, and the footer holds the prayer count plus a lightweight
+ * "Pray" action. The body and the Pray action are SIBLING pressables inside a plain View
+ * (not nested), so each is an independent touch + accessibility target: tapping the body
+ * opens detail, tapping "Pray" only records the prayer and never navigates.
  */
 function PrayerCardComponent({
   prayer,
   onPress,
+  onPray,
   prayed = false,
 }: {
   prayer: PrayerRequest;
+  /** Open the full prayer detail screen. */
   onPress: () => void;
+  /**
+   * Record an "I prayed for this" interaction directly from the card. Omitted when the
+   * action does not apply (e.g. the viewer's own request), in which case no CTA is shown
+   * unless the request is already prayed for.
+   */
+  onPray?: () => void;
   /** Whether the current user has prayed for this request (lightweight feed indicator). */
   prayed?: boolean;
 }) {
@@ -28,30 +43,63 @@ function PrayerCardComponent({
   // reveal a real name even if cached data were inconsistent.
   const shownName = prayer.isAnonymous ? 'Anonymous' : prayer.displayName;
 
+  // The Pray CTA has three modes: already prayed (a quiet static badge), prayable (an
+  // interactive button), or absent (own request, where praying does not apply).
+  const showInteractivePray = !prayed && Boolean(onPray);
+
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${PRAYER_CATEGORY_LABELS[prayer.category]} prayer request from ${shownName}. ${formatPrayerCount(prayer.prayerCount)}.${prayed ? ' You prayed for this.' : ''}`}
-      accessibilityHint="Opens the full prayer request"
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-    >
-      <View style={styles.header}>
-        <CategoryTag category={prayer.category} />
-        <Text style={styles.date}>{formatShortDate(prayer.createdAt)}</Text>
-      </View>
+    <View style={styles.card}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${PRAYER_CATEGORY_LABELS[prayer.category]} prayer request from ${shownName}.`}
+        accessibilityHint="Opens the full prayer request"
+        style={({ pressed }) => [styles.cardBody, pressed && styles.pressed]}
+      >
+        <View style={styles.header}>
+          <CategoryTag category={prayer.category} />
+          <Text style={styles.date}>{formatShortDate(prayer.createdAt)}</Text>
+        </View>
 
-      <Text style={styles.name} numberOfLines={1}>
-        {shownName}
-      </Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {shownName}
+        </Text>
 
-      <Text style={styles.body}>{truncate(prayer.body, 200)}</Text>
+        <Text style={styles.bodyText}>{truncate(prayer.body, 200)}</Text>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.count}>{formatPrayerCount(prayer.prayerCount)}</Text>
-        {prayed ? <Text style={styles.prayed}>🙏 You prayed</Text> : null}
+
+        {prayed ? (
+          <View
+            style={styles.prayedBadge}
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel="You prayed for this request"
+          >
+            <FontAwesome5 name="praying-hands" size={14} color={colors.gold} />
+            <Text style={styles.prayedText} maxFontSizeMultiplier={1.4} numberOfLines={1}>
+              Prayed
+            </Text>
+          </View>
+        ) : showInteractivePray ? (
+          <Pressable
+            onPress={onPray}
+            accessibilityRole="button"
+            accessibilityLabel="Pray for this request"
+            accessibilityHint="Marks that you prayed for this request"
+            hitSlop={8}
+            style={({ pressed }) => [styles.prayButton, pressed && styles.prayButtonPressed]}
+          >
+            <FontAwesome5 name="praying-hands" size={14} color={colors.primary} />
+            <Text style={styles.prayText} maxFontSizeMultiplier={1.4} numberOfLines={1}>
+              Pray
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -75,6 +123,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.92,
   },
+  // The detail-opening tap area (category, name, prayer text) stacked with gentle spacing.
+  cardBody: {
+    gap: spacing.sm,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -90,7 +142,7 @@ const styles = StyleSheet.create({
   date: {
     ...typography.muted,
   },
-  body: {
+  bodyText: {
     ...typography.body,
   },
   footer: {
@@ -103,11 +155,47 @@ const styles = StyleSheet.create({
   count: {
     ...typography.muted,
     color: colors.gold,
+    flexShrink: 1,
   },
-  prayed: {
+  // Interactive "Pray" affordance: a quiet outlined pill, not a glossy social button.
+  prayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  prayButtonPressed: {
+    opacity: 0.9,
+    backgroundColor: colors.accent,
+  },
+  prayText: {
+    ...typography.muted,
+    fontWeight: '600',
+    color: colors.primary,
+    flexShrink: 1,
+  },
+  // Already-prayed: a calm parchment-tinted badge with a gold icon, marking it as done.
+  prayedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accent,
+  },
+  prayedText: {
     ...typography.muted,
     fontWeight: '600',
     color: colors.text,
+    flexShrink: 1,
   },
 });
 
