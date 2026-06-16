@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
 
 import { PRAYER_CATEGORY_LABELS, type PrayerRequest } from '../models/types';
 import { colors, radius, spacing, typography } from '../theme/theme';
@@ -78,7 +77,9 @@ function PrayerCardComponent({
             accessibilityRole="text"
             accessibilityLabel="You prayed for this request"
           >
-            <FontAwesome5 name="praying-hands" size={14} color={colors.gold} />
+            <Text style={styles.ctaEmoji} allowFontScaling={false}>
+              🙏
+            </Text>
             <Text style={styles.prayedText} maxFontSizeMultiplier={1.4} numberOfLines={1}>
               Prayed
             </Text>
@@ -92,7 +93,9 @@ function PrayerCardComponent({
             hitSlop={8}
             style={({ pressed }) => [styles.prayButton, pressed && styles.prayButtonPressed]}
           >
-            <FontAwesome5 name="praying-hands" size={14} color={colors.primary} />
+            <Text style={styles.ctaEmoji} allowFontScaling={false}>
+              🙏
+            </Text>
             <Text style={styles.prayText} maxFontSizeMultiplier={1.4} numberOfLines={1}>
               Pray
             </Text>
@@ -179,6 +182,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
     flexShrink: 1,
+  },
+  // Folded-hands emoji used on the Pray / Prayed affordances. A fixed, modest size keeps it
+  // intentional and in line with the label, never oversized; accessibility comes from the
+  // surrounding control's label, so the glyph itself is not separately announced.
+  ctaEmoji: {
+    fontSize: 15,
   },
   // Already-prayed: a calm parchment-tinted badge with a gold icon, marking it as done.
   prayedBadge: {

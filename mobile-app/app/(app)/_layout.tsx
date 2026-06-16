@@ -13,11 +13,11 @@ import { colors } from '../../src/theme/theme';
  * and cannot reach the tabs. Wrapped in PrayerProvider so all app screens share the
  * loaded prayer list and interactions.
  *
- * Navigation: four tabs with quiet, concept-matched FontAwesome5 icons — a dove for the
- * feed, a fountain pen for composing a prayer request (the act is writing/journaling, not
- * social "sharing"), a Bible for the verse, and a person for settings. The compose tab is
- * labeled "Pray" and is persistent, so it is always reachable from the bottom bar, even
- * after scrolling the feed. The bar reads: Feed | Pray | Verse | Settings.
+ * Navigation: four tabs with quiet, concept-matched icons — a dove for the feed, the
+ * folded-hands emoji (🙏) for composing/praying (owner preference; reverent and clear), a
+ * Bible for the verse, and a person for settings. The compose tab is labeled "Pray" and is
+ * persistent, so it is always reachable from the bottom bar, even after scrolling the feed.
+ * The bar reads: Feed | Pray | Verse | Settings.
  *
  * Sizing (Phase H.2): icons and labels are slightly larger for readability and tap
  * confidence on iPhone, while staying calm and not oversized; all four tabs still fit.
@@ -32,6 +32,22 @@ const tabIcon =
   (name: React.ComponentProps<typeof FontAwesome5>['name']) =>
   ({ color }: { color: string }) =>
     <FontAwesome5 name={name} size={24} color={color} />;
+
+// Emoji-based tab icon (used for the folded-hands "Pray" tab). The emoji carries its own
+// color, so the active/inactive tint shows on the label instead. The glyph is hidden from
+// screen readers (the tab's "Pray" label/title conveys the action) and does not scale with
+// Dynamic Type, so the four-tab bar layout stays stable.
+const emojiTabIcon = (emoji: string) => () =>
+  (
+    <Text
+      style={styles.tabEmoji}
+      allowFontScaling={false}
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+    >
+      {emoji}
+    </Text>
+  );
 
 // Tab label that scales with the OS text size but stays bounded and on one line.
 const tabLabel =
@@ -83,7 +99,7 @@ export default function AppTabsLayout() {
         />
         <Tabs.Screen
           name="submit"
-          options={{ title: 'Pray', tabBarIcon: tabIcon('pen-fancy'), tabBarLabel: tabLabel('Pray') }}
+          options={{ title: 'Pray', tabBarIcon: emojiTabIcon('🙏'), tabBarLabel: tabLabel('Pray') }}
         />
         <Tabs.Screen
           name="verse"
@@ -102,5 +118,11 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  // Sized to sit visually in line with the 24px FontAwesome tab glyphs without crowding.
+  tabEmoji: {
+    fontSize: 22,
+    lineHeight: 26,
+    textAlign: 'center',
   },
 });

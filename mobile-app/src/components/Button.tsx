@@ -21,6 +21,7 @@ export function Button({
   onPress,
   variant = 'primary',
   disabled = false,
+  accessibilityLabel,
   accessibilityHint,
   style,
 }: {
@@ -28,6 +29,8 @@ export function Button({
   onPress: () => void;
   variant?: Variant;
   disabled?: boolean;
+  /** Screen-reader label; defaults to the visible label. Use when the label includes an emoji. */
+  accessibilityLabel?: string;
   accessibilityHint?: string;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -37,7 +40,7 @@ export function Button({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
       style={({ pressed }) => [

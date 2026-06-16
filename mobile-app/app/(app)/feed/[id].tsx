@@ -160,7 +160,8 @@ export default function PrayerDetailScreen() {
           </View>
         ) : (
           <Button
-            label="I prayed for this"
+            label="🙏 I prayed for this"
+            accessibilityLabel="I prayed for this"
             onPress={handlePray}
             disabled={pending}
             accessibilityHint="Marks that you prayed for this request"
