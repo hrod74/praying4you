@@ -11,9 +11,14 @@ import { colors, spacing, typography } from '../src/theme/theme';
  * Root layout.
  *
  * Phase B: wraps the app in AuthProvider and gates navigation on the simulated session.
- * While the persisted profile/session is loading we show a calm splash to avoid a
+ * While the persisted profile/session is loading we show a calm, branded splash to avoid a
  * flash of the wrong screen. Actual signed-in vs. signed-out routing is enforced by the
  * group layouts ((auth) and (app)) and the welcome screen via <Redirect>.
+ *
+ * Branding (Phase H.4b): this in-app loading screen is the part of the launch experience we
+ * fully control (the native/Expo Go splash is configured in app.json with the warm parchment
+ * background and folded-hands mark). It shows 🙏, the product name, and calm copy on the warm
+ * theme. The emoji is decorative; the visible text carries the meaning for screen readers.
  */
 function RootNavigator() {
   const { isHydrating } = useAuth();
@@ -21,8 +26,18 @@ function RootNavigator() {
   if (isHydrating) {
     return (
       <View style={styles.splash}>
+        {/* Decorative emoji; meaning is carried by the text below for screen readers. */}
+        <Text
+          style={styles.splashEmoji}
+          allowFontScaling={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          🙏
+        </Text>
         <Text style={styles.splashTitle}>Praying For You</Text>
-        <ActivityIndicator color={colors.primary} />
+        <Text style={styles.splashSubtitle}>Preparing your prayer space…</Text>
+        <ActivityIndicator color={colors.primary} style={styles.splashSpinner} />
       </View>
     );
   }
@@ -61,8 +76,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
+    padding: spacing.xl,
     backgroundColor: colors.background,
   },
+  splashEmoji: {
+    fontSize: 64,
+    marginBottom: spacing.xs,
+  },
   splashTitle: typography.title,
+  splashSubtitle: {
+    ...typography.muted,
+    textAlign: 'center',
+  },
+  splashSpinner: {
+    marginTop: spacing.md,
+  },
 });
