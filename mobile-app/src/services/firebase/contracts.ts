@@ -46,9 +46,11 @@ export interface AuthService {
   signOut(): Promise<void>;
   /** The current signed-in profile, or null. */
   getCurrentProfile(): Promise<UserProfile | null>;
+  /** Update the signed-in user's display name (Firebase Auth profile). */
+  updateDisplayName(displayName: string): Promise<UserProfile>;
   /** Send a password-reset email. */
   sendPasswordReset(email: string): Promise<void>;
-  /** Required before the real-tester beta. */
+  /** Required before the real-tester beta (documented gate; not implemented in J.2b). */
   deleteAccount(): Promise<void>;
 }
 

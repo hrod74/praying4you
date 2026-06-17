@@ -10,8 +10,10 @@ import { useFeedback } from '../../src/context/FeedbackContext';
 import { colors, spacing, typography } from '../../src/theme/theme';
 import {
   DISPLAY_NAME_MAX,
+  PASSWORD_MIN,
   validateDisplayName,
   validateEmail,
+  validatePassword,
 } from '../../src/utils/validation';
 
 /**
@@ -28,34 +30,55 @@ import {
  */
 export default function CreateProfileScreen() {
   const router = useRouter();
-  const { createProfile } = useAuth();
+  const { createProfile, requiresPassword } = useAuth();
   const { showSuccess, showError } = useFeedback();
 
   const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Validation errors are only surfaced after the first submit attempt, then update live.
   const nameError = submitted ? validateDisplayName(displayName) : null;
   const emailError = submitted ? validateEmail(email) : null;
-  const canSubmit = displayName.trim().length > 0 && email.trim().length > 0 && !saving;
+  // A password is only collected (and required) when Firebase Auth is the active mode.
+  const passwordError = submitted && requiresPassword ? validatePassword(password) : null;
+  const canSubmit =
+    displayName.trim().length > 0 &&
+    email.trim().length > 0 &&
+    (!requiresPassword || password.length > 0) &&
+    !saving;
 
   const handleSubmit = async () => {
     setSubmitted(true);
-    if (validateDisplayName(displayName) || validateEmail(email)) {
+    if (
+      validateDisplayName(displayName) ||
+      validateEmail(email) ||
+      (requiresPassword && validatePassword(password))
+    ) {
       return;
     }
     setSaving(true);
     try {
-      await createProfile({ displayName, email });
+      await createProfile({
+        displayName,
+        email,
+        password: requiresPassword ? password : undefined,
+      });
       showSuccess('Profile created.');
       router.replace('/(app)/feed');
-    } catch {
+    } catch (e) {
       setSaving(false);
-      showError('We could not create your profile. Please try again.');
+      // Safe, mapped copy from the auth layer (e.g. duplicate email); never raw Firebase detail.
+      showError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not create your profile. Please try again.',
+      );
     }
   };
 
@@ -89,14 +112,39 @@ export default function CreateProfileScreen() {
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
-        helperText="Private. Kept on your device and never shown publicly."
+        helperText={
+          requiresPassword
+            ? 'Private. Used to sign in, and never shown on prayer requests.'
+            : 'Private. Kept on your device and never shown publicly.'
+        }
         errorText={emailError}
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
-        returnKeyType="done"
-        onSubmitEditing={() => Keyboard.dismiss()}
+        returnKeyType={requiresPassword ? 'next' : 'done'}
+        submitBehavior={requiresPassword ? 'submit' : 'blurAndSubmit'}
+        onSubmitEditing={() =>
+          requiresPassword ? passwordRef.current?.focus() : Keyboard.dismiss()
+        }
       />
+
+      {requiresPassword ? (
+        <TextField
+          ref={passwordRef}
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          placeholder="At least 6 characters"
+          helperText={`Choose a password of at least ${PASSWORD_MIN} characters. Kept private by Firebase.`}
+          errorText={passwordError}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+          textContentType="newPassword"
+          returnKeyType="done"
+          onSubmitEditing={() => Keyboard.dismiss()}
+        />
+      ) : null}
 
       <View style={styles.privacyNote}>
         <Text style={styles.privacyText}>

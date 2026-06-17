@@ -27,7 +27,7 @@ import {
  */
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, signOut, updateProfile } = useAuth();
+  const { profile, signOut, updateProfile, requiresPassword } = useAuth();
   const { resetLocalData, getMyRequests, getPrayedRequests } = usePrayers();
   const { showSuccess, showError } = useFeedback();
 
@@ -44,9 +44,12 @@ export default function SettingsScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // In Firebase mode the email is managed by Firebase Auth and is not editable here yet (an email
+  // change needs verification/reauth, deferred to a later phase), so only the display name is edited.
   const nameError = submitted ? validateDisplayName(name) : null;
-  const emailError = submitted ? validateEmail(email) : null;
-  const canSave = name.trim().length > 0 && email.trim().length > 0 && !saving;
+  const emailError = submitted && !requiresPassword ? validateEmail(email) : null;
+  const canSave =
+    name.trim().length > 0 && (requiresPassword || email.trim().length > 0) && !saving;
 
   const startEdit = () => {
     setName(profile?.displayName ?? '');
@@ -63,17 +66,22 @@ export default function SettingsScreen() {
 
   const handleSaveProfile = async () => {
     setSubmitted(true);
-    if (validateDisplayName(name) || validateEmail(email)) return;
+    if (validateDisplayName(name) || (!requiresPassword && validateEmail(email))) return;
     setSaving(true);
     try {
-      await updateProfile({ displayName: name, email });
+      // Firebase mode updates the display name only; the email stays as-is.
+      await updateProfile({ displayName: name, email: requiresPassword ? (profile?.email ?? '') : email });
       Keyboard.dismiss();
       setEditing(false);
       setSaving(false);
       showSuccess('Profile updated.');
-    } catch {
+    } catch (e) {
       setSaving(false);
-      showError('We could not save your profile just now. Please try again.');
+      showError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not save your profile just now. Please try again.',
+      );
     }
   };
 
@@ -121,25 +129,40 @@ export default function SettingsScreen() {
               submitBehavior="submit"
               onSubmitEditing={() => emailRef.current?.focus()}
             />
-            <TextField
-              ref={emailRef}
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              helperText="Private. Kept on your device and never shown publicly."
-              errorText={emailError}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              returnKeyType="done"
-              onSubmitEditing={() => Keyboard.dismiss()}
-            />
+            {requiresPassword ? (
+              <View>
+                <Text style={styles.rowLabel}>Email</Text>
+                <Text style={styles.rowValue}>{profile?.email ?? '—'}</Text>
+                <Text style={styles.privateNote}>
+                  🔒 Private. Your email is managed by your account sign-in and is not editable
+                  here yet.
+                </Text>
+              </View>
+            ) : (
+              <TextField
+                ref={emailRef}
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                helperText="Private. Kept on your device and never shown publicly."
+                errorText={emailError}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+              />
+            )}
             <Button
               label="Save profile"
               onPress={handleSaveProfile}
               disabled={!canSave}
-              accessibilityHint="Saves your display name and email on this device"
+              accessibilityHint={
+                requiresPassword
+                  ? 'Saves your display name'
+                  : 'Saves your display name and email on this device'
+              }
             />
             <Button label="Cancel" variant="secondary" onPress={cancelEdit} />
           </View>

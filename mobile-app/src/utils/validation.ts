@@ -9,6 +9,10 @@
 export const DISPLAY_NAME_MIN = 2;
 export const DISPLAY_NAME_MAX = 40;
 
+// Minimum password length. Mirrors Firebase Auth's own minimum (6) so the client check and the
+// server agree. Only used when Firebase Auth is the active mode (email/password).
+export const PASSWORD_MIN = 6;
+
 // Prayer body length bounds (mirrors the PRD: 10–500 characters).
 export const PRAYER_BODY_MIN = 10;
 export const PRAYER_BODY_MAX = 500;
@@ -33,6 +37,18 @@ export function validateEmail(value: string): string | null {
   const trimmed = value.trim();
   if (trimmed.length === 0) return 'Please enter your email.';
   if (!EMAIL_PATTERN.test(trimmed)) return 'Please enter a valid email address.';
+  return null;
+}
+
+/**
+ * Validates a password for Firebase email/password sign-up. Returns a calm error string, or
+ * null when valid. Not trimmed (spaces can be part of a password).
+ */
+export function validatePassword(value: string): string | null {
+  if (value.length === 0) return 'Please enter a password.';
+  if (value.length < PASSWORD_MIN) {
+    return `Password must be at least ${PASSWORD_MIN} characters.`;
+  }
   return null;
 }
 

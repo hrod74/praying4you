@@ -17,7 +17,8 @@ export {
   type PrayerInteractionService,
   type ReportService,
 } from './contracts';
-export { firebaseAuthService } from './authService';
+export { firebaseAuthService, getFirebaseAuth, subscribeToProfile } from './authService';
+export { AUTH_ERROR_COPY, authErrorMessage } from './authErrors';
 export { firebaseUserService } from './userService';
 export { firebasePrayerRequestService } from './prayerRequestService';
 export { firebasePrayerInteractionService } from './prayerInteractionService';
