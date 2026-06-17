@@ -17,14 +17,26 @@ import type { UserProfile } from '../models/types';
 /**
  * Run a Firestore profile-doc side effect best-effort. The private `users/{uid}` doc is durable
  * infrastructure, not the source of truth for the signed-in UI (Firebase Auth is), so a failure
- * here (e.g. security rules not yet deployed, or transient network) must never block sign-in,
- * sign-up, or profile edits. No email/uid is logged.
+ * here (e.g. security rules not deployed, or transient network) must never block sign-in, sign-up,
+ * or profile edits, and is never surfaced to the user.
+ *
+ * In development it logs the Firebase error code + message so failures are diagnosable. These are
+ * non-sensitive (a code like "permission-denied" and a generic message); no email, UID, password,
+ * or config value is logged.
  */
-function syncProfileDoc(run: () => Promise<unknown>): void {
-  void run().catch(() => {
-    if (__DEV__) {
-      console.warn('[profile] Firestore profile sync skipped (will retry on next sign-in).');
-    }
+function syncProfileDoc(label: string, run: () => Promise<unknown>): void {
+  void run().catch((error: unknown) => {
+    if (!__DEV__) return;
+    const code = (error as { code?: string })?.code ?? 'unknown';
+    const message = error instanceof Error ? error.message : String(error);
+    const hint =
+      code === 'permission-denied'
+        ? ' Republish mobile-app/firestore.rules in the Firebase Console (Firestore Database > Rules).'
+        : '';
+    console.warn(
+      `[profile] Firestore profile sync failed at "${label}" (code: ${code}). ` +
+        `Auth still succeeded; will retry on next sign-in.${hint} Detail: ${message}`,
+    );
   });
 }
 
@@ -146,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(created);
       setIsSignedIn(true);
       // Create the private Firestore profile doc (best-effort; never blocks account creation).
-      syncProfileDoc(() =>
+      syncProfileDoc('sign-up', () =>
         firebaseUserService.ensureProfileForSignUp(created.id, created.displayName),
       );
       return;
@@ -178,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const updated = await firebaseAuthService.updateDisplayName(displayName);
         setProfile(updated);
         // Mirror the display name into the private Firestore profile doc (best-effort).
-        syncProfileDoc(() =>
+        syncProfileDoc('update-display-name', () =>
           firebaseUserService.updateDisplayName(updated.id, updated.displayName),
         );
         return;
@@ -209,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsSignedIn(true);
         // Read/refresh the private Firestore profile doc and update lastSignedInAt (best-effort).
         // Also backfills the doc for accounts created before this phase.
-        syncProfileDoc(() =>
+        syncProfileDoc('sign-in', () =>
           firebaseUserService.recordSignIn(signedIn.id, signedIn.displayName),
         );
         return true;

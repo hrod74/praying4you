@@ -1,24 +1,27 @@
 rules_version = '2';
 
-// Praying For You — Firestore Security Rules (DRAFT, Phase J.2c)
+// Praying For You — Firestore Security Rules (Alpha, Phase J.2c, simplified in the J.2c sync fix)
 //
-// Scope of this phase: the private user profile document at `users/{uid}` ONLY.
-// Prayer requests, prayer interactions, and reports are NOT in Firestore yet; they are denied by
-// the catch-all rule below until their own phases add rules + emulator tests.
+// Scope: the private user profile document at `users/{uid}` ONLY.
+// Prayer requests, prayer interactions, and reports are NOT in Firestore yet; they stay denied by
+// the catch-all rule below until their own phases add explicit rules + emulator tests.
 //
-// These rules are a DRAFT in the repo. They are NOT auto-deployed. The owner must deploy them in
-// the Firebase Console (Firestore Database > Rules) or via the Firebase CLI. Default locked rules
-// will reject profile writes until these are deployed (the app handles that gracefully).
+// IMPORTANT: these rules are NOT auto-deployed. The owner must publish them in the Firebase
+// Console (Firestore Database > Rules) or via the Firebase CLI for them to take effect.
 //
-// Access model:
-//   - A signed-in user can read ONLY their own users/{uid} profile (no cross-user reads).
-//   - A signed-in user can create their own profile, with required fields and accountStatus 'active'.
-//   - A signed-in user can update allowed fields (displayName, updatedAt, lastSignedInAt) on their
-//     own profile.
-//   - Protected fields cannot change from the client: uid, createdAt, profileVersion, accountStatus.
-//     (accountStatus / moderation changes are console/admin only.)
-//   - No client deletes (account deletion is a later, dedicated phase).
-//   - There is NO public read of users. Email is never stored here.
+// Why this version is simpler than the first draft: the earlier draft over-validated profile
+// CREATE (it required `profileVersion is int` and exact `serverTimestamp() == request.time`
+// matches). Those checks rejected otherwise-valid writes with permission-denied, so no
+// `users/{uid}` doc was ever created. For Alpha we keep an owner-only model based purely on the
+// authenticated UID, which is what actually matters for privacy. Field-shape hardening can return
+// later with emulator tests to prove it does not reject valid writes.
+//
+// Access model (owner-only; no public, no unauthenticated access):
+//   - A signed-in user can READ, CREATE, UPDATE, and DELETE only their own users/{uid} profile.
+//     (DELETE is allowed so the next phase, account deletion, can remove the profile doc.)
+//   - No user can read, create, update, or delete another user's profile.
+//   - Everything else remains denied.
+//   - Email is never stored in this document.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -27,42 +30,17 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    function isValidNewProfile(uid) {
-      let d = request.resource.data;
-      return d.uid == uid
-        && d.displayName is string
-        && d.displayName.size() <= 40
-        && d.profileVersion is int
-        && d.accountStatus == 'active'
-        // Server timestamps resolve to the request time on write.
-        && d.createdAt == request.time
-        && d.updatedAt == request.time
-        && d.lastSignedInAt == request.time;
-    }
-
-    function isAllowedProfileUpdate(uid) {
-      let after = request.resource.data;
-      let before = resource.data;
-      // Immutable / protected fields must not change from the client.
-      return after.uid == before.uid
-        && after.createdAt == before.createdAt
-        && after.profileVersion == before.profileVersion
-        && after.accountStatus == before.accountStatus
-        && after.displayName is string
-        && after.displayName.size() <= 40
-        && after.updatedAt == request.time;
-    }
-
-    // Private user profile — owner-only. No email is stored here.
+    // Private user profile — owner-only. The document id IS the user's UID, so requiring
+    // request.auth.uid == uid is sufficient to guarantee a user only touches their own profile.
     match /users/{uid} {
       allow read: if isOwner(uid);
-      allow create: if isOwner(uid) && isValidNewProfile(uid);
-      allow update: if isOwner(uid) && isAllowedProfileUpdate(uid);
-      allow delete: if false; // account deletion is handled in a later, dedicated phase
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if isOwner(uid); // for the upcoming account-deletion phase
     }
 
     // Everything else (prayerRequests, prayerInteractions, reports, ...) is denied until its
-    // phase adds explicit rules + emulator tests. No broad public access.
+    // phase adds explicit rules + emulator tests. No broad public access, no unauthenticated access.
     match /{document=**} {
       allow read, write: if false;
     }

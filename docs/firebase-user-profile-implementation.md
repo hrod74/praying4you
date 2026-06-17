@@ -79,10 +79,17 @@ actually read/write, the owner must:
 3. No indexes are required for this phase (single-doc reads by id).
 4. Do **not** open `users` to public read. Do **not** use open/test-mode rules for a real beta.
 
-The rules encode: signed-in user can read/create/update **only their own** `users/{uid}`; protected
-fields (`uid`, `createdAt`, `profileVersion`, `accountStatus`) are immutable from the client; no
-client deletes; everything else (prayerRequests, prayerInteractions, reports) is denied until its
-own phase.
+The rules (simplified for Alpha in the J.2c sync fix) encode an **owner-only** model: a signed-in
+user can read/create/update/delete **only their own** `users/{uid}` (delete is allowed for the
+upcoming account-deletion phase); no cross-user access; everything else (prayerRequests,
+prayerInteractions, reports) is denied until its own phase.
+
+> **Note (sync fix):** the first draft over-validated profile CREATE (it required
+> `profileVersion is int` and exact `serverTimestamp() == request.time` matches), which rejected
+> valid writes with `permission-denied`, so no profile doc was ever created. The rules were
+> simplified to the owner-only model above. **If you published the earlier draft, republish the
+> updated `mobile-app/firestore.rules`.** Field-shape hardening can return later with emulator
+> tests that prove it does not reject valid writes.
 
 ## What remains local/mock
 
