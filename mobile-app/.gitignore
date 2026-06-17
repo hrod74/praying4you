@@ -30,8 +30,16 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# local env files & Firebase config — never commit real values or keys.
+# The placeholder .env.example IS committed (it has no real values).
+.env
+.env.*
+!.env.example
+# Firebase native/admin config files (not used in the Expo Go MVP; ignored as a safeguard).
+google-services.json
+GoogleService-Info.plist
+serviceAccountKey.json
+firebase-adminsdk*.json
 
 # typescript
 *.tsbuildinfo
