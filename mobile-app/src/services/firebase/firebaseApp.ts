@@ -1,4 +1,5 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 import { firebaseConfig, isFirebaseConfigured } from '../../config/firebaseConfig';
 
@@ -27,7 +28,23 @@ export function getFirebaseApp(): FirebaseApp | null {
   return cached;
 }
 
-/** Whether a real Firebase app is available (config present). False in this phase. */
+let cachedDb: Firestore | null = null;
+
+/**
+ * Returns the Cloud Firestore instance, or `null` when Firebase is not configured (local/mock
+ * fallback). Memoized. Uses the Firebase JS SDK modular API (Expo Go compatible, no native
+ * modules). Phase J.2c uses this only for the private `users/{uid}` profile doc; prayer data
+ * (requests, interactions, reports) stays local/mock and is NOT read or written here.
+ */
+export function getFirebaseDb(): Firestore | null {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  if (cachedDb) return cachedDb;
+  cachedDb = getFirestore(app);
+  return cachedDb;
+}
+
+/** Whether a real Firebase app is available (config present). */
 export function isFirebaseReady(): boolean {
   return isFirebaseConfigured();
 }

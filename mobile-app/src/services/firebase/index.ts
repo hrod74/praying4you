@@ -8,11 +8,12 @@
  * concern at a time, without changing screens or shared types.
  */
 
-export { getFirebaseApp, isFirebaseReady } from './firebaseApp';
+export { getFirebaseApp, getFirebaseDb, isFirebaseReady } from './firebaseApp';
 export {
   NotImplementedError,
   type AuthService,
   type UserService,
+  type StoredUserProfile,
   type PrayerRequestService,
   type PrayerInteractionService,
   type ReportService,

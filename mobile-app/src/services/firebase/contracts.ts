@@ -54,11 +54,38 @@ export interface AuthService {
   deleteAccount(): Promise<void>;
 }
 
-/** Private user profile docs. Email lives here only and is never exposed to other users. */
+/**
+ * The private Firestore `users/{uid}` profile document shape.
+ *
+ * Email is intentionally NOT stored here: Firebase Auth already owns the email, so duplicating it
+ * into Firestore would only widen its exposure surface. Email therefore lives only in Firebase
+ * Auth (private) and never appears in this doc, in any public surface, or in prayer data.
+ * Timestamps are ISO strings (converted from Firestore Timestamps), or null while a server
+ * timestamp is still resolving.
+ */
+export interface StoredUserProfile {
+  uid: string;
+  displayName: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  lastSignedInAt: string | null;
+  profileVersion: number;
+  /** e.g. 'active'. Moderation/account-status changes are console/admin only (not client-writable). */
+  accountStatus: string;
+}
+
+/**
+ * Private user profile docs at `users/{uid}` (owner-only). No email is stored (Auth owns it).
+ * Writes are best-effort side effects of the auth flow and must never block sign-in/sign-up.
+ */
 export interface UserService {
-  /** Read the signed-in user's own profile (own doc only). */
-  getOwnProfile(uid: string): Promise<UserProfile | null>;
-  /** Update the user's own display name. */
+  /** Read the signed-in user's own profile doc (own doc only), or null if missing/unavailable. */
+  getOwnProfile(uid: string): Promise<StoredUserProfile | null>;
+  /** Create the profile doc on sign-up if it does not already exist. */
+  ensureProfileForSignUp(uid: string, displayName: string): Promise<void>;
+  /** On sign-in: create the doc if missing (backfill), else update lastSignedInAt; return it. */
+  recordSignIn(uid: string, displayName: string): Promise<StoredUserProfile | null>;
+  /** Update the user's own display name (and updatedAt) on their own doc. */
   updateDisplayName(uid: string, displayName: string): Promise<void>;
 }
 

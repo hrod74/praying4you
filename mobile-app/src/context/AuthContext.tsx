@@ -11,7 +11,22 @@ import {
 
 import { isFirebaseConfigured } from '../config/firebaseConfig';
 import { firebaseAuthService, subscribeToProfile } from '../services/firebase/authService';
+import { firebaseUserService } from '../services/firebase/userService';
 import type { UserProfile } from '../models/types';
+
+/**
+ * Run a Firestore profile-doc side effect best-effort. The private `users/{uid}` doc is durable
+ * infrastructure, not the source of truth for the signed-in UI (Firebase Auth is), so a failure
+ * here (e.g. security rules not yet deployed, or transient network) must never block sign-in,
+ * sign-up, or profile edits. No email/uid is logged.
+ */
+function syncProfileDoc(run: () => Promise<unknown>): void {
+  void run().catch(() => {
+    if (__DEV__) {
+      console.warn('[profile] Firestore profile sync skipped (will retry on next sign-in).');
+    }
+  });
+}
 
 /**
  * AuthContext — the single auth seam, with two interchangeable modes behind one API.
@@ -130,6 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set eagerly for a snappy UI; onAuthStateChanged will also confirm this shortly.
       setProfile(created);
       setIsSignedIn(true);
+      // Create the private Firestore profile doc (best-effort; never blocks account creation).
+      syncProfileDoc(() =>
+        firebaseUserService.ensureProfileForSignUp(created.id, created.displayName),
+      );
       return;
     }
 
@@ -158,6 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (AUTH_MODE === 'firebase') {
         const updated = await firebaseAuthService.updateDisplayName(displayName);
         setProfile(updated);
+        // Mirror the display name into the private Firestore profile doc (best-effort).
+        syncProfileDoc(() =>
+          firebaseUserService.updateDisplayName(updated.id, updated.displayName),
+        );
         return;
       }
 
@@ -184,6 +207,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const signedIn = await firebaseAuthService.signIn(credentials);
         setProfile(signedIn);
         setIsSignedIn(true);
+        // Read/refresh the private Firestore profile doc and update lastSignedInAt (best-effort).
+        // Also backfills the doc for accounts created before this phase.
+        syncProfileDoc(() =>
+          firebaseUserService.recordSignIn(signedIn.id, signedIn.displayName),
+        );
         return true;
       }
 

@@ -1,0 +1,70 @@
+rules_version = '2';
+
+// Praying For You — Firestore Security Rules (DRAFT, Phase J.2c)
+//
+// Scope of this phase: the private user profile document at `users/{uid}` ONLY.
+// Prayer requests, prayer interactions, and reports are NOT in Firestore yet; they are denied by
+// the catch-all rule below until their own phases add rules + emulator tests.
+//
+// These rules are a DRAFT in the repo. They are NOT auto-deployed. The owner must deploy them in
+// the Firebase Console (Firestore Database > Rules) or via the Firebase CLI. Default locked rules
+// will reject profile writes until these are deployed (the app handles that gracefully).
+//
+// Access model:
+//   - A signed-in user can read ONLY their own users/{uid} profile (no cross-user reads).
+//   - A signed-in user can create their own profile, with required fields and accountStatus 'active'.
+//   - A signed-in user can update allowed fields (displayName, updatedAt, lastSignedInAt) on their
+//     own profile.
+//   - Protected fields cannot change from the client: uid, createdAt, profileVersion, accountStatus.
+//     (accountStatus / moderation changes are console/admin only.)
+//   - No client deletes (account deletion is a later, dedicated phase).
+//   - There is NO public read of users. Email is never stored here.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isValidNewProfile(uid) {
+      let d = request.resource.data;
+      return d.uid == uid
+        && d.displayName is string
+        && d.displayName.size() <= 40
+        && d.profileVersion is int
+        && d.accountStatus == 'active'
+        // Server timestamps resolve to the request time on write.
+        && d.createdAt == request.time
+        && d.updatedAt == request.time
+        && d.lastSignedInAt == request.time;
+    }
+
+    function isAllowedProfileUpdate(uid) {
+      let after = request.resource.data;
+      let before = resource.data;
+      // Immutable / protected fields must not change from the client.
+      return after.uid == before.uid
+        && after.createdAt == before.createdAt
+        && after.profileVersion == before.profileVersion
+        && after.accountStatus == before.accountStatus
+        && after.displayName is string
+        && after.displayName.size() <= 40
+        && after.updatedAt == request.time;
+    }
+
+    // Private user profile — owner-only. No email is stored here.
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidNewProfile(uid);
+      allow update: if isOwner(uid) && isAllowedProfileUpdate(uid);
+      allow delete: if false; // account deletion is handled in a later, dedicated phase
+    }
+
+    // Everything else (prayerRequests, prayerInteractions, reports, ...) is denied until its
+    // phase adds explicit rules + emulator tests. No broad public access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
