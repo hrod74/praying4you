@@ -281,4 +281,24 @@ fallback preserved throughout (no `.env.local` → the app runs fully local and 
   needed** (owner-only delete on `users/{uid}` already shipped in J.2c). Prayer data is untouched and
   out of scope until it moves to Firestore, at which point deletion must be revisited. See
   `docs/firebase-account-deletion-implementation.md` and the owner checklist
-  `docs/QA_delete_scenarios.md`. **Next: J.2e — move prayer requests into Firestore.**
+  `docs/QA_delete_scenarios.md`.
+
+**Phase J.2e — Firestore prayer requests (implemented).** Prayer requests moved from local/mock to
+the Firestore `prayerRequests` collection behind a new mode-aware seam
+(`src/services/prayerRequests.ts`): create / feed / detail / edit / soft-remove / my-requests read
+and write Firestore when Firebase is configured, and fall back to the original local/mock path
+otherwise. Prayer interactions ("I prayed for this") and reports are **unchanged** — still
+local/mock in both modes, layered on top of whichever request baseline loads, so the feed UI,
+prayed-for CTA, and derived counts behave exactly as before. Privacy: **no email** is stored on a
+request; anonymous posts store only the public string "Anonymous" (the real name is never written,
+so the identity behind an anonymous post stays private); `authorUid` is retained for owner-only
+rules but is opaque and never shown in the UI; there is no "who prayed" data. Removal is a **soft
+remove** (`status: 'removed'` + `removedAt`); clients **cannot hard-delete**. `mobile-app/firestore.rules`
+was **updated** with `prayerRequests` rules (signed-in read of active; owner-only create/edit/
+soft-remove; protected `authorUid`/`createdAt`/`prayerCount`; no `email`; no client delete) and
+**the owner must republish the full rules file** in the Firebase Console. No composite index is
+needed (single equality filter, client-side sort). Old local prayer data is **not** auto-migrated;
+Firebase mode starts with new requests. Safe Firestore error copy added (load/create/update/remove/
+permission/network). See `docs/firebase-prayer-requests-implementation.md` and the owner checklist
+`docs/QA_prayer_request_scenarios.md`. **Next: J.2f — Firestore prayer interactions (aggregate-only,
+never who prayed).**

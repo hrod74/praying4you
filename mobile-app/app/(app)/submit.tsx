@@ -41,8 +41,12 @@ export default function SubmitPrayerScreen() {
       setFormKey((k) => k + 1);
       // Return to the Feed; the new request is prepended, so it sits at the top.
       router.navigate('/(app)/feed');
-    } catch {
-      showError('We could not share your request just now. Please try again.');
+    } catch (e) {
+      showError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not share your request right now. Please try again.',
+      );
       throw new Error('share-failed'); // re-enable the form
     }
   };

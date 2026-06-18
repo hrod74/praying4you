@@ -17,7 +17,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { useFeedback } from '../../../src/context/FeedbackContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
 import type { PrayerRequest } from '../../../src/models/types';
-import { getPrayerById } from '../../../src/services/prayerService';
+import { getRequestById } from '../../../src/services/prayerRequests';
 import { colors, radius, spacing, typography } from '../../../src/theme/theme';
 import { formatLongDate, formatPrayerCount } from '../../../src/utils/format';
 
@@ -49,9 +49,14 @@ export default function PrayerDetailScreen() {
   useEffect(() => {
     if (fromContext) return;
     let active = true;
-    void getPrayerById(id).then((p) => {
-      if (active) setFetched(p);
-    });
+    void getRequestById(id)
+      .then((p) => {
+        if (active) setFetched(p);
+      })
+      .catch(() => {
+        // A lookup failure resolves to the calm "not found" state rather than a raw error.
+        if (active) setFetched(null);
+      });
     return () => {
       active = false;
     };
@@ -100,7 +105,7 @@ export default function PrayerDetailScreen() {
     if (!profile) return;
     Alert.alert(
       'Remove this prayer request?',
-      'This will remove it from your prayer feed in this local prototype.',
+      'This removes it from the prayer feed. You can do this only on your own request.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -112,8 +117,12 @@ export default function PrayerDetailScreen() {
                 await removePrayer(prayer.id, profile.id);
                 showSuccess('Prayer request removed.');
                 router.replace('/(app)/feed');
-              } catch {
-                showError('We could not remove it just now. Please try again.');
+              } catch (e) {
+                showError(
+                  e instanceof Error && e.message
+                    ? e.message
+                    : 'We could not remove your request right now. Please try again.',
+                );
               }
             })();
           },

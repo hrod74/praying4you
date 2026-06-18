@@ -1,30 +1,33 @@
 rules_version = '2';
 
-// Praying For You — Firestore Security Rules (Alpha, Phase J.2c, simplified in the J.2c sync fix)
+// Praying For You — Firestore Security Rules (Alpha)
 //
-// Scope: the private user profile document at `users/{uid}` ONLY.
-// Prayer requests, prayer interactions, and reports are NOT in Firestore yet; they stay denied by
-// the catch-all rule below until their own phases add explicit rules + emulator tests.
+// Scope so far:
+//   - users/{uid}          private profile document (Phase J.2c) — owner-only.
+//   - prayerRequests/{id}  prayer requests (Phase J.2e) — signed-in read of active requests;
+//                          owner-only create/edit/soft-remove.
 //
-// IMPORTANT: these rules are NOT auto-deployed. The owner must publish them in the Firebase
-// Console (Firestore Database > Rules) or via the Firebase CLI for them to take effect.
+// Prayer INTERACTIONS ("I prayed for this") and REPORTS are NOT in Firestore yet; they stay local
+// and remain denied by the catch-all rule below until their own phases add explicit rules + tests.
 //
-// Why this version is simpler than the first draft: the earlier draft over-validated profile
-// CREATE (it required `profileVersion is int` and exact `serverTimestamp() == request.time`
-// matches). Those checks rejected otherwise-valid writes with permission-denied, so no
-// `users/{uid}` doc was ever created. For Alpha we keep an owner-only model based purely on the
-// authenticated UID, which is what actually matters for privacy. Field-shape hardening can return
-// later with emulator tests to prove it does not reject valid writes.
+// IMPORTANT: these rules are NOT auto-deployed. The owner must publish the FULL contents of this
+// file in the Firebase Console (Firestore Database > Rules > Publish) or via the Firebase CLI for
+// them to take effect.
 //
-// Access model (owner-only; no public, no unauthenticated access):
-//   - A signed-in user can READ, CREATE, UPDATE, and DELETE only their own users/{uid} profile.
-//     (DELETE is allowed so the next phase, account deletion, can remove the profile doc.)
-//   - No user can read, create, update, or delete another user's profile.
-//   - Everything else remains denied.
-//   - Email is never stored in this document.
+// Privacy invariants enforced/assumed here:
+//   - users/{uid} is owner-only; no user can read another user's profile.
+//   - Email is never stored in Firestore (Auth owns it), and a prayer request may not contain an
+//     `email` field (enforced on create + update below).
+//   - prayerRequests carry `authorUid` for ownership/moderation; it is an opaque UID and is never
+//     shown in the UI. The real name behind an anonymous post is not stored on the request.
+//   - There is no "who prayed" data anywhere in these rules.
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
@@ -36,11 +39,46 @@ service cloud.firestore {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid);
       allow update: if isOwner(uid);
-      allow delete: if isOwner(uid); // for the upcoming account-deletion phase
+      allow delete: if isOwner(uid); // account-deletion phase (J.2d)
     }
 
-    // Everything else (prayerRequests, prayerInteractions, reports, ...) is denied until its
-    // phase adds explicit rules + emulator tests. No broad public access, no unauthenticated access.
+    // Prayer requests (Phase J.2e).
+    match /prayerRequests/{requestId} {
+      // READ: any signed-in user may read an ACTIVE request (the shared feed). An owner may also
+      // read their own request in any status. Soft-removed requests are not readable by others.
+      allow read: if isSignedIn()
+        && (resource.data.status == 'active' || resource.data.authorUid == request.auth.uid);
+
+      // CREATE: a signed-in user may create only their OWN request, starting active with a zero
+      // count and safe field shapes, and may NOT include an email field.
+      allow create: if isSignedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.status == 'active'
+        && request.resource.data.prayerCount == 0
+        && request.resource.data.isAnonymous is bool
+        && request.resource.data.body is string
+        && request.resource.data.category is string
+        && request.resource.data.displayName is string
+        && !('email' in request.resource.data);
+
+      // UPDATE (edit + soft-remove): owner only. Protected fields (authorUid, createdAt,
+      // prayerCount) must not change, status must stay within the allowed set, and no email may be
+      // introduced. There is deliberately no rule that lets a client raise prayerCount here; the
+      // aggregate count belongs to the future interactions phase, not to client edits.
+      allow update: if isSignedIn()
+        && resource.data.authorUid == request.auth.uid
+        && request.resource.data.authorUid == resource.data.authorUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.prayerCount == resource.data.prayerCount
+        && request.resource.data.status in ['active', 'removed']
+        && !('email' in request.resource.data);
+
+      // No client deletes: removal is a soft remove (status -> removed), never a hard delete.
+      allow delete: if false;
+    }
+
+    // Everything else (prayerInteractions, reports, ...) is denied until its phase adds explicit
+    // rules + tests. No broad public access, no unauthenticated access.
     match /{document=**} {
       allow read, write: if false;
     }

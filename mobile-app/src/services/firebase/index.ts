@@ -28,5 +28,6 @@ export {
 } from './authErrors';
 export { firebaseUserService } from './userService';
 export { firebasePrayerRequestService } from './prayerRequestService';
+export { PRAYER_ERROR_COPY, prayerRequestError, type PrayerOp } from './prayerErrors';
 export { firebasePrayerInteractionService } from './prayerInteractionService';
 export { firebaseReportService } from './reportService';

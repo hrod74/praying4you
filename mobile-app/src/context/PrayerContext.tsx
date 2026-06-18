@@ -11,22 +11,23 @@ import {
 
 import {
   clearLocalPrayerData,
-  createPrayer,
   interactionKey,
-  listActivePrayers,
   loadInteractions,
-  loadOverrides,
-  loadRemovedIds,
   loadReports,
   recordPrayerInteraction,
   recordReport,
   saveInteractions,
-  saveOverrides,
-  saveRemovedIds,
   saveReports,
   saveSubmittedPrayers,
   type NewPrayerInput,
 } from '../services/prayerService';
+import {
+  createRequest,
+  editRequest,
+  listActiveRequests,
+  persistsRequestsLocally,
+  removeRequest,
+} from '../services/prayerRequests';
 import type {
   PrayerCategory,
   PrayerInteraction,
@@ -60,6 +61,13 @@ import type {
  * record, so a refresh or restart can never double-count. `resetLocalData` clears all
  * local prototype activity (the profile, owned by AuthContext, is left intact). Email is
  * never stored in or derived from any of this data.
+ *
+ * Firestore prayer requests (Phase J.2e): the request read/create/edit/remove path now goes
+ * through the mode-aware seam (`src/services/prayerRequests.ts`). When Firebase is configured the
+ * requests come from the Firestore `prayerRequests` collection; otherwise the original local/mock
+ * path is used. Prayer interactions and reports are deliberately UNCHANGED here — they remain
+ * local/mock in both modes, layered on top of whichever request baseline was loaded, so the feed
+ * UI, the prayed-for CTA, and the derived counts behave exactly as before.
  */
 
 /** Fields an owner may change when editing their own request. */
@@ -130,7 +138,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const [list, storedInteractions, storedReports] = await Promise.all([
-        listActivePrayers(),
+        listActiveRequests(),
         loadInteractions(),
         loadReports(),
       ]);
@@ -144,8 +152,14 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       reportedKeys.current = new Set(
         storedReports.map((r) => interactionKey(r.reportedBy, r.requestId)),
       );
-    } catch {
-      setError('We could not load prayer requests right now. Pull down to try again.');
+    } catch (e) {
+      // Prefer the seam's safe copy (e.g. permission/network) and fall back to the pull-to-refresh
+      // wording. Raw Firebase detail is never surfaced.
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not load prayer requests right now. Pull down to try again.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -179,12 +193,15 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   );
 
   const addPrayer = useCallback(async (input: NewPrayerInput) => {
-    const created = await createPrayer(input);
-    // Prepend so the new request appears at the top of the feed (it is also the newest),
-    // then persist the locally-submitted subset so it survives a restart.
+    const created = await createRequest(input);
+    // Prepend so the new request appears at the top of the feed (it is also the newest). In local
+    // mode, persist the locally-submitted subset so it survives a restart; in Firebase mode the
+    // Firestore document is the source of truth, so there is nothing to persist on-device.
     setBaseline((prev) => {
       const next = [created, ...prev];
-      void saveSubmittedPrayers(next.filter((p) => p.id.startsWith('local-')));
+      if (persistsRequestsLocally()) {
+        void saveSubmittedPrayers(next.filter((p) => p.id.startsWith('local-')));
+      }
       return next;
     });
     return created.id;
@@ -199,14 +216,14 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       if (!target || target.userId !== userId) return; // owner-only guard
       const body = input.body.trim();
       const displayName = input.isAnonymous ? 'Anonymous' : input.ownerDisplayName;
-      const overrides = await loadOverrides();
-      overrides[requestId] = {
-        body,
+      // Persist via the seam (Firestore in Firebase mode; on-device override in local mode). A
+      // failure throws and is surfaced by the caller; the in-memory baseline updates only on success.
+      await editRequest(requestId, userId, {
+        body: input.body,
         category: input.category,
         isAnonymous: input.isAnonymous,
-        displayName,
-      };
-      await saveOverrides(overrides);
+        ownerDisplayName: input.ownerDisplayName,
+      });
       setBaseline((prev) =>
         prev.map((p) =>
           p.id === requestId
@@ -224,10 +241,9 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     async (requestId: string, userId: string) => {
       const target = baseline.find((p) => p.id === requestId);
       if (!target || target.userId !== userId) return; // owner-only guard
-      const removedIds = await loadRemovedIds();
-      if (!removedIds.includes(requestId)) {
-        await saveRemovedIds([...removedIds, requestId]);
-      }
+      // Soft remove via the seam (Firestore status -> removed in Firebase mode; on-device removed
+      // set in local mode). Never a hard delete. Drop from the in-memory baseline only on success.
+      await removeRequest(requestId, userId);
       setBaseline((prev) => prev.filter((p) => p.id !== requestId));
     },
     [baseline],
@@ -291,13 +307,15 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   );
 
   const resetLocalData = useCallback(async () => {
+    // Clears LOCAL prototype activity only (prayed marks, reports, and any local submitted/edited/
+    // removed requests). In Firebase mode the Firestore requests are the source of truth and are
+    // not affected; only the local prayed/report marks clear, then the feed reloads from the seam.
     await clearLocalPrayerData();
     prayedKeys.current = new Set();
     reportedKeys.current = new Set();
     setInteractions([]);
     setReports([]);
-    // Reload the baseline so the feed returns to seed-only (submitted requests cleared).
-    const list = await listActivePrayers();
+    const list = await listActiveRequests();
     setBaseline(list);
   }, []);
 

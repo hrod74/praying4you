@@ -62,8 +62,12 @@ export default function EditPrayerScreen() {
       });
       showSuccess('Prayer request updated.');
       router.back();
-    } catch {
-      showError('We could not save your changes just now. Please try again.');
+    } catch (e) {
+      showError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not update your request right now. Please try again.',
+      );
       throw new Error('edit-failed'); // re-enable the form
     }
   };
