@@ -48,8 +48,14 @@ export interface AuthService {
   getCurrentProfile(): Promise<UserProfile | null>;
   /** Update the signed-in user's display name (Firebase Auth profile). */
   updateDisplayName(displayName: string): Promise<UserProfile>;
-  /** Send a password-reset email. */
+  /** Send a password-reset email. Non-enumerating: unknown emails resolve like known ones. */
   sendPasswordReset(email: string): Promise<void>;
+  /**
+   * Change the signed-in user's password. Reauthenticates with the current password first
+   * (Firebase requires a recent login), then updates to the new one. Throws PasswordChangeError
+   * with safe copy on failure (e.g. wrong current password, requires-recent-login).
+   */
+  changePassword(input: { currentPassword: string; newPassword: string }): Promise<void>;
   /** Required before the real-tester beta (documented gate; not implemented in J.2b). */
   deleteAccount(): Promise<void>;
 }

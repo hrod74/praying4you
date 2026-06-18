@@ -11,7 +11,11 @@ import {
 
 import { isFirebaseConfigured } from '../config/firebaseConfig';
 import { firebaseAuthService, subscribeToProfile } from '../services/firebase/authService';
-import { accountDeletionError } from '../services/firebase/authErrors';
+import {
+  accountDeletionError,
+  CHANGE_PASSWORD_COPY,
+  PasswordChangeError,
+} from '../services/firebase/authErrors';
 import { firebaseUserService } from '../services/firebase/userService';
 import type { UserProfile } from '../models/types';
 
@@ -103,6 +107,13 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   /** Send a password-reset email (Firebase mode only; no-op in local mode). */
   sendPasswordReset: (email: string) => Promise<void>;
+  /**
+   * Change the signed-in user's password (Firebase mode only). Reauthenticates with the current
+   * password, then updates to the new one. Throws a PasswordChangeError with safe copy on failure
+   * (including `requiresRecentLogin`). In local mode there is no password, so it throws a calm
+   * PasswordChangeError explaining the feature needs Firebase.
+   */
+  changePassword: (input: { currentPassword: string; newPassword: string }) => Promise<void>;
   /**
    * Permanently delete the signed-in account and return to the signed-out state.
    *
@@ -270,6 +281,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseAuthService.sendPasswordReset(email);
   }, []);
 
+  const changePassword = useCallback(
+    async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {
+      // Local/mock mode has no password to change; surface calm copy instead of crashing.
+      if (AUTH_MODE !== 'firebase') {
+        throw new PasswordChangeError(CHANGE_PASSWORD_COPY.localUnavailable);
+      }
+      // By the book: Firebase reauthenticates and updates the password. Errors arrive as a
+      // PasswordChangeError carrying safe copy (and `requiresRecentLogin` when relevant).
+      await firebaseAuthService.changePassword({ currentPassword, newPassword });
+    },
+    [],
+  );
+
   const deleteAccount = useCallback(async () => {
     if (AUTH_MODE === 'firebase') {
       const uid = profile?.id;
@@ -316,6 +340,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       sendPasswordReset,
+      changePassword,
       deleteAccount,
     }),
     [
@@ -327,6 +352,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       sendPasswordReset,
+      changePassword,
       deleteAccount,
     ],
   );

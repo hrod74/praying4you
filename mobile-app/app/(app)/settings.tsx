@@ -8,12 +8,18 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
 import { usePrayers } from '../../src/context/PrayerContext';
-import { AccountDeletionError, DELETE_ERROR_COPY } from '../../src/services/firebase/authErrors';
+import {
+  AccountDeletionError,
+  CHANGE_PASSWORD_COPY,
+  DELETE_ERROR_COPY,
+  PasswordChangeError,
+} from '../../src/services/firebase/authErrors';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
 import {
   DISPLAY_NAME_MAX,
   validateDisplayName,
   validateEmail,
+  validatePassword,
 } from '../../src/utils/validation';
 
 /**
@@ -28,7 +34,8 @@ import {
  */
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, signOut, updateProfile, requiresPassword, deleteAccount } = useAuth();
+  const { profile, signOut, updateProfile, requiresPassword, changePassword, deleteAccount } =
+    useAuth();
   const { resetLocalData, getMyRequests, getPrayedRequests } = usePrayers();
   const { showSuccess, showError } = useFeedback();
   const [deleting, setDeleting] = useState(false);
@@ -53,11 +60,84 @@ export default function SettingsScreen() {
   const canSave =
     name.trim().length > 0 && (requiresPassword || email.trim().length > 0) && !saving;
 
+  // Inline change-password form (Firebase mode only). Like Edit profile, saving requires an
+  // explicit tap; the keyboard keys only move focus or dismiss. Passwords use secure entry, are
+  // cleared from state on close/success, and are never shown back to the user or logged.
+  const newPasswordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwSubmitted, setPwSubmitted] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const newPasswordError = pwSubmitted ? validatePassword(newPassword) : null;
+  const confirmPasswordError =
+    pwSubmitted && !validatePassword(newPassword) && newPassword !== confirmPassword
+      ? CHANGE_PASSWORD_COPY.mismatch
+      : null;
+  const canChangePassword =
+    currentPassword.length > 0 &&
+    newPassword.length > 0 &&
+    confirmPassword.length > 0 &&
+    !savingPassword;
+
   const startEdit = () => {
     setName(profile?.displayName ?? '');
     setEmail(profile?.email ?? '');
     setSubmitted(false);
     setEditing(true);
+  };
+
+  const startChangePassword = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPwSubmitted(false);
+    setChangingPassword(true);
+  };
+
+  const closeChangePassword = () => {
+    Keyboard.dismiss();
+    setChangingPassword(false);
+    setPwSubmitted(false);
+    // Clear secrets from memory once the form is closed.
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const handleChangePassword = async () => {
+    setPwSubmitted(true);
+    // Validate locally first: a real new password, and a matching confirmation.
+    if (validatePassword(newPassword)) return;
+    if (newPassword !== confirmPassword) return;
+    setSavingPassword(true);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      closeChangePassword();
+      setSavingPassword(false);
+      showSuccess(CHANGE_PASSWORD_COPY.success);
+    } catch (e) {
+      setSavingPassword(false);
+      // Firebase may require a fresh sign-in before changing a password. Offer a calm path to
+      // sign in again rather than failing silently.
+      if (e instanceof PasswordChangeError && e.requiresRecentLogin) {
+        Alert.alert('Please sign in again', e.message, [
+          { text: 'Not now', style: 'cancel' },
+          {
+            text: 'Sign in again',
+            onPress: () => {
+              closeChangePassword();
+              void signOut();
+            },
+          },
+        ]);
+        return;
+      }
+      showError(e instanceof Error && e.message ? e.message : CHANGE_PASSWORD_COPY.generic);
+    }
   };
 
   const cancelEdit = () => {
@@ -240,6 +320,82 @@ export default function SettingsScreen() {
           </View>
         )}
       </View>
+
+      {/* Change password — Firebase mode only (local profiles have no password to change). */}
+      {requiresPassword ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Password</Text>
+          {changingPassword ? (
+            <View style={styles.card}>
+              <Text style={styles.aboutText}>
+                Enter your current password, then choose a new one.
+              </Text>
+              <TextField
+                label="Current password"
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                placeholder="Your current password"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry
+                textContentType="password"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => newPasswordRef.current?.focus()}
+              />
+              <TextField
+                ref={newPasswordRef}
+                label="New password"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="At least 6 characters"
+                helperText="Use at least 6 characters."
+                errorText={newPasswordError}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry
+                textContentType="newPassword"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+              />
+              <TextField
+                ref={confirmPasswordRef}
+                label="Confirm new password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Re-enter your new password"
+                errorText={confirmPasswordError}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry
+                textContentType="newPassword"
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+              />
+              <Button
+                label={savingPassword ? 'Updating password…' : 'Update password'}
+                onPress={handleChangePassword}
+                disabled={!canChangePassword}
+                accessibilityHint="Reauthenticates and updates your account password"
+              />
+              <Button label="Cancel" variant="secondary" onPress={closeChangePassword} />
+            </View>
+          ) : (
+            <View style={styles.card}>
+              <Text style={styles.aboutText}>
+                Update the password you use to sign in. You will need your current password.
+              </Text>
+              <Button
+                label="Change password"
+                variant="secondary"
+                onPress={startChangePassword}
+                accessibilityHint="Opens a form to change your account password"
+              />
+            </View>
+          )}
+        </View>
+      ) : null}
 
       {/* Your prayer activity */}
       <View style={styles.section}>

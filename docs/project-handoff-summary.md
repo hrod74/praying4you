@@ -302,3 +302,22 @@ Firebase mode starts with new requests. Safe Firestore error copy added (load/cr
 permission/network). See `docs/firebase-prayer-requests-implementation.md` and the owner checklist
 `docs/QA_prayer_request_scenarios.md`. **Next: J.2f — Firestore prayer interactions (aggregate-only,
 never who prayed).**
+
+**Phase J.2f.1 — password management (implemented).** Added two Firebase Auth account-management
+flows, by the book via the Firebase JS SDK, with no Firestore changes. (1) **Forgot password /
+reset** from the sign-in screen: a "Forgot password?" link calls `sendPasswordResetEmail`. It is
+**account-non-enumerating** — the same confirmation ("If an account exists for that email, password
+reset instructions will be sent.") shows whether or not the email is registered, and the service
+swallows `auth/user-not-found` so existence is never revealed. (2) **Change password** from
+**Settings → Password** (Firebase mode only): an inline form takes current + new + confirm, validates
+match and the 6-char minimum locally, then `reauthenticateWithCredential` + `updatePassword`; success
+shows "Your password has been updated." `auth/requires-recent-login` surfaces calm copy with a "Sign
+in again" path. All errors map to safe copy in `authErrors.ts` (`PASSWORD_RESET_COPY` /
+`passwordResetErrorMessage`, `CHANGE_PASSWORD_COPY` / `PasswordChangeError` / `passwordChangeError`);
+no raw Firebase codes shown. **No passwords are stored or logged**; secure text entry throughout;
+fields cleared on close/success. **Local/mock fallback:** both surfaces are hidden when Firebase is
+not configured (local profiles have no password), and the context methods are safe no-ops / calm
+errors so nothing crashes. No prayer requests, interactions, reports, push, AI, social/passwordless,
+or anonymous auth were touched. See `docs/firebase-password-management-implementation.md` and the
+owner checklist `docs/QA_password_management_scenarios.md`. **Next: J.2f — Firestore prayer
+interactions (aggregate-only, never who prayed).**

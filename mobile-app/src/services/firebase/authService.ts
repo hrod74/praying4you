@@ -1,13 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FirebaseError } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
   deleteUser,
+  EmailAuthProvider,
   getAuth,
   initializeAuth,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updatePassword,
   updateProfile as firebaseUpdateProfile,
   type Auth,
   type Persistence,
@@ -29,7 +33,16 @@ const getReactNativePersistence = (
   }
 ).getReactNativePersistence;
 import { getFirebaseApp } from './firebaseApp';
-import { accountDeletionError, authErrorMessage, DELETE_ERROR_COPY, AccountDeletionError } from './authErrors';
+import {
+  accountDeletionError,
+  authErrorMessage,
+  DELETE_ERROR_COPY,
+  AccountDeletionError,
+  CHANGE_PASSWORD_COPY,
+  passwordChangeError,
+  PasswordChangeError,
+  passwordResetErrorMessage,
+} from './authErrors';
 import { type AuthService } from './contracts';
 
 /**
@@ -152,11 +165,36 @@ export const firebaseAuthService: AuthService = {
   },
 
   async sendPasswordReset(email) {
+    // By the book: Firebase owns the reset email + the reset link/token. We only ask it to send.
     const auth = requireAuth();
     try {
       await sendPasswordResetEmail(auth, email.trim());
     } catch (error) {
-      throw new Error(authErrorMessage(error));
+      // Non-enumeration: an unknown email must look identical to a known one, so we swallow
+      // `auth/user-not-found` and resolve. The caller then shows the same neutral confirmation
+      // either way and never learns whether the address is registered. Genuine failures
+      // (network, rate limit, malformed email) still surface as safe copy.
+      if (error instanceof FirebaseError && error.code === 'auth/user-not-found') return;
+      throw new Error(passwordResetErrorMessage(error));
+    }
+  },
+
+  async changePassword({ currentPassword, newPassword }) {
+    // By the book: Firebase owns credential verification, hashing, and the password update. We
+    // reauthenticate the currently signed-in user with their CURRENT password (Firebase requires a
+    // recent login to change a password), then call updatePassword. We only ever change the signed-in
+    // user's own password. Passwords are never stored or logged anywhere.
+    const auth = requireAuth();
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      throw new PasswordChangeError(CHANGE_PASSWORD_COPY.requiresRecentLogin, true);
+    }
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+    } catch (error) {
+      throw passwordChangeError(error);
     }
   },
 

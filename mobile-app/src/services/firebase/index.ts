@@ -25,6 +25,11 @@ export {
   DELETE_ERROR_COPY,
   AccountDeletionError,
   accountDeletionError,
+  PASSWORD_RESET_COPY,
+  passwordResetErrorMessage,
+  CHANGE_PASSWORD_COPY,
+  PasswordChangeError,
+  passwordChangeError,
 } from './authErrors';
 export { firebaseUserService } from './userService';
 export { firebasePrayerRequestService } from './prayerRequestService';

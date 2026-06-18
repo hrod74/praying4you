@@ -7,6 +7,7 @@ import { Screen } from '../../src/components/Screen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
+import { PASSWORD_RESET_COPY } from '../../src/services/firebase/authErrors';
 import { colors, spacing, typography } from '../../src/theme/theme';
 import { validateEmail } from '../../src/utils/validation';
 
@@ -54,18 +55,29 @@ export default function SignInScreen() {
     }
   };
 
+  const [sendingReset, setSendingReset] = useState(false);
+
   const handleForgotPassword = async () => {
+    // Need a valid-looking email before we ask Firebase to send anything.
     if (validateEmail(email)) {
       setSubmitted(true);
-      showError('Enter your email above, then tap reset.');
+      showError(PASSWORD_RESET_COPY.invalidEmail);
       return;
     }
+    setSendingReset(true);
     try {
       await sendPasswordReset(email);
-      showSuccess('If that email has an account, a reset link is on its way.');
-    } catch {
-      // Keep messaging neutral so we never reveal whether an email exists.
-      showSuccess('If that email has an account, a reset link is on its way.');
+      // Non-enumerating: the same confirmation shows whether or not the email has an account.
+      // The auth layer swallows "unknown email" so we never reveal which addresses are registered.
+      showSuccess(PASSWORD_RESET_COPY.confirmation);
+    } catch (e) {
+      // Only genuine failures (network, rate limit) reach here; they carry safe, non-enumerating
+      // copy from the auth layer. Raw Firebase detail is never shown.
+      showError(
+        e instanceof Error && e.message ? e.message : PASSWORD_RESET_COPY.generic,
+      );
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -115,12 +127,16 @@ export default function SignInScreen() {
           />
           <Pressable
             onPress={handleForgotPassword}
+            disabled={sendingReset}
             accessibilityRole="button"
             accessibilityLabel="Forgot password? Send a reset email"
+            accessibilityState={{ disabled: sendingReset }}
             hitSlop={8}
             style={styles.linkRow}
           >
-            <Text style={styles.linkText}>Forgot password? Send a reset email</Text>
+            <Text style={styles.linkText}>
+              {sendingReset ? 'Sending reset email…' : 'Forgot password? Send a reset email'}
+            </Text>
           </Pressable>
           <Button
             label="Create a profile"

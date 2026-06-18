@@ -95,3 +95,96 @@ export function accountDeletionError(error: unknown): AccountDeletionError {
       return new AccountDeletionError(DELETE_ERROR_COPY.generic);
   }
 }
+
+/**
+ * Calm, safe copy for the forgot-password / reset flow (Phase J.2f.1). No raw Firebase detail.
+ * No em dashes in user-facing copy.
+ *
+ * `confirmation` is deliberately NON-ENUMERATING: it is shown whether or not an account exists for
+ * the email, so the flow never reveals which addresses are registered (account-enumeration safety).
+ */
+export const PASSWORD_RESET_COPY = {
+  /** Shown on success AND for unknown emails, so existence is never disclosed. */
+  confirmation: 'If an account exists for that email, password reset instructions will be sent.',
+  /** Client-side guard before we call Firebase. */
+  invalidEmail: 'Please enter a valid email address.',
+  network: 'We could not connect right now. Please check your connection and try again.',
+  tooManyRequests: 'Too many attempts. Please wait a little while and try again.',
+  /** Any genuine failure (not unknown-email, which is treated as success). */
+  generic: 'We could not send password reset instructions right now. Please try again.',
+  /** Local/mock mode: there is no backend to email a reset link. */
+  localUnavailable: 'Password reset is available when Firebase is configured.',
+} as const;
+
+/**
+ * Safe copy for a genuine reset failure. NEVER call this for `auth/user-not-found`: that case is
+ * swallowed in the service so the UI shows the neutral confirmation instead (non-enumeration).
+ */
+export function passwordResetErrorMessage(error: unknown): string {
+  const code = error instanceof FirebaseError ? error.code : '';
+  switch (code) {
+    case 'auth/invalid-email':
+      return PASSWORD_RESET_COPY.invalidEmail;
+    case 'auth/network-request-failed':
+      return PASSWORD_RESET_COPY.network;
+    case 'auth/too-many-requests':
+      return PASSWORD_RESET_COPY.tooManyRequests;
+    default:
+      return PASSWORD_RESET_COPY.generic;
+  }
+}
+
+/**
+ * Calm, safe copy for the signed-in change-password flow (Phase J.2f.1). No raw Firebase detail.
+ * No em dashes in user-facing copy.
+ */
+export const CHANGE_PASSWORD_COPY = {
+  success: 'Your password has been updated.',
+  /** Reauthentication failed: the current password was wrong. */
+  wrongPassword: 'That password does not look right. Please try again.',
+  weakPassword: 'Please choose a stronger password. Use at least 6 characters.',
+  /** New password and confirmation did not match (validated client-side). */
+  mismatch: 'The new passwords do not match.',
+  network: 'We could not connect right now. Please check your connection and try again.',
+  tooManyRequests: 'Too many attempts. Please wait a little while and try again.',
+  /** Firebase needs a fresh sign-in before updating the password. */
+  requiresRecentLogin: 'For your security, please sign in again before changing your password.',
+  /** Local/mock mode: local profiles have no password to change. */
+  localUnavailable: 'Password change is available when Firebase is configured.',
+  generic: 'We could not update your password right now. Please try again.',
+} as const;
+
+/**
+ * Error raised by the change-password flow. Carries already-safe user-facing copy in `message`
+ * plus `requiresRecentLogin`, which Settings uses to guide the user to sign in again (Firebase
+ * requires a recent login before changing a password). No raw Firebase detail is exposed.
+ */
+export class PasswordChangeError extends Error {
+  readonly requiresRecentLogin: boolean;
+  constructor(message: string, requiresRecentLogin = false) {
+    super(message);
+    this.name = 'PasswordChangeError';
+    this.requiresRecentLogin = requiresRecentLogin;
+  }
+}
+
+/** Maps any change-password failure to a safe PasswordChangeError. Unknown errors are generic. */
+export function passwordChangeError(error: unknown): PasswordChangeError {
+  if (error instanceof PasswordChangeError) return error;
+  const code = error instanceof FirebaseError ? error.code : '';
+  switch (code) {
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return new PasswordChangeError(CHANGE_PASSWORD_COPY.wrongPassword);
+    case 'auth/weak-password':
+      return new PasswordChangeError(CHANGE_PASSWORD_COPY.weakPassword);
+    case 'auth/requires-recent-login':
+      return new PasswordChangeError(CHANGE_PASSWORD_COPY.requiresRecentLogin, true);
+    case 'auth/network-request-failed':
+      return new PasswordChangeError(CHANGE_PASSWORD_COPY.network);
+    case 'auth/too-many-requests':
+      return new PasswordChangeError(CHANGE_PASSWORD_COPY.tooManyRequests);
+    default:
+      return new PasswordChangeError(CHANGE_PASSWORD_COPY.generic);
+  }
+}
