@@ -9,6 +9,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
   type Firestore,
 } from 'firebase/firestore';
@@ -194,6 +195,35 @@ export const firebasePrayerRequestService: PrayerRequestService = {
         .sort(byNewestFirst);
     } catch (error) {
       throw prayerRequestError('load', error);
+    }
+  },
+
+  async softRemoveAllByOwner(userId) {
+    const db = requireDb();
+    // Find the owner's currently active requests, then soft-remove each in batched writes. Owner-only
+    // (the update rule requires authorUid == request.auth.uid) and protected fields (authorUid,
+    // createdAt, prayerCount) are left untouched. This is the account-deletion cleanup: requests are
+    // never hard-deleted, so reports/interactions can never reference a missing request, and a future
+    // retention policy can decide whether to purge or anonymize removed records later.
+    //
+    // Note: the raw Firebase error is allowed to propagate. The only caller (the account-deletion
+    // seam) maps it to safe copy via `accountDeletionError`, consistent with the other delete steps.
+    const snap = await getDocs(query(collection(db, COLLECTION), where('authorUid', '==', userId)));
+    const active = snap.docs.filter((d) => d.data().status !== 'removed');
+    if (active.length === 0) return;
+    // Firestore caps a write batch at 500 operations; chunk to stay well under that.
+    const CHUNK = 450;
+    for (let i = 0; i < active.length; i += CHUNK) {
+      const batch = writeBatch(db);
+      for (const d of active.slice(i, i + CHUNK)) {
+        batch.update(d.ref, {
+          status: 'removed',
+          removedReason: 'accountDeleted',
+          removedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
     }
   },
 };

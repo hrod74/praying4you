@@ -8,30 +8,34 @@ Expo Go, and check the box when the result matches what is described.
 
 This checklist verifies that account deletion works end to end before any Alpha testing with
 real users. Account deletion must work before we invite testers, so a person can always remove
-their sign-in and private profile.
+their sign-in, their private profile, and their prayer requests from the feed.
 
 What this phase covers:
 
 - Deleting the Firebase Authentication sign-in for the current user.
 - Deleting that user's private profile document at `users/{uid}` in Firestore.
+- **Soft-removing that user's active prayer requests** in Firestore so they leave the feed
+  (Phase J.2f.2). The documents are kept with `status: removed`, `removedReason: accountDeleted`,
+  and `removedAt` set; they are never hard-deleted.
 - Returning the app to the signed-out / welcome state.
 
 What is still out of scope (so do not test these here):
 
-- Prayer requests, prayer interactions (the "prayed for" counts), and reports are still local
-to the device and are not in Firestore yet. Deletion does not touch them.
+- Prayer interactions (the "prayed for" counts) and reports are still local to the device and are
+not in Firestore yet. Deletion does not touch them there. There is no "who prayed" data anywhere.
 
 ## Before You Start
 
 - [x] Expo is running with `npx expo start -c`
 - [x] Firebase Console is open to Authentication → Users
 - [x] Firebase Console is open to Firestore Database → Data → users
+- [ ] Firebase Console is open to Firestore Database → Data → prayerRequests
 - [x] Testing uses fresh throwaway accounts only
 - [x] `.env.local` is saved locally and not committed
 - [x] Current Firestore rules are published
 
-> Tip: keep the two Firebase Console tabs side by side so you can watch the user appear and
-> disappear in Authentication and in Firestore as you test.
+> Tip: keep the Firebase Console tabs side by side so you can watch the user appear and
+> disappear in Authentication and in Firestore (users and prayerRequests) as you test.
 
 ## Scenario 1: Happy Path Account Deletion
 
@@ -108,13 +112,40 @@ are comfortable temporarily moving the config.
 > run `npx expo start -c`, create a local profile, then delete it. Rename the file back when
 > done so Firebase mode returns.
 
-## Scenario 7: Data Boundary Check
+## Scenario 7: Delete Account With Active Prayer Requests
 
-- [x] Confirm no `prayerRequests` are written to Firestore
-- [x] Confirm no `prayerInteractions` are written to Firestore
-- [x] Confirm no `reports` are written to Firestore
-- [x] Confirm only the Auth user and the `users/{uid}` profile are affected
-- [x] Confirm no email is stored in Firestore
+This is the Phase J.2f.2 scenario: a deleting user who has authored prayer requests. It confirms
+their requests are soft-removed (kept in Firestore with a removed status), not hard-deleted, and
+that they leave the feed.
+
+- [ ] Create a throwaway account
+- [ ] Create one named prayer request
+- [ ] Create one anonymous prayer request
+- [ ] Confirm both appear in the feed
+- [ ] Confirm both exist in Firestore `prayerRequests`
+- [ ] Delete the account
+- [ ] Confirm Firebase Auth user is removed
+- [ ] Confirm Firestore `users/{uid}` profile is removed
+- [ ] Confirm the user's `prayerRequests` are soft-removed, not hard-deleted
+- [ ] Confirm `status` is `removed`
+- [ ] Confirm `removedReason` is `accountDeleted`
+- [ ] Confirm `removedAt` is set
+- [ ] Confirm removed requests no longer appear in feed
+- [ ] Restart app
+- [ ] Confirm deleted user is not restored
+
+> The anonymous request stores the public name "Anonymous" only (the real name is never stored),
+> and `authorUid` is an opaque UID that is never shown in the app. Both of the user's requests
+> should be soft-removed regardless of whether they were posted named or anonymously.
+
+## Scenario 8: Data Boundary Check
+
+- [ ] Confirm other users' `prayerRequests` are not changed
+- [ ] Confirm no `prayerInteractions` collection is written
+- [ ] Confirm no `reports` collection is written
+- [ ] Confirm no email is stored in `prayerRequests`
+- [ ] Confirm no hard delete happened for `prayerRequests` (the documents still exist, with status removed)
+- [ ] Confirm a request the user only prayed for (authored by someone else) is not removed
 
 ## Pass / Fail Summary
 
@@ -124,7 +155,13 @@ are comfortable temporarily moving the config.
 - [x] Delete after fresh sign-in passed
 - [x] Recent-login behavior handled or noted
 - [x] Local / mock fallback passed or not tested
-- [x] No prayer data touched
+- [ ] Delete with active prayer requests passed
+- [ ] User's prayer requests are soft-removed (status removed, removedReason accountDeleted, removedAt set)
+- [ ] Removed requests no longer appear in the feed
+- [ ] No hard delete of prayer requests
+- [ ] Other users' prayer requests unchanged
+- [ ] No prayerInteractions or reports written to Firestore
+- [ ] No email stored in Firestore
 - [x] No technical errors shown to the user
 
 ## QA Notes

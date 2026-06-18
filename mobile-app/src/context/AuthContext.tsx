@@ -17,6 +17,7 @@ import {
   PasswordChangeError,
 } from '../services/firebase/authErrors';
 import { firebaseUserService } from '../services/firebase/userService';
+import { removeOwnRequestsForAccountDeletion } from '../services/prayerRequests';
 import type { UserProfile } from '../models/types';
 
 /**
@@ -117,10 +118,12 @@ interface AuthContextValue {
   /**
    * Permanently delete the signed-in account and return to the signed-out state.
    *
-   * Firebase mode: deletes the private `users/{uid}` profile doc first (while still
-   * authenticated), then deletes the Firebase Auth user, then clears any local session state.
-   * Local mode: clears the on-device profile/session. On failure it throws an
-   * AccountDeletionError with safe copy (and `requiresRecentLogin` when a fresh sign-in is needed).
+   * Firebase mode (in order, while still authenticated): soft-removes the user's active
+   * `prayerRequests` (status -> removed, removedReason -> accountDeleted; never hard-deleted), then
+   * deletes the private `users/{uid}` profile doc, then deletes the Firebase Auth user, then clears
+   * any local session state. Local mode: soft-removes the user's own submitted requests, then clears
+   * the on-device profile/session. On failure it throws an AccountDeletionError with safe copy (and
+   * `requiresRecentLogin` when a fresh sign-in is needed); a blocked step leaves the account intact.
    */
   deleteAccount: () => Promise<void>;
 }
@@ -297,19 +300,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteAccount = useCallback(async () => {
     if (AUTH_MODE === 'firebase') {
       const uid = profile?.id;
-      // 1. Delete the private Firestore profile doc FIRST, while the user is still authenticated
-      //    (owner-only rules require an active session). Wrapped so any Firestore failure surfaces
-      //    as safe copy. We stop here on failure so we never orphan the doc by deleting Auth first.
       if (uid) {
+        // 1. Soft-remove the user's active prayer requests FIRST, while still authenticated
+        //    (owner-only rules require request.auth.uid == authorUid). Requests are marked removed,
+        //    never hard-deleted, so reports/interactions can't reference a missing request. We stop
+        //    on failure so we never delete the account while their requests are still in the feed.
+        try {
+          await removeOwnRequestsForAccountDeletion(uid);
+        } catch (error) {
+          throw accountDeletionError(error);
+        }
+        // 2. Delete the private Firestore profile doc, still while authenticated (owner-only rules).
+        //    We stop here on failure so we never orphan the doc by deleting Auth first.
         try {
           await firebaseUserService.deleteOwnProfile(uid);
         } catch (error) {
           throw accountDeletionError(error);
         }
       }
-      // 2. Delete the Firebase Auth user (throws AccountDeletionError, e.g. requires-recent-login).
+      // 3. Delete the Firebase Auth user (throws AccountDeletionError, e.g. requires-recent-login).
       await firebaseAuthService.deleteAccount();
-      // 3. onAuthStateChanged will clear profile/isSignedIn; also clear any local fallback state.
+      // 4. onAuthStateChanged will clear profile/isSignedIn; also clear any local fallback state.
       try {
         await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY]);
       } catch {
@@ -318,7 +329,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Local/mock fallback: clear the on-device profile/session and return to signed-out state.
+    // Local/mock fallback: soft-remove the user's own submitted requests (best-effort; mirrors the
+    // Firebase behavior so they leave the feed), then clear the on-device profile/session.
+    const uid = profile?.id;
+    if (uid) {
+      try {
+        await removeOwnRequestsForAccountDeletion(uid);
+      } catch {
+        // Non-fatal: local soft-remove is best-effort and must never block account deletion.
+      }
+    }
     setProfile(null);
     setIsSignedIn(false);
     try {

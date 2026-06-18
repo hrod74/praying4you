@@ -278,8 +278,8 @@ fallback preserved throughout (no `.env.local` → the app runs fully local and 
   signed-in user (no admin/service-account behavior). Requires-recent-login and network/permission
   failures map to safe copy, with a "sign in again" path; a blocked deletion leaves both the Auth
   user and profile intact. Local/mock fallback clears on-device profile/session. **No rules change
-  needed** (owner-only delete on `users/{uid}` already shipped in J.2c). Prayer data is untouched and
-  out of scope until it moves to Firestore, at which point deletion must be revisited. See
+  needed** (owner-only delete on `users/{uid}` already shipped in J.2c). Prayer data was untouched and
+  out of scope at the time (revisited in J.2f.2 below). See
   `docs/firebase-account-deletion-implementation.md` and the owner checklist
   `docs/QA_delete_scenarios.md`.
 
@@ -321,3 +321,29 @@ errors so nothing crashes. No prayer requests, interactions, reports, push, AI, 
 or anonymous auth were touched. See `docs/firebase-password-management-implementation.md` and the
 owner checklist `docs/QA_password_management_scenarios.md`. **Next: J.2f — Firestore prayer
 interactions (aggregate-only, never who prayed).**
+
+**Phase J.2f.2 — revisit account deletion for Firestore prayer requests (implemented).** Account
+deletion was first built (J.2d) before prayer requests moved to Firestore, so it only removed the Auth
+user + `users/{uid}` profile. Now that `prayerRequests` live in Firestore, deletion also cleans up the
+deleting user's authored requests, by **soft-remove, not hard delete** (owner decision for Alpha).
+New order (all while still authenticated): (1) **soft-remove the user's active prayer requests** —
+each owned active request gets `status: 'removed'`, `removedReason: 'accountDeleted'`, `removedAt`,
+`updatedAt`, via a batched `softRemoveAllByOwner(uid)` on `firebasePrayerRequestService` reached
+through the seam `removeOwnRequestsForAccountDeletion`; (2) delete `users/{uid}`; (3) delete the Auth
+user; (4) clear local state; (5) return to welcome. Each step maps failures to the existing safe
+deletion copy (requires-recent-login / network / permission / generic); a blocked step leaves the
+account intact and is retryable (idempotent — already-removed requests are skipped). Removed requests
+leave the feed and My Prayer Requests (both filter to `active`). **Only the user's own** requests are
+touched; others' requests and requests they merely prayed for are never changed; no email is written;
+`authorUid` stays opaque/never shown. **Why soft delete:** feels gone to users, keeps a minimal removed
+record for safety/moderation/audit, avoids dangling references once interactions/reports move to
+Firestore, and leaves a future retention policy (purge or anonymize) open. **No firestore.rules change
+and no republish needed** — the existing owner-only `prayerRequests` update rule already permits the
+soft-remove (status -> removed, protected fields unchanged, no email; extra removedReason/removedAt are
+allowed). Local/mock fallback soft-removes the user's own submitted requests on-device (best-effort) so
+nothing crashes. Updated delete-account confirmation copy ("...remove your active prayer requests from
+the feed...", no backend detail, no em dashes). **No** prayerInteractions/reports/push/AI added; "who
+prayed" still never exposed. See `docs/firebase-account-deletion-implementation.md`,
+`docs/firebase-prayer-requests-implementation.md`, and `docs/QA_delete_scenarios.md` (new "Delete
+Account With Active Prayer Requests" scenario + data boundary checks). **Next: J.2f — Firestore prayer
+interactions (aggregate-only, never who prayed); revisit deletion again there.**

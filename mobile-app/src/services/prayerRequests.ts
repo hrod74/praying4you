@@ -6,6 +6,7 @@ import {
   listActivePrayers,
   loadOverrides,
   loadRemovedIds,
+  loadSubmittedPrayers,
   saveOverrides,
   saveRemovedIds,
   type NewPrayerInput,
@@ -86,6 +87,29 @@ export async function removeRequest(requestId: string, userId: string): Promise<
   if (!removedIds.includes(requestId)) {
     await saveRemovedIds([...removedIds, requestId]);
   }
+}
+
+/**
+ * Soft-remove ALL of a user's active prayer requests as part of account deletion (Phase J.2f.2).
+ *
+ * Firebase mode: marks each of the owner's active `prayerRequests` documents `status: 'removed'`,
+ * `removedReason: 'accountDeleted'`, with `removedAt`/`updatedAt` set (never a hard delete). Run this
+ * while the user is still authenticated; the raw error propagates so the deletion caller can map it.
+ * Local mode: adds the user's own submitted request ids to the on-device soft-removed set, so they
+ * stop appearing in the feed and in "My Prayer Requests" (mirroring the Firebase behavior). Requests
+ * authored by other users (or only prayed for by this user) are never touched.
+ */
+export async function removeOwnRequestsForAccountDeletion(userId: string): Promise<void> {
+  if (useFirebase()) {
+    await firebasePrayerRequestService.softRemoveAllByOwner(userId);
+    return;
+  }
+  // Local: soft-remove only the user's OWN submitted requests (by author id).
+  const [submitted, removedIds] = await Promise.all([loadSubmittedPrayers(), loadRemovedIds()]);
+  const mineIds = submitted.filter((p) => p.userId === userId).map((p) => p.id);
+  if (mineIds.length === 0) return;
+  const next = Array.from(new Set([...removedIds, ...mineIds]));
+  if (next.length !== removedIds.length) await saveRemovedIds(next);
 }
 
 /**

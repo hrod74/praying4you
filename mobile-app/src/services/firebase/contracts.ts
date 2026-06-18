@@ -121,6 +121,14 @@ export interface PrayerRequestService {
   remove(requestId: string, userId: string): Promise<void>;
   /** The signed-in user's own requests. */
   listMine(userId: string): Promise<PrayerRequest[]>;
+  /**
+   * Soft-remove ALL of the owner's currently active requests (account deletion, Phase J.2f.2).
+   * Each request is marked `status: 'removed'`, `removedReason: 'accountDeleted'`, with `removedAt`
+   * and `updatedAt` set. Never a hard delete; only the caller's own requests are touched. Intended
+   * to run while the user is still authenticated, just before the account is deleted. Lets the
+   * underlying Firebase error propagate so the account-deletion caller can map it to safe copy.
+   */
+  softRemoveAllByOwner(userId: string): Promise<void>;
 }
 
 /**

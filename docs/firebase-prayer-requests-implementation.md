@@ -52,6 +52,7 @@ before; only the source of the request list changed.
 | `createdAt` | server timestamp | Set on create. |
 | `updatedAt` | server timestamp | Updated on edit / remove. |
 | `removedAt` | server timestamp | Set only when soft-removed. |
+| `removedReason` | string | Set only on account-deletion soft-remove: `"accountDeleted"` (Phase J.2f.2). Absent for an ordinary owner "Remove request". |
 
 **Email is never stored** in a prayer request (and the rules forbid an `email` field on create and
 update). There is no `title` field (the app has no title; body only). `reportCount` is not stored
@@ -100,6 +101,11 @@ in Firestore (reports are local); the app derives it from the local report list 
   `updatedAt`. The user-facing language stays **"Remove request"**. Removed requests disappear from
   the feed and detail. Documents are **never hard-deleted** from the client (the rules forbid
   `delete`).
+- **Account-deletion soft-remove (Phase J.2f.2):** `softRemoveAllByOwner(uid)` batch soft-removes
+  **all** of the owner's active requests when they delete their account, additionally setting
+  `removedReason: 'accountDeleted'`. Same soft-remove guarantees (never hard-deleted; protected fields
+  untouched; no email). See `docs/firebase-account-deletion-implementation.md` for the full deletion
+  flow and ordering.
 
 ## Error handling
 
@@ -156,9 +162,10 @@ Alpha.
   AGGREGATE-ONLY to others, never "who prayed"). This is the recommended next phase (J.2f). When it
   lands, `prayerCount` becomes server-incremented and the rules gain an interactions collection.
 - **Reports in Firestore** (store-for-manual-review, admin-read, duplicate-prevented).
-- Account deletion (J.2d) currently removes the Auth user + `users/{uid}` profile only; once prayer
-  requests are in Firestore for real testers, deletion should be revisited to also handle a user's
-  own prayer requests (e.g. soft-remove or anonymize).
+- Account deletion was **revisited in Phase J.2f.2**: deleting an account now **soft-removes** the
+  user's own active prayer requests (`status: removed`, `removedReason: accountDeleted`) before
+  deleting the profile and Auth user. See `docs/firebase-account-deletion-implementation.md`. It will
+  need revisiting again to handle interactions/reports once those move to Firestore.
 
 ## Validation performed
 

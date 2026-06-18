@@ -220,13 +220,14 @@ export default function SettingsScreen() {
   };
 
   // Two-step deletion guarded by an explicit confirmation so it cannot be triggered by an
-  // accidental tap. The copy is clear about what is removed and that it cannot be undone, and it
-  // notes that prayer requests are not part of this step yet (they are not in Firestore).
+  // accidental tap. The copy is clear about what is removed and that it cannot be undone. It speaks
+  // in user-facing terms (profile removed, active requests removed from the feed) and deliberately
+  // does not explain the backend soft-remove detail.
   const confirmDeleteAccount = () => {
     Alert.alert(
       'Delete account?',
-      'This will delete your account sign-in and remove your profile from this app. This cannot be undone.\n\n' +
-        'Your prayer requests are not part of this step yet. Right now this removes your sign-in and your private profile only.',
+      'Deleting your account will remove your profile and remove your active prayer requests from the feed. ' +
+        'People will no longer be able to see or pray for those requests. This cannot be undone.',
       [
         { text: 'Keep my account', style: 'cancel' },
         {
@@ -524,8 +525,8 @@ export default function SettingsScreen() {
             This cannot be undone.
           </Text>
           <Text style={styles.dangerNote}>
-            Your prayer requests are not part of this step yet. Right now this removes your
-            sign-in and your private profile only.
+            Your active prayer requests will be removed from the feed, so people can no longer
+            see or pray for them.
           </Text>
           <Button
             label={deleting ? 'Deleting account…' : 'Delete account'}
@@ -533,7 +534,7 @@ export default function SettingsScreen() {
             onPress={confirmDeleteAccount}
             disabled={deleting}
             style={styles.deleteButton}
-            accessibilityHint="Asks you to confirm, then permanently deletes your account sign-in and private profile"
+            accessibilityHint="Asks you to confirm, then permanently deletes your account and removes your active prayer requests from the feed"
           />
         </View>
       </View>
