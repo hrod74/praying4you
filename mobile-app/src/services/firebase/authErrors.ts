@@ -43,3 +43,55 @@ export function authErrorMessage(error: unknown): string {
       return AUTH_ERROR_COPY.generic;
   }
 }
+
+/**
+ * Calm, safe copy for account deletion (Phase J.2d). Raw Firebase detail is never shown.
+ * No em dashes in user-facing copy.
+ */
+export const DELETE_ERROR_COPY = {
+  /** Firebase needs a fresh sign-in before deleting (auth/requires-recent-login). */
+  requiresRecentLogin: 'For your security, please sign in again before deleting your account.',
+  /** Lost connection mid-flow (auth or Firestore). */
+  network: 'We could not connect right now. Please check your connection and try again.',
+  /** Firestore rules blocked the profile delete, or the session went stale. */
+  permission: 'We could not complete that request. Please try signing in again.',
+  /** Anything else. */
+  generic: 'We could not delete your account right now. Please try again.',
+} as const;
+
+/**
+ * Error raised by the account-deletion flow. Carries already-safe user-facing copy in `message`
+ * plus `requiresRecentLogin`, which the Settings screen uses to guide the user to sign in again
+ * (Firebase requires a recent login before deleting a user). No raw Firebase detail is exposed.
+ */
+export class AccountDeletionError extends Error {
+  readonly requiresRecentLogin: boolean;
+  constructor(message: string, requiresRecentLogin = false) {
+    super(message);
+    this.name = 'AccountDeletionError';
+    this.requiresRecentLogin = requiresRecentLogin;
+  }
+}
+
+/**
+ * Maps any deletion failure (Firebase Auth or Firestore) to a safe AccountDeletionError.
+ * Handles both Auth codes (e.g. `auth/requires-recent-login`) and Firestore codes
+ * (`permission-denied`, `unavailable`). Unknown errors fall back to generic copy.
+ */
+export function accountDeletionError(error: unknown): AccountDeletionError {
+  if (error instanceof AccountDeletionError) return error;
+  const code = error instanceof FirebaseError ? error.code : '';
+  switch (code) {
+    case 'auth/requires-recent-login':
+      return new AccountDeletionError(DELETE_ERROR_COPY.requiresRecentLogin, true);
+    case 'auth/network-request-failed':
+    case 'unavailable':
+    case 'deadline-exceeded':
+      return new AccountDeletionError(DELETE_ERROR_COPY.network);
+    case 'permission-denied':
+    case 'unauthenticated':
+      return new AccountDeletionError(DELETE_ERROR_COPY.permission);
+    default:
+      return new AccountDeletionError(DELETE_ERROR_COPY.generic);
+  }
+}

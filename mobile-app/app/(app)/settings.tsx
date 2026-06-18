@@ -8,6 +8,7 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
 import { usePrayers } from '../../src/context/PrayerContext';
+import { AccountDeletionError, DELETE_ERROR_COPY } from '../../src/services/firebase/authErrors';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
 import {
   DISPLAY_NAME_MAX,
@@ -27,9 +28,10 @@ import {
  */
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, signOut, updateProfile, requiresPassword } = useAuth();
+  const { profile, signOut, updateProfile, requiresPassword, deleteAccount } = useAuth();
   const { resetLocalData, getMyRequests, getPrayedRequests } = usePrayers();
   const { showSuccess, showError } = useFeedback();
+  const [deleting, setDeleting] = useState(false);
 
   // A quiet record of the user's own prayer activity — companionship, not a score.
   const sharedCount = profile ? getMyRequests(profile.id).length : 0;
@@ -103,6 +105,55 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: () => {
             void resetLocalData().then(() => showSuccess('Local prototype data reset.'));
+          },
+        },
+      ],
+    );
+  };
+
+  // Run the deletion. On success the (app) layout redirects to the welcome screen as soon as the
+  // session clears; the success toast lives above that navigation so it still shows. Failures are
+  // mapped to calm copy; a requires-recent-login result offers a path to sign in again and retry.
+  const runDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      showSuccess('Your account has been deleted.');
+    } catch (e) {
+      setDeleting(false);
+      if (e instanceof AccountDeletionError && e.requiresRecentLogin) {
+        Alert.alert('Please sign in again', e.message, [
+          { text: 'Not now', style: 'cancel' },
+          {
+            text: 'Sign in again',
+            onPress: () => {
+              void signOut();
+            },
+          },
+        ]);
+        return;
+      }
+      showError(
+        e instanceof Error && e.message ? e.message : DELETE_ERROR_COPY.generic,
+      );
+    }
+  };
+
+  // Two-step deletion guarded by an explicit confirmation so it cannot be triggered by an
+  // accidental tap. The copy is clear about what is removed and that it cannot be undone, and it
+  // notes that prayer requests are not part of this step yet (they are not in Firestore).
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'This will delete your account sign-in and remove your profile from this app. This cannot be undone.\n\n' +
+        'Your prayer requests are not part of this step yet. Right now this removes your sign-in and your private profile only.',
+      [
+        { text: 'Keep my account', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: () => {
+            void runDeleteAccount();
           },
         },
       ],
@@ -308,6 +359,29 @@ export default function SettingsScreen() {
         accessibilityHint="Signs you out and returns to the welcome screen"
       />
 
+      {/* Delete account — placed last, behind a confirmation, so it is hard to tap by accident. */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Delete account</Text>
+        <View style={styles.dangerCard}>
+          <Text style={styles.aboutText}>
+            Deleting your account removes your sign-in and your private profile from this app.
+            This cannot be undone.
+          </Text>
+          <Text style={styles.dangerNote}>
+            Your prayer requests are not part of this step yet. Right now this removes your
+            sign-in and your private profile only.
+          </Text>
+          <Button
+            label={deleting ? 'Deleting account…' : 'Delete account'}
+            variant="secondary"
+            onPress={confirmDeleteAccount}
+            disabled={deleting}
+            style={styles.deleteButton}
+            accessibilityHint="Asks you to confirm, then permanently deletes your account sign-in and private profile"
+          />
+        </View>
+      </View>
+
       <Text style={styles.footer}>Praying For You · Local prototype</Text>
     </Screen>
   );
@@ -408,6 +482,21 @@ const styles = StyleSheet.create({
   aboutMuted: {
     ...typography.muted,
     marginTop: spacing.xs,
+  },
+  dangerCard: {
+    backgroundColor: colors.dangerSurface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  dangerNote: {
+    ...typography.muted,
+    color: colors.danger,
+  },
+  deleteButton: {
+    borderColor: colors.danger,
   },
   footer: {
     ...typography.muted,

@@ -11,6 +11,7 @@ import {
 
 import { isFirebaseConfigured } from '../config/firebaseConfig';
 import { firebaseAuthService, subscribeToProfile } from '../services/firebase/authService';
+import { accountDeletionError } from '../services/firebase/authErrors';
 import { firebaseUserService } from '../services/firebase/userService';
 import type { UserProfile } from '../models/types';
 
@@ -102,6 +103,15 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   /** Send a password-reset email (Firebase mode only; no-op in local mode). */
   sendPasswordReset: (email: string) => Promise<void>;
+  /**
+   * Permanently delete the signed-in account and return to the signed-out state.
+   *
+   * Firebase mode: deletes the private `users/{uid}` profile doc first (while still
+   * authenticated), then deletes the Firebase Auth user, then clears any local session state.
+   * Local mode: clears the on-device profile/session. On failure it throws an
+   * AccountDeletionError with safe copy (and `requiresRecentLogin` when a fresh sign-in is needed).
+   */
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -260,6 +270,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseAuthService.sendPasswordReset(email);
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    if (AUTH_MODE === 'firebase') {
+      const uid = profile?.id;
+      // 1. Delete the private Firestore profile doc FIRST, while the user is still authenticated
+      //    (owner-only rules require an active session). Wrapped so any Firestore failure surfaces
+      //    as safe copy. We stop here on failure so we never orphan the doc by deleting Auth first.
+      if (uid) {
+        try {
+          await firebaseUserService.deleteOwnProfile(uid);
+        } catch (error) {
+          throw accountDeletionError(error);
+        }
+      }
+      // 2. Delete the Firebase Auth user (throws AccountDeletionError, e.g. requires-recent-login).
+      await firebaseAuthService.deleteAccount();
+      // 3. onAuthStateChanged will clear profile/isSignedIn; also clear any local fallback state.
+      try {
+        await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY]);
+      } catch {
+        // Non-fatal: the Firebase session is already gone.
+      }
+      return;
+    }
+
+    // Local/mock fallback: clear the on-device profile/session and return to signed-out state.
+    setProfile(null);
+    setIsSignedIn(false);
+    try {
+      await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY]);
+    } catch {
+      // Non-fatal: state is already cleared for this run.
+    }
+  }, [profile]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       profile,
@@ -272,8 +316,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       sendPasswordReset,
+      deleteAccount,
     }),
-    [profile, isSignedIn, isHydrating, createProfile, updateProfile, signIn, signOut, sendPasswordReset],
+    [
+      profile,
+      isSignedIn,
+      isHydrating,
+      createProfile,
+      updateProfile,
+      signIn,
+      signOut,
+      sendPasswordReset,
+      deleteAccount,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

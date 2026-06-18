@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   getAuth,
   initializeAuth,
   onAuthStateChanged,
@@ -28,8 +29,8 @@ const getReactNativePersistence = (
   }
 ).getReactNativePersistence;
 import { getFirebaseApp } from './firebaseApp';
-import { authErrorMessage } from './authErrors';
-import { NotImplementedError, type AuthService } from './contracts';
+import { accountDeletionError, authErrorMessage, DELETE_ERROR_COPY, AccountDeletionError } from './authErrors';
+import { type AuthService } from './contracts';
 
 /**
  * Firebase Auth service (Phase J.2b) — email/password, by the book.
@@ -160,8 +161,16 @@ export const firebaseAuthService: AuthService = {
   },
 
   async deleteAccount() {
-    // Documented gate (not implemented in J.2b). User-initiated account deletion is required
-    // before alpha/beta with real testers; it is implemented and verified in a later phase.
-    throw new NotImplementedError('firebaseAuthService.deleteAccount');
+    // By the book: Firebase owns user deletion. We delete only the currently signed-in user
+    // (never another user) and never use admin/service-account behavior. Firebase may require a
+    // recent sign-in; that surfaces as a friendly AccountDeletionError the UI can act on.
+    const auth = requireAuth();
+    const user = auth.currentUser;
+    if (!user) throw new AccountDeletionError(DELETE_ERROR_COPY.generic);
+    try {
+      await deleteUser(user);
+    } catch (error) {
+      throw accountDeletionError(error);
+    }
   },
 };

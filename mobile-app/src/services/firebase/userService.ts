@@ -1,4 +1,5 @@
 import {
+  deleteDoc,
   doc,
   getDoc,
   serverTimestamp,
@@ -106,5 +107,13 @@ export const firebaseUserService: UserService = {
       displayName: displayName.trim(),
       updatedAt: serverTimestamp(),
     });
+  },
+
+  async deleteOwnProfile(uid) {
+    const db = getFirebaseDb();
+    if (!db) return;
+    // Owner-only delete (enforced by the security rules). deleteDoc is a no-op if the doc is
+    // already gone. Only the signed-in user's own users/{uid} is touched; no prayer data.
+    await deleteDoc(doc(db, 'users', uid));
   },
 };

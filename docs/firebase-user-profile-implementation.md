@@ -99,22 +99,21 @@ prayerInteractions, reports) is denied until its own phase.
 - Verses — bundled local KJV.
 - The only Firestore collection touched is `users`.
 
-## Why account deletion is the next required phase
+## Account deletion (now implemented in J.2d)
 
-Real accounts now create durable records in **both** Firebase Auth and Firestore (`users/{uid}`).
-Before any alpha/beta with real testers, a user must be able to **delete their account** and have
-both the Auth user and the Firestore profile removed (or anonymized), per the privacy commitments
-in `privacy-safety-copy.md` and the app-store requirements in `product-requirements.md`. Account
-deletion is deliberately a separate, carefully verified phase (it touches real user data and must be
-correct and irreversible-by-design). It is **not** implemented here, and `deleteAccount()` still
-throws until that phase.
+Real accounts create durable records in **both** Firebase Auth and Firestore (`users/{uid}`), so a
+user must be able to delete their account before any alpha/beta with real testers. This is now done
+in **Phase J.2d**: from Settings, a confirmed flow deletes the `users/{uid}` profile doc first (while
+authenticated), then deletes the Firebase Auth user, then returns to the signed-out state.
+`deleteAccount()` is no longer a throwing stub. See
+[`docs/firebase-account-deletion-implementation.md`](./firebase-account-deletion-implementation.md)
+and the manual checklist [`docs/QA_delete_scenarios.md`](./QA_delete_scenarios.md).
 
-## Next recommended phase: J.2d Account Deletion
+## Next recommended phase: J.2e Firestore prayer requests
 
-Implement user-initiated account deletion (delete the Firebase Auth user with reauth-if-needed, and
-delete/anonymize `users/{uid}`), add a Settings entry point with a clear confirmation, document the
-exact data handling, and verify end to end. This is the gate before broader Firestore work
-(prayerRequests, then interactions, then reports) and before external testers.
+Move prayer requests into Firestore behind the existing service seam (owner-private writes,
+public-read with data minimization, no raw UIDs / email leaked), with security rules + emulator
+tests. Then revisit account deletion to also handle the user's prayer data.
 
 ## Validation performed
 

@@ -19,7 +19,13 @@ export {
   type ReportService,
 } from './contracts';
 export { firebaseAuthService, getFirebaseAuth, subscribeToProfile } from './authService';
-export { AUTH_ERROR_COPY, authErrorMessage } from './authErrors';
+export {
+  AUTH_ERROR_COPY,
+  authErrorMessage,
+  DELETE_ERROR_COPY,
+  AccountDeletionError,
+  accountDeletionError,
+} from './authErrors';
 export { firebaseUserService } from './userService';
 export { firebasePrayerRequestService } from './prayerRequestService';
 export { firebasePrayerInteractionService } from './prayerInteractionService';

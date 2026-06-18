@@ -87,6 +87,8 @@ export interface UserService {
   recordSignIn(uid: string, displayName: string): Promise<StoredUserProfile | null>;
   /** Update the user's own display name (and updatedAt) on their own doc. */
   updateDisplayName(uid: string, displayName: string): Promise<void>;
+  /** Delete the user's own profile doc (account deletion). Owner-only; no-op if missing. */
+  deleteOwnProfile(uid: string): Promise<void>;
 }
 
 /** Prayer request feed/detail. Returns only what the UX needs; no raw owner ids to other users. */

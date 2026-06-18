@@ -259,3 +259,26 @@ Updated `firebase-mvp-plan.md`, `firebase-review-brief.md`, `firebase-setup-chec
 `product-requirements.md`, `implementation-plan.md`, `prototype-roadmap.md`, `workflows.md`,
 `reviews/phase-i-firebase-mvp-plan-review.md`, and this summary. No code, Firebase project, EAS
 project, config, or secrets were added.
+
+**Phase J.2b–J.2d — Firebase Auth, private user profile, and account deletion (implemented).**
+Firebase was wired behind the existing auth seam, one concern at a time, with the local/mock
+fallback preserved throughout (no `.env.local` → the app runs fully local and never crashes):
+
+- **J.2b — Firebase Auth (by the book).** Email/password sign-up, sign-in, sign-out, and password
+  reset via the Firebase JS SDK (Expo Go compatible, no native modules), with the session persisted
+  across restarts (AsyncStorage). Errors map to calm, safe copy (no raw Firebase detail). Email is
+  private (owned by Firebase Auth); display name is the only public identity.
+- **J.2c — private Firestore user profile.** The owner-only `users/{uid}` document is created on
+  sign-up and read/backfilled on sign-in (best-effort, never blocks auth). **Email is not stored in
+  Firestore.** It is the only Firestore collection wired; prayer requests, interactions, and reports
+  remain local/mock. Rules are owner-only and must be published by the owner.
+- **J.2d — account deletion (this phase).** From **Settings → Delete account**, a confirmed flow
+  deletes the `users/{uid}` profile doc first (while authenticated), then deletes the Firebase Auth
+  user, then returns to the signed-out / welcome state with calm confirmation copy. Deletes only the
+  signed-in user (no admin/service-account behavior). Requires-recent-login and network/permission
+  failures map to safe copy, with a "sign in again" path; a blocked deletion leaves both the Auth
+  user and profile intact. Local/mock fallback clears on-device profile/session. **No rules change
+  needed** (owner-only delete on `users/{uid}` already shipped in J.2c). Prayer data is untouched and
+  out of scope until it moves to Firestore, at which point deletion must be revisited. See
+  `docs/firebase-account-deletion-implementation.md` and the owner checklist
+  `docs/QA_delete_scenarios.md`. **Next: J.2e — move prayer requests into Firestore.**
