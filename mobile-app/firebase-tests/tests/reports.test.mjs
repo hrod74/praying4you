@@ -1,7 +1,17 @@
 import { test, before, after, beforeEach } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 
 import { makeTestEnv, reportDoc, requestDoc } from './helpers.mjs';
 
@@ -136,15 +146,48 @@ test('the client cannot update a report status', async () => {
   await assertFails(updateDoc(doc(bob, 'reports/bob_req1'), { status: 'closed' }));
 });
 
-test('the client cannot delete a report', async () => {
+// Account-deletion cleanup (Phase J.2h): a reporter may delete ONLY their own report docs.
+test('a reporter can delete their OWN report (account-deletion cleanup)', async () => {
   await seedReport('bob', 'req1', 'alice');
   const bob = testEnv.authenticatedContext('bob').firestore();
-  await assertFails(deleteDoc(doc(bob, 'reports/bob_req1')));
+  await assertSucceeds(deleteDoc(doc(bob, 'reports/bob_req1')));
 });
 
-test('the client cannot list reports', async () => {
+test('a user cannot delete another user\'s report', async () => {
+  // alice filed a report on someone's request; bob must not be able to delete it.
+  await seedReport('alice', 'req1', 'carol');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertFails(deleteDoc(doc(bob, 'reports/alice_req1')));
+});
+
+test('an unauthenticated user cannot delete a report', async () => {
+  await seedReport('bob', 'req1', 'alice');
+  const anon = testEnv.unauthenticatedContext().firestore();
+  await assertFails(deleteDoc(doc(anon, 'reports/bob_req1')));
+});
+
+// Account-deletion cleanup needs to enumerate the reporter's OWN reports — and ONLY their own.
+test('a reporter can list ONLY their own reports', async () => {
   await seedReport('bob', 'req1', 'alice');
   const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertSucceeds(
+    getDocs(query(collection(bob, 'reports'), where('reporterUid', '==', 'bob'))),
+  );
+});
+
+test('a user cannot list another user\'s reports (no who-reported surface)', async () => {
+  await seedReport('alice', 'req1', 'carol');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  // Filtered to someone else's reporterUid -> denied.
+  await assertFails(
+    getDocs(query(collection(bob, 'reports'), where('reporterUid', '==', 'alice'))),
+  );
+});
+
+test('the client cannot list ALL reports (unfiltered enumeration denied)', async () => {
+  await seedReport('bob', 'req1', 'alice');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  // No reporterUid filter -> the list rule cannot be satisfied for every matched doc -> denied.
   await assertFails(getDocs(collection(bob, 'reports')));
 });
 

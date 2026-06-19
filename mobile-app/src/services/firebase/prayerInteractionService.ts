@@ -7,6 +7,7 @@ import {
   runTransaction,
   serverTimestamp,
   where,
+  writeBatch,
   type Firestore,
 } from 'firebase/firestore';
 
@@ -133,6 +134,27 @@ export const firebasePrayerInteractionService: PrayerInteractionService = {
         .filter((id) => id.length > 0);
     } catch (error) {
       throw prayerInteractionError(error);
+    }
+  },
+
+  async deleteAllMine(userUid) {
+    const db = requireDb();
+    // Account-deletion cleanup (Phase J.2h): remove ONLY this user's own interaction docs. The list
+    // query is owner-scoped (the rule allows listing only interactions where userUid == the caller),
+    // and each delete is owner-scoped too. We deliberately do NOT touch any request's prayerCount —
+    // aggregate counts are preserved for MVP (there is no "who prayed" UI, so a count that is not
+    // decremented exposes nothing about anyone). The raw Firebase error propagates so the caller (the
+    // account-deletion seam) can decide how to handle it; deletion treats this as best-effort.
+    const snap = await getDocs(query(collection(db, COLLECTION), where('userUid', '==', userUid)));
+    if (snap.empty) return;
+    // Firestore caps a write batch at 500 operations; chunk to stay well under that.
+    const CHUNK = 450;
+    for (let i = 0; i < snap.docs.length; i += CHUNK) {
+      const batch = writeBatch(db);
+      for (const d of snap.docs.slice(i, i + CHUNK)) {
+        batch.delete(d.ref);
+      }
+      await batch.commit();
     }
   },
 };

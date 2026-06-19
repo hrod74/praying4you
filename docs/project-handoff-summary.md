@@ -167,8 +167,8 @@ screen works · categories on feed + detail · submitting works (top of feed) ·
 for this" works · **Verse of the day works** · **Settings shows profile + privacy + About**
 · **Report request works locally** on others' posts (hidden on own) · **submitted requests,
 prayed marks, and reports persist across app restarts** (AsyncStorage; counts derived, no
-double-count) · **Reset prototype data** in Settings (keeps profile) · **email is never
-shown publicly** · **calm confirmation feedback** on key actions (and gentle errors) ·
+double-count) · **email is never shown publicly** · **calm confirmation feedback** on key
+actions (and gentle errors) ·
 **Your prayer activity** in Settings (Requests shared / Prayers lifted) with **My prayer
 requests** and **Prayers I've prayed for** lists · **owner Edit request / Remove request**
 (soft remove, confirmed) shown only on your own posts · **local Edit profile** (display
@@ -466,3 +466,31 @@ anywhere; no who-reported/who-prayed surface; no raw UIDs in UI. See
 `docs/firebase-reports-implementation.md` and `docs/QA_report_scenarios.md`. **Next: J.2h — revisit
 account deletion to also clean up the user's interactions + reports (with rules tests).** Commit:
 `feat: add Firestore reports`.
+
+**Phase J.2h — account-deletion cleanup + remove prototype reset (implemented).** Account deletion was
+last revisited (J.2f.2) before `prayerInteractions` and `reports` moved to Firestore, so it cleaned up
+only the Auth user, `users/{uid}`, and the user's `prayerRequests`. Now `AuthContext.deleteAccount`
+also removes the records that identify the deleting user as an actor: their own `prayerInteractions`
+(`firebasePrayerInteractionService.deleteAllMine`) and their own `reports`
+(`firebaseReportService.deleteAllMine`), via new Firebase-only seam functions
+(`deleteMyInteractionsForAccountDeletion`, `deleteMyReportsForAccountDeletion`). Both run **best-effort**
+while the user is still authenticated, after the requests are soft-removed and before the profile/Auth
+delete — a failure (e.g. rules not yet republished) is dev-logged and never blocks deletion. **Prayer
+counts are intentionally preserved:** deleting interactions does **not** decrement `prayerCount` (no
+who-prayed UI exists, so a non-decremented count exposes nothing, and we avoid an unproven transactional
+decrement for MVP). **Only the deleting user's own reports are removed**; reports filed by others (incl.
+against the deleting user's requests) are kept for manual review. **firestore.rules updated (owner MUST
+republish before QA):** `prayerInteractions` now allows owner-self-scoped `delete`
+(`userUid==auth.uid`; `update` still denied; the delete never touches `prayerCount`); `reports` now
+allows owner-self-scoped `list` + `delete` (`reporterUid==auth.uid`) so cleanup can enumerate and remove
+the user's own reports — still **no cross-user "who reported" surface** (a caller only ever sees/deletes
+their own). **Settings cleanup:** removed the "Reset prototype data" section, its confirmation modal, and
+prototype/local-only copy (privacy bullet, About line, footer); Edit profile, Change password, Sign out,
+and Delete account are unchanged. `resetLocalData` remains in `PrayerContext` as a dev-only internal but
+is no longer exposed in the UI. **Rules tests:** +8 cases (4 interaction delete/count-preserved, 4 report
+delete/list, each with denials) — full suite **passes 55/55** on Java 17. TypeScript clean; Expo (Metro)
+starts cleanly with cache clear; local/mock fallback unchanged and still exposes no prototype reset; no
+email anywhere; no raw UIDs in UI. See `docs/QA_delete_scenarios.md`,
+`docs/firebase-prayer-interactions-implementation.md`, and `docs/firebase-reports-implementation.md`.
+**Next:** consider a minimal owner-facing manual-moderation workflow doc. Commit:
+`fix: clean up account deletion data`.

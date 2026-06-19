@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -202,9 +203,42 @@ test('a different user can create a separate interaction and increment the count
   assert.equal(await readCount('req1'), 2);
 });
 
-test('an interaction is immutable and cannot be deleted from the client', async () => {
+test('an interaction is immutable: the client cannot update it', async () => {
   await seedRequest('req1', 'alice');
   await seedInteraction('bob', 'req1');
   const bob = testEnv.authenticatedContext('bob').firestore();
   await assertFails(updateDoc(doc(bob, 'prayerInteractions/bob_req1'), { schemaVersion: 2 }));
+});
+
+// Account-deletion cleanup (Phase J.2h): a user may delete ONLY their own interaction docs.
+test('a user can delete their OWN interaction (account-deletion cleanup)', async () => {
+  await seedRequest('req1', 'alice');
+  await seedInteraction('bob', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertSucceeds(deleteDoc(doc(bob, 'prayerInteractions/bob_req1')));
+  assert.equal(await interactionExists('bob', 'req1'), false);
+});
+
+test('a user cannot delete another user\'s interaction', async () => {
+  await seedRequest('req1', 'alice');
+  await seedInteraction('alice', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertFails(deleteDoc(doc(bob, 'prayerInteractions/alice_req1')));
+});
+
+test('deleting an own interaction does not change the request prayerCount (count preserved)', async () => {
+  await seedRequest('req1', 'alice', { prayerCount: 5 });
+  await seedInteraction('bob', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  // The delete is the ONLY write; it touches the interaction doc, never the request. The aggregate
+  // count is intentionally preserved (there is no "who prayed" UI, so a non-decremented count is safe).
+  await assertSucceeds(deleteDoc(doc(bob, 'prayerInteractions/bob_req1')));
+  assert.equal(await readCount('req1'), 5);
+});
+
+test('an unauthenticated user cannot delete an interaction', async () => {
+  await seedRequest('req1', 'alice');
+  await seedInteraction('bob', 'req1');
+  const anon = testEnv.unauthenticatedContext().firestore();
+  await assertFails(deleteDoc(doc(anon, 'prayerInteractions/bob_req1')));
 });

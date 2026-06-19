@@ -25,18 +25,17 @@ import {
 /**
  * Settings / Profile / About (Phase G, polished in Phase H, Phase H.1).
  *
- * An intentional settings screen: the local profile (display name + email clearly marked
- * private), a quiet "Your prayer activity" summary with links to the user's own requests and
- * the prayers they have lifted up, plain-language privacy guidance, a sincere About section, a
- * way to reset local prototype activity, and sign-out. Email appears only here, on the owner's
- * own private screen — never on any public prayer surface. This is a local prototype, not a
- * production account system.
+ * An intentional settings screen: the profile (display name + email clearly marked private), a
+ * quiet "Your prayer activity" summary with links to the user's own requests and the prayers they
+ * have lifted up, plain-language privacy guidance, a sincere About section, password change (Firebase
+ * mode), sign-out, and account deletion. Email appears only here, on the owner's own private screen —
+ * never on any public prayer surface.
  */
 export default function SettingsScreen() {
   const router = useRouter();
   const { profile, signOut, updateProfile, requiresPassword, changePassword, deleteAccount } =
     useAuth();
-  const { resetLocalData, getMyRequests, getPrayedRequests } = usePrayers();
+  const { getMyRequests, getPrayedRequests } = usePrayers();
   const { showSuccess, showError } = useFeedback();
   const [deleting, setDeleting] = useState(false);
 
@@ -170,25 +169,6 @@ export default function SettingsScreen() {
   const handleSignOut = async () => {
     await signOut();
     showSuccess('You’re signed out.');
-  };
-
-  // Reset clears local prototype activity (submitted requests, prayed marks, reports, owner
-  // edits, and removals) but keeps the profile. A confirmation guards against an accidental tap.
-  const confirmReset = () => {
-    Alert.alert(
-      'Reset prototype data?',
-      'This clears prayer requests you have submitted, your prayed marks, any reports, and any edits or removals on this device. Your profile stays signed in. The starter prayers return to how they began.',
-      [
-        { text: 'Keep my data', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            void resetLocalData().then(() => showSuccess('Local prototype data reset.'));
-          },
-        },
-      ],
-    );
   };
 
   // Run the deletion. On success the (app) layout redirects to the welcome screen as soon as the
@@ -465,8 +445,8 @@ export default function SettingsScreen() {
           <View style={styles.bullet}>
             <Text style={styles.dot}>•</Text>
             <Text style={styles.bulletText}>
-              This is an early <Text style={styles.bold}>local prototype</Text>, not a
-              production account system — your profile and data stay on this device.
+              You can <Text style={styles.bold}>delete your account</Text> at any time. Your profile
+              is removed and your active prayer requests leave the feed.
             </Text>
           </View>
         </View>
@@ -487,25 +467,8 @@ export default function SettingsScreen() {
             invited to be present with one another.
           </Text>
           <Text style={styles.aboutMuted}>
-            A local prototype. Be kind with what you share, and with one another.
+            Be kind with what you share, and with one another.
           </Text>
-        </View>
-      </View>
-
-      {/* Prototype data */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Prototype data</Text>
-        <View style={styles.card}>
-          <Text style={styles.aboutText}>
-            Your requests, prayed marks, and reports are saved on this device so they are
-            still here when you reopen the app. You can clear them anytime and start fresh.
-          </Text>
-          <Button
-            label="Reset prototype data"
-            variant="secondary"
-            onPress={confirmReset}
-            accessibilityHint="Clears your local prayer requests, prayed marks, and reports. Keeps your profile."
-          />
         </View>
       </View>
 
@@ -539,7 +502,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.footer}>Praying For You · Local prototype</Text>
+      <Text style={styles.footer}>Praying For You</Text>
     </Screen>
   );
 }

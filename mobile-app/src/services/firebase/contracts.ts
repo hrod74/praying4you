@@ -150,6 +150,15 @@ export interface PrayerInteractionService {
    * "Prayers I've prayed for". Returns request ids, not who-prayed data. AGGREGATE-ONLY to others.
    */
   listMinePrayedFor(userUid: string): Promise<string[]>;
+  /**
+   * Delete ALL of the signed-in user's own interaction docs (account-deletion cleanup, Phase J.2h).
+   * Owner-only (each delete is allowed only where `userUid` is the caller). Deliberately does NOT
+   * touch any request's `prayerCount`: aggregate counts are preserved for MVP (no "who prayed" UI),
+   * so removing the actor records is enough. Intended to run while the user is still authenticated,
+   * just before the account is deleted. Lets the underlying Firebase error propagate so the caller
+   * can decide how to handle it (account deletion treats it as best-effort).
+   */
+  deleteAllMine(userUid: string): Promise<void>;
 }
 
 /**
@@ -173,4 +182,13 @@ export interface ReportService {
   }): Promise<void>;
   /** Whether the signed-in user has already reported a request (own record only). */
   hasReported(reporterUid: string, requestId: string): Promise<boolean>;
+  /**
+   * Delete ALL of the signed-in user's own report docs (account-deletion cleanup, Phase J.2h).
+   * Owner-only (each delete is allowed only where `reporterUid` is the caller), so removing the
+   * account removes the records that identify that user as the reporter. Reports filed by OTHER users
+   * (including against the deleting user's requests) are never touched and remain for manual review.
+   * Intended to run while the user is still authenticated, just before the account is deleted. Lets
+   * the underlying Firebase error propagate so the caller can handle it (best-effort in deletion).
+   */
+  deleteAllMine(reporterUid: string): Promise<void>;
 }

@@ -89,7 +89,10 @@ The new `reports/{reportId}` block:
   must be `open`; `reason` must be allowed; `keys().hasOnly([...])` (no email/name/phone); the target
   request must **exist and be active**; and its real author must **not** be the reporter (cannot
   report your own request).
-- `update`, `delete`: **denied** — status changes and removal happen only via manual Console review.
+- `update`: **denied** — status changes happen only via manual Console review.
+- `list`, `delete`: **owner-self-scoped** (Phase J.2h) — a reporter may list and delete **only their
+  own** reports (`reporterUid == request.auth.uid`), used by account-deletion cleanup. Still no
+  cross-user "who reported" surface: a caller can never see or delete another user's report.
 
 Unchanged and still enforced: owner-only `users/{uid}`; prayer-request read/create/edit/soft-remove
 rules; the aggregate-only prayer-interaction rules; no email in any prayer data; no hard deletes.
@@ -105,8 +108,11 @@ calls are made, and the app does not crash without `.env.local`.
 `mobile-app/firebase-tests/tests/reports.test.mjs` covers: report another user's active request;
 unauthenticated cannot report; cannot report own/removed request; cannot report twice; cannot file for
 another reporterUid; no email; reason must be allowed; status must be `open`; `requestAuthorUid` must
-match the real author; cannot update status; cannot delete; cannot list; can get own report but not
-another's. Run with `cd mobile-app && npm run test:rules` (Java 11+); the full suite passes **47/47**.
+match the real author; cannot update status; can get own report but not another's. Phase J.2h adds:
+a reporter **can delete their own** report (and **cannot** delete another's, nor unauthenticated); a
+reporter **can list only their own** reports (and **cannot** list another user's, list unfiltered, or
+list unauthenticated). Run with `cd mobile-app && npm run test:rules` (Java 11+); the full suite passes
+**55/55**.
 
 ## Files changed
 
@@ -123,14 +129,36 @@ another's. Run with `cd mobile-app && npm run test:rules` (Java 11+); the full s
 - `firestore.rules` — new `reports` block.
 - `firebase-tests/tests/reports.test.mjs`, `firebase-tests/tests/helpers.mjs` — rules tests + helper.
 
+### Phase J.2h additions (account-deletion cleanup)
+
+- `src/services/firebase/reportService.ts` — added `deleteAllMine(reporterUid)` (owner-scoped list +
+  batch delete).
+- `src/services/firebase/contracts.ts` — added `deleteAllMine` to `ReportService`.
+- `src/services/reports.ts` — added `deleteMyReportsForAccountDeletion(uid)` (Firebase-only seam).
+- `src/context/AuthContext.tsx` — `deleteAccount` calls the cleanup best-effort while authenticated.
+- `firestore.rules` — `reports` block now allows owner-self-scoped `list` + `delete`.
+- `firebase-tests/tests/reports.test.mjs` — added delete-own / list-own (and matching denials) tests.
+
+## Account-deletion cleanup (Phase J.2h)
+
+When a user deletes their account, the reports **they filed** are now removed so the records that
+identify them as the reporter do not linger:
+
+- `firebaseReportService.deleteAllMine(reporterUid)` lists the caller's own reports
+  (`where('reporterUid', '==', uid)`) and batch-deletes them (chunked at 450 per batch).
+- The seam exposes `deleteMyReportsForAccountDeletion(uid)` (Firebase mode only; no-op in local/mock).
+  `AuthContext.deleteAccount` calls it **best-effort** while the user is still authenticated — a failure
+  (for example, rules not yet republished) is logged in dev and never blocks account deletion.
+- **Only the deleting user's own reports are removed.** Reports filed by **other** users — including
+  reports against the deleting user's requests — are intentionally kept for manual Console review.
+
+These rules **must be republished** in the Firebase Console for cleanup to take effect.
+
 ## What is out of scope (next phases)
 
 - No admin UI, notifications, AI moderation, email, or auto-removal/blocking.
-- **Account-deletion cleanup for interactions/reports** is deferred to a follow-up: when a user
-  deletes their account, their interactions and reports are not yet cleaned up.
 
 ## Next recommended phase
 
-Revisit **account deletion** to also clean up the deleting user's `prayerInteractions` and `reports`
-(the requests are already soft-removed), with matching rules tests. After that, consider a minimal
-moderation workflow doc for the owner's manual Console review.
+Consider a minimal moderation workflow doc for the owner's manual Console review (how to triage `open`
+reports, what to do with a request, and how reporter/other-user reports relate after a deletion).
