@@ -1,6 +1,12 @@
 # Harness dependencies (installed locally; never committed).
 node_modules/
 
+# Generated copy of the app's real rules (synced from ../firestore.rules by `npm run sync-rules`,
+# which runs automatically before `npm test`). It only exists so the emulator can load the real rules
+# from firebase.json at boot (no allow-all warning); the single source of truth stays
+# mobile-app/firestore.rules, so this copy is never committed.
+firestore.rules
+
 # Firebase emulator artifacts / debug logs (never contain app secrets, but no need to commit).
 firebase-debug.log
 firestore-debug.log

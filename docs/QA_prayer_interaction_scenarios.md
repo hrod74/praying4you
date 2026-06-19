@@ -38,10 +38,11 @@ What is out of scope here (do not test these):
 > first re-publish `mobile-app/firestore.rules` (above). Two prior bugs caused exactly this symptom
 > and are now fixed, but BOTH fixes live in the rules and/or app, so you must publish the latest rules
 > and run the latest build (`npx expo start -c`):
+>
 > 1. The count was written with a server-side `increment()` transform the rules could not validate,
->    which rolled back the whole write. Fixed: the count is written as a literal `+ 1`.
+>   which rolled back the whole write. Fixed: the count is written as a literal `+ 1`.
 > 2. The interaction read rule denied the transaction's pre-create duplicate check for a not-yet-
->    existing doc (`permission-denied` on `BatchGetDocuments`). Fixed: a user may `get` their own
+>   existing doc (`permission-denied` on `BatchGetDocuments`). Fixed: a user may `get` their own
 >    deterministic interaction doc by id prefix, even before it exists.
 
 ## Scenario 1: Pray From Feed Card
@@ -153,3 +154,4 @@ Write any observations here (date, device, what you saw):
 -
 -
 ```
+

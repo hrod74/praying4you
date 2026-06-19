@@ -5,8 +5,10 @@
   "type": "module",
   "description": "Firestore security-rules test harness for Praying For You. Isolated from the Expo app: its own dependencies, never imported by the app, never bundled by Metro. Runs against the Firebase Local Emulator Suite (no production data, no service account, no real config).",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project demo-praying4you \"node --test\"",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-praying4you \"node --test\"",
+    "sync-rules": "node -e \"require('fs').copyFileSync('../firestore.rules','firestore.rules')\"",
+    "pretest": "npm run sync-rules",
+    "test": "firebase emulators:exec --only firestore --project demo-praying4you \"node --test --test-concurrency=1\"",
+    "preemulator": "npm run sync-rules",
     "emulator": "firebase emulators:start --only firestore --project demo-praying4you"
   },
   "devDependencies": {

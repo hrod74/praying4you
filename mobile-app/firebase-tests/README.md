@@ -16,6 +16,10 @@ npm install          # installs @firebase/rules-unit-testing, firebase, firebase
 npm test             # firebase emulators:exec --only firestore ... node --test
 ```
 
-Requirements: **Java 11+** (the Firestore emulator is a Java process) and network access on first run
-(the emulator jar is downloaded once). If the emulator cannot run in your environment, the tests
-cannot run; see the doc for the manual backend QA gate that must be used instead.
+Requirements: **Java 11+** (the Firestore emulator is a Java process; Java 17 recommended) and network
+access on first run (the emulator jar is downloaded once). The suite currently passes 33/33 on Java 17.
+
+Notes: `npm test` first runs `sync-rules` (copies the real `../firestore.rules` into this folder so the
+emulator loads it from `firebase.json` — no allow-all warning; the copy is git-ignored). Tests run
+serially (`--test-concurrency=1`) because the files share one emulator database. A future
+"Java < 21" deprecation warning from `firebase-tools` is harmless.

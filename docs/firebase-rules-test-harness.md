@@ -73,50 +73,47 @@ cd mobile-app/firebase-tests && npm test
 (equivalently, from `mobile-app/`: `npm run test:rules`)
 
 This runs `firebase emulators:exec --only firestore --project demo-praying4you "node --test"`: it
-boots the Firestore emulator, runs the Node test files, and shuts the emulator down. The real rules
-are loaded into the emulator by the tests themselves (via `initializeTestEnvironment`), so
-`firebase.json` deliberately does **not** reference the rules file (which lives one level up, outside
-the harness directory).
+boots the Firestore emulator, runs the Node test files **serially**, and shuts the emulator down.
+
+**The real rules are loaded two ways, both pointing at `mobile-app/firestore.rules`:**
+
+- `npm run sync-rules` (run automatically as `pretest`) copies `../firestore.rules` into the harness
+  as `firestore.rules`, which `firebase.json` references. This is what the emulator loads at boot, so
+  there is **no "no rules file / default allow-all" warning**. The copy is git-ignored (single source
+  of truth stays `mobile-app/firestore.rules`); a stale copy can never drift because it is re-synced
+  before every run.
+- The tests also pass the same real rules to `initializeTestEnvironment`, so the validation is
+  explicit and self-contained.
+
+**Serial execution (`--test-concurrency=1`) is required.** The three test files share one emulator
+database (`demo-praying4you`) and each clears it in `beforeEach`. If the files ran in parallel (the
+`node --test` default), one file's `clearFirestore()` would wipe another file's freshly-seeded data
+mid-test, causing flaky `Null value error` / `NOT_FOUND` / `undefined.prayerCount` failures. Running
+serially gives each file a clean, uncontended database.
 
 ## Java requirement
 
-**The Firestore emulator requires Java 11+** (it is a Java process). With an older JDK the emulator
-exits immediately and the tests cannot run.
+**The Firestore emulator requires Java 11+** (it is a Java process; Java 17 is recommended). With an
+older JDK the emulator exits immediately and the tests cannot run. `firebase-tools@15` will require
+Java 21+, so a future "Java < 21" deprecation warning is expected and harmless.
 
-## Status of the test run in this environment (honest result)
+## Status of the test run (current)
 
-The harness was authored and its dependencies installed successfully, and the emulator jar downloaded,
-but the emulator **could not start** because the local JDK is **Java 1.8**. The exact failure:
-
-```
-Unsupported java version, make sure java --version reports 1.8 or higher.
-Firestore Emulator has exited with code: 1
-java.lang.UnsupportedClassVersionError: .../firestore/CloudFirestore has been compiled by a more
-recent version of the Java Runtime (class file version 55.0), this version of the Java Runtime only
-recognizes class file versions up to 52.0
-```
-
-(Class file version 55.0 = Java 11; 52.0 = Java 8.)
-
-> **Rules were not fully validated by automation. Manual Firebase QA is required before this phase is
-> considered complete.**
-
-### How to actually run the tests (the fix)
-
-Install a modern JDK, then rerun:
+**The suite runs and passes: 33/33 tests, exit 0**, on Java 17, with no missing-rules warning. The
+earlier Java 1.8 blocker is **resolved** (Java 17 is now installed). The automation gap is closed.
 
 ```sh
-# install Java 11+ (Java 17 recommended), e.g. on macOS:
-#   brew install temurin@17    # then ensure `java -version` reports 17
-cd mobile-app/firebase-tests && npm test
+cd mobile-app && npm run test:rules
+# ... ℹ tests 33 / ℹ pass 33 / ℹ fail 0 ✔ Script exited successfully (code 0)
 ```
 
-No code or rules changes are needed once a compatible JDK is present.
+> The only remaining emulator notice is the benign future warning that `firebase-tools@15` will drop
+> Java < 21; it is not a failure.
 
-## What manual Firebase QA still remains required
+## Manual Firebase QA still required (in addition to automation)
 
-Until the emulator tests have actually been run green on a Java 11+ machine, the manual backend QA
-checklists remain the source of truth and must be completed:
+The rules tests validate the rules logic, but they do **not** replace on-device QA of the app itself.
+Manual device QA via the per-feature checklists remains part of the process:
 
 - `docs/QA_prayer_interaction_scenarios.md` (pray flow, count, duplicate prevention, removed-request
   block, no who-prayed, no email).

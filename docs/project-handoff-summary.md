@@ -428,3 +428,18 @@ complete.** New backend QA gate documented (workflows §9): TypeScript passes, r
 rules change (or state the Java blocker), Expo starts, manual QA still happens; **project rule: any
 future `firestore.rules` change must ship rules tests or state why they could not run.** See
 `docs/firebase-rules-test-harness.md`. Commit: `test: add Firebase rules harness`.
+
+**Phase J.2f.4 follow-up — rules harness now runs green (Java resolved).** Java 17 is installed, so
+the emulator runs and the suite **passes 33/33** (`cd mobile-app && npm run test:rules`); the Java 1.8
+blocker is resolved and the automation gap is closed. Three initial failures were a **test-harness
+race, not an app/rules defect**: `node --test` ran the three files in parallel against one shared
+emulator DB while each cleared it in `beforeEach`, so one file's `clearFirestore()` wiped another's
+seeded data mid-test (surfacing as `Null value error` / `NOT_FOUND` / `undefined.prayerCount`). Fixes
+(harness only): serialize with `--test-concurrency=1`; harden `readCount` to throw clearly if the
+request is missing; strengthen the valid-first-time test (assert the interaction doc exists AND count
+== 1) and the duplicate/same-user tests (assert count does not move). Also fixed the "no Cloud
+Firestore rules file" warning: a `pretest` `sync-rules` step copies the real `mobile-app/firestore.rules`
+into the harness for `firebase.json` to load at boot (copy is git-ignored; single source of truth
+unchanged). **No `firestore.rules` change and no app behavior change.** The only remaining emulator
+notice is the benign `firebase-tools@15` "Java < 21" future warning. Commit: `test: fix Firebase rules
+harness`.

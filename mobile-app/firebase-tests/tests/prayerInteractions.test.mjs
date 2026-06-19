@@ -60,14 +60,27 @@ async function seedInteraction(uid, reqId) {
   });
 }
 
-/** Read the authoritative prayerCount with rules disabled. */
+/** Read the authoritative prayerCount with rules disabled. Throws clearly if the request is missing. */
 async function readCount(reqId) {
   let count = 0;
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const snap = await getDoc(doc(ctx.firestore(), `prayerRequests/${reqId}`));
+    if (!snap.exists()) {
+      throw new Error(`readCount: prayerRequests/${reqId} does not exist (seed the request first)`);
+    }
     count = snap.data().prayerCount;
   });
   return count;
+}
+
+/** Whether an interaction doc exists, read with rules disabled (for asserting create succeeded). */
+async function interactionExists(uid, reqId) {
+  let exists = false;
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const snap = await getDoc(doc(ctx.firestore(), `prayerInteractions/${uid}_${reqId}`));
+    exists = snap.exists();
+  });
+  return exists;
 }
 
 /** Mirror the app's pray flow: one batch that creates the interaction and writes a literal +1. */
@@ -115,21 +128,28 @@ test('a valid first-time prayer creates the interaction and increments count by 
   await seedRequest('req1', 'alice');
   const bob = testEnv.authenticatedContext('bob').firestore();
   await assertSucceeds(prayBatch(bob, 'bob', 'req1', (await readCount('req1')) + 1));
+  // Proves BOTH outcomes: the interaction doc was created AND the count is now exactly 1.
+  assert.equal(await interactionExists('bob', 'req1'), true);
   assert.equal(await readCount('req1'), 1);
 });
 
 test('a duplicate interaction is blocked (and does not double-count)', async () => {
-  await seedRequest('req1', 'alice');
-  await seedInteraction('bob', 'req1'); // bob already prayed
+  await seedRequest('req1', 'alice'); // count starts at 0
+  await seedInteraction('bob', 'req1'); // bob already prayed (count not incremented by the seed)
   const bob = testEnv.authenticatedContext('bob').firestore();
   await assertFails(prayBatch(bob, 'bob', 'req1', (await readCount('req1')) + 1));
+  assert.equal(await readCount('req1'), 0); // proves the blocked attempt did not double-count
 });
 
 test('the same user cannot increment the count twice for the same request', async () => {
   await seedRequest('req1', 'alice');
   const bob = testEnv.authenticatedContext('bob').firestore();
+  // First pray succeeds: interaction created, count 1.
   await assertSucceeds(prayBatch(bob, 'bob', 'req1', (await readCount('req1')) + 1));
-  await assertFails(prayBatch(bob, 'bob', 'req1', (await readCount('req1')) + 1));
+  assert.equal(await readCount('req1'), 1);
+  // Second attempt by the same user is blocked (its interaction doc already exists, so create is
+  // denied and the +1 rule's !exists check fails) and the count does not move.
+  await assertFails(prayBatch(bob, 'bob', 'req1', 2));
   assert.equal(await readCount('req1'), 1);
 });
 
