@@ -42,3 +42,9 @@ export {
   type InteractionErrorCode,
 } from './interactionErrors';
 export { firebaseReportService } from './reportService';
+export {
+  REPORT_ERROR_COPY,
+  ReportError,
+  reportError,
+  type ReportErrorCode,
+} from './reportErrors';

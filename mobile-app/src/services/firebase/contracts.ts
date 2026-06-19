@@ -1,7 +1,6 @@
 import type {
   PrayerCategory,
   PrayerRequest,
-  Report,
   ReportReason,
   UserProfile,
 } from '../../models/types';
@@ -153,15 +152,25 @@ export interface PrayerInteractionService {
   listMinePrayedFor(userUid: string): Promise<string[]>;
 }
 
-/** Lightweight reporting: store for manual console review; admin-read only; duplicates prevented. */
+/**
+ * Lightweight reporting (Phase J.2g): store a report at `reports/{uid}_{requestId}` for MANUAL
+ * Firebase Console review. One per user+request (deterministic id), never on the user's own request,
+ * never on a removed request. Reports are NOT listable or publicly readable; a user may read only
+ * their own report (for duplicate handling). No email, display name, or phone is ever stored.
+ */
 export interface ReportService {
-  /** File a report against another user's request (one per user+request; not on own request). */
+  /**
+   * File a report against another user's ACTIVE request. Idempotent-safe: throws a `ReportError`
+   * with code `already` if the user already reported it (no duplicate doc). `requestAuthorUid` must
+   * be the target request's author (verified by the security rules against the real request).
+   */
   report(input: {
+    reporterUid: string;
     requestId: string;
-    reportedBy: string;
+    requestAuthorUid: string;
     reason: ReportReason;
     notes?: string;
-  }): Promise<Report>;
+  }): Promise<void>;
   /** Whether the signed-in user has already reported a request (own record only). */
-  hasReported(userId: string, requestId: string): Promise<boolean>;
+  hasReported(reporterUid: string, requestId: string): Promise<boolean>;
 }

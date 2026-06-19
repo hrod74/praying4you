@@ -41,6 +41,11 @@ unit-testing library against the emulator. Coverage:
   the count again; no interaction may contain an email, be created for another user, or target a
   removed request; `prayerCount` cannot be changed arbitrarily; interactions are immutable from the
   client.
+- **`reports/{uid}_{requestId}`** (`tests/reports.test.mjs`, Phase J.2g): a reporter can report another
+  user's active request and `get` only their own report doc (even before it exists); cannot report
+  their own or a removed request; cannot report twice; cannot file for another `reporterUid`; no email;
+  reason must be allowed; status must be `open`; `requestAuthorUid` must match the real author; cannot
+  update a report's status, delete a report, list reports, or read another user's report.
 
 > The two J.2f.3 bugs above are now directly covered: the "exactly +1" increment test (uses a literal
 > value in a batch) and the "get own interaction doc before it exists" test.
@@ -99,12 +104,13 @@ Java 21+, so a future "Java < 21" deprecation warning is expected and harmless.
 
 ## Status of the test run (current)
 
-**The suite runs and passes: 33/33 tests, exit 0**, on Java 17, with no missing-rules warning. The
-earlier Java 1.8 blocker is **resolved** (Java 17 is now installed). The automation gap is closed.
+**The suite runs and passes: 47/47 tests, exit 0**, on Java 17, with no missing-rules warning (33
+from J.2f.4 plus 14 `reports` tests added in J.2g). The earlier Java 1.8 blocker is **resolved** (Java
+17 is now installed). The automation gap is closed.
 
 ```sh
 cd mobile-app && npm run test:rules
-# ... ℹ tests 33 / ℹ pass 33 / ℹ fail 0 ✔ Script exited successfully (code 0)
+# ... ℹ tests 47 / ℹ pass 47 / ℹ fail 0 ✔ Script exited successfully (code 0)
 ```
 
 > The only remaining emulator notice is the benign future warning that `firebase-tools@15` will drop
@@ -118,6 +124,8 @@ Manual device QA via the per-feature checklists remains part of the process:
 - `docs/QA_prayer_interaction_scenarios.md` (pray flow, count, duplicate prevention, removed-request
   block, no who-prayed, no email).
 - `docs/QA_prayer_request_scenarios.md` (create/edit/soft-remove/ownership/no email).
+- `docs/QA_report_scenarios.md` (report active request, duplicate/self/removed blocked, no email, no
+  who-reported).
 - `docs/QA_delete_scenarios.md` (account deletion soft-removes the user's requests).
 
 ## Backend QA gate (project rule)

@@ -12,6 +12,7 @@ import {
   REPORT_REASON_LABELS,
   type ReportReason,
 } from '../../../src/models/types';
+import { ReportError } from '../../../src/services/firebase/reportErrors';
 import { colors, radius, spacing, typography } from '../../../src/theme/theme';
 
 const NOTE_MAX = 300;
@@ -36,14 +37,32 @@ export default function ReportScreen() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isOwn = Boolean(profile && prayer && prayer.userId === profile.id);
 
   const handleSubmit = async () => {
-    if (!reason || !profile || !prayer || isOwn) return;
+    if (!reason || !profile || !prayer || isOwn || saving) return;
+    setError(null);
     setSaving(true);
-    await reportPrayer(prayer.id, profile.id, reason, notes);
-    setDone(true);
+    try {
+      await reportPrayer(prayer.id, profile.id, reason, notes);
+      setDone(true);
+    } catch (e) {
+      setSaving(false);
+      // "Already reported" is a calm, expected outcome (e.g. reported in a previous session): show
+      // the same gentle thank-you rather than an error.
+      if (e instanceof ReportError && e.code === 'already') {
+        setDone(true);
+        return;
+      }
+      // Otherwise surface the report layer's safe copy; never a raw Firebase error.
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not submit your report right now. Please try again.',
+      );
+    }
   };
 
   if (done) {
@@ -53,8 +72,8 @@ export default function ReportScreen() {
           <Text style={styles.confirmIcon}>🕊️</Text>
           <Text style={styles.confirmTitle}>Thank you for letting us know.</Text>
           <Text style={styles.confirmText}>
-            This request has been flagged for review. In this prototype there is no
-            moderation team yet — but in the real app, a person would take a look.
+            We have received your report, and a person will review it. This is private and is
+            not shown to the person who posted.
           </Text>
         </View>
         <Button label="Done" onPress={() => router.back()} />
@@ -117,11 +136,17 @@ export default function ReportScreen() {
         style={styles.noteInput}
       />
 
+      {error ? (
+        <Text style={styles.errorText} accessibilityLiveRegion="polite">
+          {error}
+        </Text>
+      ) : null}
+
       <Button
-        label="Submit report"
+        label={saving ? 'Submitting…' : 'Submit report'}
         onPress={handleSubmit}
         disabled={!reason || saving}
-        accessibilityHint="Sends your report for this prototype"
+        accessibilityHint="Sends your report for a person to review privately"
       />
     </Screen>
   );
@@ -191,5 +216,9 @@ const styles = StyleSheet.create({
   confirmText: {
     ...typography.body,
     textAlign: 'center',
+  },
+  errorText: {
+    ...typography.muted,
+    color: colors.danger,
   },
 });

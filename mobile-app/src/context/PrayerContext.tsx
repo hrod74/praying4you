@@ -33,6 +33,8 @@ import {
   listMyPrayedRequestIds,
   prayForRequest,
 } from '../services/prayerInteractions';
+import { reportsUseFirebase, reportRequest } from '../services/reports';
+import { ReportError } from '../services/firebase/reportErrors';
 import { useAuth } from './AuthContext';
 import type {
   PrayerCategory,
@@ -83,6 +85,9 @@ import type {
 
 /** Interactions are Firestore-backed when Firebase is configured; else local/mock. Decided once. */
 const USE_FIREBASE_INTERACTIONS = interactionsUseFirebase();
+
+/** Reports are Firestore-backed when Firebase is configured; else local/mock. Decided once. */
+const USE_FIREBASE_REPORTS = reportsUseFirebase();
 
 /** Fields an owner may change when editing their own request. */
 export interface EditPrayerInput {
@@ -151,8 +156,13 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   // Synchronous guard so rapid double-taps can't double-record before state updates.
   const prayedKeys = useRef<Set<string>>(new Set());
-  // Recorded reports + a synchronous one-per-user guard.
+  // LOCAL mode: recorded reports; drives the local derived flag/report count.
   const [reports, setReports] = useState<Report[]>([]);
+  // FIREBASE mode: request ids the CURRENT user has reported this session (reports are a private
+  // moderation record with no client list, so this drives the "you reported" UI without reading
+  // back from Firestore).
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
+  // Synchronous one-per-user guard (both modes).
   const reportedKeys = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
@@ -355,16 +365,57 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
 
   const hasReported = useCallback(
     (requestId: string, userId: string) =>
-      reports.some((r) => r.requestId === requestId && r.reportedBy === userId),
-    [reports],
+      USE_FIREBASE_REPORTS
+        ? reportedIds.has(requestId)
+        : reports.some((r) => r.requestId === requestId && r.reportedBy === userId),
+    [reports, reportedIds],
   );
 
   const reportPrayer = useCallback(
     async (requestId: string, userId: string, reason: ReportReason, notes?: string) => {
       const key = interactionKey(userId, requestId);
-      if (reportedKeys.current.has(key)) return; // one report per user+request
-      reportedKeys.current.add(key);
+      if (reportedKeys.current.has(key)) return; // one report per user+request (synchronous guard)
 
+      if (USE_FIREBASE_REPORTS) {
+        // Firestore: write a private report doc for manual review. Derive the (opaque, never-shown)
+        // author uid from the loaded request so the rules can verify it against the real request.
+        const target = baseline.find((p) => p.id === requestId);
+        if (!target) throw new ReportError('unavailable');
+        if (target.userId === userId) throw new ReportError('ownRequest');
+        if (target.status !== 'active') throw new ReportError('unavailable');
+        reportedKeys.current.add(key);
+        try {
+          await reportRequest({
+            reporterUid: userId,
+            requestId,
+            requestAuthorUid: target.userId,
+            reason,
+            notes,
+          });
+          setReportedIds((prev) => {
+            const next = new Set(prev);
+            next.add(requestId);
+            return next;
+          });
+        } catch (e) {
+          // On an "already reported" result, keep the reported state (it IS reported); otherwise
+          // release the guard so a transient failure can be retried. Always rethrow safe copy.
+          if (e instanceof ReportError && e.code === 'already') {
+            setReportedIds((prev) => {
+              const next = new Set(prev);
+              next.add(requestId);
+              return next;
+            });
+          } else {
+            reportedKeys.current.delete(key);
+          }
+          throw e;
+        }
+        return;
+      }
+
+      // Local/mock mode: append to the on-device report list (derived flag/count handles the rest).
+      reportedKeys.current.add(key);
       const report = await recordReport({ requestId, reportedBy: userId, reason, notes });
       setReports((prev) => {
         const next = [...prev, report];
@@ -372,7 +423,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [],
+    [baseline],
   );
 
   const resetLocalData = useCallback(async () => {

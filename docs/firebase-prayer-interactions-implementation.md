@@ -228,8 +228,10 @@ email stored, no raw UIDs, and no "who prayed" UI. Optionally test the local/moc
   `.env.local` remains gitignored.
 - `legacy-web-app/` and `.claude/` untouched; Expo SDK unchanged; no native modules added.
 
-## Next recommended phase: J.2g — Firestore reports
+## Next recommended phase
 
-Move **reports** into Firestore (store-for-manual-review, admin-read only, duplicate-prevented, no
-public listing), with security rules + tests. Then revisit account deletion to also handle a deleting
-user's own interactions and reports.
+Reports moved into Firestore in **Phase J.2g** (store-for-manual-review, duplicate-prevented, no
+public listing, no client list/read of others) — see
+[`docs/firebase-reports-implementation.md`](./firebase-reports-implementation.md). Next: revisit
+**account deletion** to also clean up a deleting user's own interactions and reports (the requests are
+already soft-removed), with matching rules tests.

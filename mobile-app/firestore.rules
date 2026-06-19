@@ -10,9 +10,10 @@ rules_version = '2';
 //   - prayerInteractions/{id}  "I prayed for this" (Phase J.2f.3) — one per user+request, id is
 //                              `{uid}_{requestId}`; owner can create + read only their own; no
 //                              client update/delete; AGGREGATE-ONLY (no "who prayed" listing).
-//
-// REPORTS are NOT in Firestore yet; they stay local and remain denied by the catch-all rule below
-// until their own phase adds explicit rules + tests.
+//   - reports/{id}             "report this request" (Phase J.2g) — one per reporter+request, id is
+//                              `{uid}_{requestId}`; reporter-only create + read-own; no list, no
+//                              client status change/delete. Private moderation record reviewed
+//                              MANUALLY in the Firebase Console (no "who reported" surface anywhere).
 //
 // IMPORTANT: these rules are NOT auto-deployed. The owner must publish the FULL contents of this
 // file in the Firebase Console (Firestore Database > Rules > Publish) or via the Firebase CLI for
@@ -143,7 +144,46 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Everything else (reports, ...) is denied until its phase adds explicit rules + tests.
+    // Reports ("report this request") — Phase J.2g. One doc per reporter+request, deterministic id
+    // `{uid}_{requestId}`. A PRIVATE moderation record reviewed MANUALLY in the Firebase Console
+    // (Console access bypasses these rules). From the client a reporter may create their own report
+    // and read ONLY their own report (for duplicate handling); no one may list reports, read another
+    // user's report, change a report's status, or delete a report.
+    match /reports/{reportId} {
+      // GET (single doc): a reporter may read ONLY their own deterministic report doc, authorized
+      // from the id prefix `{uid}_` (works even before it exists, for the duplicate pre-check). The
+      // prefix check blocks reading another user's report.
+      allow get: if isSignedIn()
+        && reportId[0:(request.auth.uid.size() + 1)] == (request.auth.uid + '_');
+
+      // LIST: never. There is deliberately no "who reported" surface anywhere in the app.
+      allow list: if false;
+
+      // CREATE: a signed-in user may file ONLY their own report, on someone else's ACTIVE request,
+      // once. The doc id must be `{uid}_{requestId}`; reporterUid must be the caller; status starts
+      // `open`; the reason must be one of the app's allowed reasons; ONLY the known fields may be
+      // present (hasOnly => no email / display name / phone / device id); and the target request must
+      // exist, be active, and have an author who is NOT the reporter (cannot report your own request).
+      // Duplicates are impossible: the id is deterministic and `update` is denied, so a second write
+      // is an update and is rejected.
+      allow create: if isSignedIn()
+        && reportId == (request.auth.uid + '_' + request.resource.data.requestId)
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.reason in ['spam', 'inappropriate', 'harmful', 'other']
+        && request.resource.data.keys().hasOnly(
+             ['id', 'reporterUid', 'requestId', 'requestAuthorUid', 'reason', 'status', 'createdAt', 'schemaVersion', 'notes'])
+        && !('email' in request.resource.data)
+        && exists(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId))
+        && get(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId)).data.status == 'active'
+        && get(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId)).data.authorUid == request.resource.data.requestAuthorUid
+        && request.resource.data.requestAuthorUid != request.auth.uid;
+
+      // No client status changes and no deletes: moderation/review is manual via the Console.
+      allow update, delete: if false;
+    }
+
+    // Everything else is denied until its phase adds explicit rules + tests.
     // No broad public access, no unauthenticated access.
     match /{document=**} {
       allow read, write: if false;

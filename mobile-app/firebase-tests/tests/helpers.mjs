@@ -72,3 +72,22 @@ export function interactionDoc(userUid, requestId) {
     createdAt: new Date(),
   };
 }
+
+/**
+ * A minimal valid reports doc. Id must be `{reporterUid}_{requestId}`; `requestAuthorUid` must be the
+ * target request's real author; reason must be an allowed value; status must be `open`. Never stores
+ * an email, display name, or phone.
+ */
+export function reportDoc(reporterUid, requestId, requestAuthorUid, overrides = {}) {
+  return {
+    id: `${reporterUid}_${requestId}`,
+    reporterUid,
+    requestId,
+    requestAuthorUid,
+    reason: 'inappropriate',
+    status: 'open',
+    schemaVersion: 1,
+    createdAt: new Date(),
+    ...overrides,
+  };
+}

@@ -443,3 +443,26 @@ into the harness for `firebase.json` to load at boot (copy is git-ignored; singl
 unchanged). **No `firestore.rules` change and no app behavior change.** The only remaining emulator
 notice is the benign `firebase-tools@15` "Java < 21" future warning. Commit: `test: fix Firebase rules
 harness`.
+
+**Phase J.2g — Firestore reports for manual review (implemented).** "Report this request" moved from
+local/mock to the Firestore `reports` collection behind a new mode-aware seam (`src/services/reports.ts`).
+A private moderation record at `reports/{uid}_{requestId}` (deterministic id = no duplicates) stores
+only `id`, `reporterUid`, `requestId`, `requestAuthorUid`, `reason` (existing set: spam/inappropriate/
+harmful/other), `status: 'open'`, `createdAt`, `schemaVersion`, and an optional `notes` — **no email,
+display name, or phone**. `firebaseReportService.report` pre-checks the reporter's own doc (calm
+duplicate handling) then creates it; `PrayerContext.reportPrayer`/`hasReported` are mode-aware (an
+in-session `reportedIds` set drives the "you reported" state, since reports have **no client list**).
+The report screen surfaces calm error/duplicate copy (`reportErrors.ts`); `already` shows the gentle
+thank-you. Lightweight by design: **no admin UI, notifications, AI moderation, email, or
+auto-removal**; manual review happens in the Firebase Console. **firestore.rules updated (owner MUST
+republish before QA):** new `reports` block — reporter-only `create` (id `{uid}_{requestId}`,
+`reporterUid==auth.uid`, status `open`, allowed reason, `keys().hasOnly([...])` so no email/name/phone,
+target request must exist + be active, real author != reporter); `get` own report only (by id prefix,
+even before it exists); `list`/`update`/`delete` denied. **Rules tests:** added
+`firebase-tests/tests/reports.test.mjs` (14 cases) — full suite **passes 47/47** on Java 17. Local/mock
+fallback unchanged; app does not crash without `.env.local`. **No** account-deletion change (cleanup of
+interactions/reports is the next phase); no prayerRequests/interactions behavior change; no email
+anywhere; no who-reported/who-prayed surface; no raw UIDs in UI. See
+`docs/firebase-reports-implementation.md` and `docs/QA_report_scenarios.md`. **Next: J.2h — revisit
+account deletion to also clean up the user's interactions + reports (with rules tests).** Commit:
+`feat: add Firestore reports`.
