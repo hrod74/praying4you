@@ -347,3 +347,29 @@ prayed" still never exposed. See `docs/firebase-account-deletion-implementation.
 `docs/firebase-prayer-requests-implementation.md`, and `docs/QA_delete_scenarios.md` (new "Delete
 Account With Active Prayer Requests" scenario + data boundary checks). **Next: J.2f — Firestore prayer
 interactions (aggregate-only, never who prayed); revisit deletion again there.**
+
+**Phase J.2f.3 — Firestore prayer interactions (implemented).** "I prayed for this" moved from
+local/mock to the Firestore `prayerInteractions` collection behind a new mode-aware seam
+(`src/services/prayerInteractions.ts`). A one-per-user doc at `prayerInteractions/{uid}_{requestId}`
+(deterministic id = no duplicates) stores only `userUid`, `requestId`, `createdAt`, `schemaVersion`
+(+ a redundant `id`) — **no email, no display name**. `prayForRequest` runs a **Firestore
+transaction**: confirm the request exists and is active, check the interaction doc, and if new, create
+it AND `increment(prayerCount)` atomically (idempotent — a repeat is a no-op). `PrayerContext` is now
+mode-aware: in Firebase mode the displayed `prayerCount` comes straight from Firestore (no local
+delta; optimistic +1 on a new pray), and the user's already-prayed state + "Prayers I've prayed for"
+are hydrated from their **own** interaction docs (`listMinePrayedFor` returns request ids only).
+Feed card + detail CTAs and the prayed-for screen work unchanged in both modes; safe interaction error
+copy (`interactionErrors.ts`: could-not-pray / already / unavailable / network / permission) is
+surfaced, never raw Firebase detail. **AGGREGATE-ONLY**: other users see only the count; there is no
+API/query/screen/rule that lists who prayed, and no raw UIDs in the UI. **Reports stay local/mock**;
+verses stay local. **firestore.rules updated (owner MUST republish the full file before QA):** new
+`prayerInteractions` block (own-read only via `userUid == auth.uid`; create only own doc with id
+`{uid}_{requestId}`, no email, target request must exist + be active; no client update/delete) plus a
+second `prayerRequests` `allow update` permitting a **+1-only** `prayerCount` change tied to creating
+the user's brand-new interaction in the same commit (`!exists` before + `existsAfter`), so the count
+can't be inflated directly or repeatedly. Local/mock fallback unchanged (on-device list + derived
+counts); app does not crash without `.env.local`. **No** reports/push/AI/social/passwordless/anonymous
+auth added. See `docs/firebase-prayer-interactions-implementation.md` and the owner checklist
+`docs/QA_prayer_interaction_scenarios.md`. **Next: J.2g — Firestore reports (admin-read,
+duplicate-prevented, no public listing); then revisit account deletion to also clean up the user's
+interactions/reports.**

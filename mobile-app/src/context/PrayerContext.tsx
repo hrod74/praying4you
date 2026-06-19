@@ -28,6 +28,12 @@ import {
   persistsRequestsLocally,
   removeRequest,
 } from '../services/prayerRequests';
+import {
+  interactionsUseFirebase,
+  listMyPrayedRequestIds,
+  prayForRequest,
+} from '../services/prayerInteractions';
+import { useAuth } from './AuthContext';
 import type {
   PrayerCategory,
   PrayerInteraction,
@@ -62,13 +68,21 @@ import type {
  * local prototype activity (the profile, owned by AuthContext, is left intact). Email is
  * never stored in or derived from any of this data.
  *
- * Firestore prayer requests (Phase J.2e): the request read/create/edit/remove path now goes
- * through the mode-aware seam (`src/services/prayerRequests.ts`). When Firebase is configured the
- * requests come from the Firestore `prayerRequests` collection; otherwise the original local/mock
- * path is used. Prayer interactions and reports are deliberately UNCHANGED here — they remain
- * local/mock in both modes, layered on top of whichever request baseline was loaded, so the feed
- * UI, the prayed-for CTA, and the derived counts behave exactly as before.
+ * Firestore prayer requests (Phase J.2e): the request read/create/edit/remove path goes through the
+ * mode-aware seam (`src/services/prayerRequests.ts`). When Firebase is configured the requests come
+ * from the Firestore `prayerRequests` collection; otherwise the original local/mock path is used.
+ *
+ * Firestore prayer interactions (Phase J.2f.3): "I prayed for this" is now also mode-aware via
+ * `src/services/prayerInteractions.ts`. In Firebase mode, praying writes a one-per-user
+ * `prayerInteractions/{uid}_{requestId}` doc and increments the request's aggregate `prayerCount` in
+ * a transaction; the displayed count comes straight from Firestore (no local delta), and the current
+ * user's already-prayed set is hydrated from their own interaction docs. In local mode the original
+ * on-device interaction list + derived counts are used, unchanged. REPORTS remain local/mock in both
+ * modes. Interactions are AGGREGATE-ONLY to others: there is no "who prayed" data anywhere.
  */
+
+/** Interactions are Firestore-backed when Firebase is configured; else local/mock. Decided once. */
+const USE_FIREBASE_INTERACTIONS = interactionsUseFirebase();
 
 /** Fields an owner may change when editing their own request. */
 export interface EditPrayerInput {
@@ -120,13 +134,21 @@ interface PrayerContextValue {
 const PrayerContext = createContext<PrayerContextValue | undefined>(undefined);
 
 export function PrayerProvider({ children }: { children: ReactNode }) {
+  // The signed-in user's uid is needed to hydrate their own prayed-for set in Firebase mode.
+  const { profile } = useAuth();
+  const uid = profile?.id ?? null;
+
   // Base records (seed + locally-submitted), with their BASE counts; live counts are
   // derived below from the interaction/report lists.
   const [baseline, setBaseline] = useState<PrayerRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Recorded "I prayed for this" interactions; state drives the derived counts/re-render.
+  // LOCAL mode: recorded "I prayed for this" interactions; state drives the derived counts/re-render.
   const [interactions, setInteractions] = useState<PrayerInteraction[]>([]);
+  // FIREBASE mode: the request ids the CURRENT user has prayed for (hydrated from their own
+  // interaction docs). Drives already-prayed state and "Prayers I've prayed for"; counts come from
+  // the Firestore request docs (with an optimistic +1 applied to the baseline on a new pray).
+  const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   // Synchronous guard so rapid double-taps can't double-record before state updates.
   const prayedKeys = useRef<Set<string>>(new Set());
   // Recorded reports + a synchronous one-per-user guard.
@@ -137,18 +159,26 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const [list, storedInteractions, storedReports] = await Promise.all([
+      // In Firebase mode interactions live in Firestore: skip the on-device interaction list and
+      // hydrate the current user's prayed-for set from their own interaction docs instead. Reports
+      // are still local/mock in both modes. A prayed-for lookup failure must not break the feed, so
+      // it degrades to an empty set rather than throwing.
+      const [list, storedInteractions, storedReports, myPrayedIds] = await Promise.all([
         listActiveRequests(),
-        loadInteractions(),
+        USE_FIREBASE_INTERACTIONS ? Promise.resolve<PrayerInteraction[]>([]) : loadInteractions(),
         loadReports(),
+        USE_FIREBASE_INTERACTIONS && uid
+          ? listMyPrayedRequestIds(uid).catch(() => [] as string[])
+          : Promise.resolve<string[]>([]),
       ]);
       setBaseline(list);
       setInteractions(storedInteractions);
       setReports(storedReports);
-      // Rebuild the synchronous guards from persisted data so restored marks aren't redone.
-      prayedKeys.current = new Set(
-        storedInteractions.map((i) => interactionKey(i.userId, i.requestId)),
-      );
+      setPrayedIds(new Set(myPrayedIds));
+      // Rebuild the synchronous guards so restored/loaded marks aren't redone.
+      prayedKeys.current = USE_FIREBASE_INTERACTIONS
+        ? new Set(uid ? myPrayedIds.map((rid) => interactionKey(uid, rid)) : [])
+        : new Set(storedInteractions.map((i) => interactionKey(i.userId, i.requestId)));
       reportedKeys.current = new Set(
         storedReports.map((r) => interactionKey(r.reportedBy, r.requestId)),
       );
@@ -163,7 +193,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [uid]);
 
   useEffect(() => {
     void load();
@@ -172,10 +202,17 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   // Displayed list: layer interaction/report deltas onto each base record. Recomputing
   // from the deduped lists (rather than mutating) guarantees no double-counting on
   // refresh/restart, and flags any request that has at least one report.
+  //
+  // In FIREBASE mode the prayerCount already comes from Firestore (the source of truth, kept current
+  // by the transaction + an optimistic +1 applied to the baseline on a new pray), so no local prayer
+  // delta is layered here. Reports are still local/mock in both modes, so the report delta always
+  // applies.
   const prayers = useMemo<PrayerRequest[]>(() => {
     if (interactions.length === 0 && reports.length === 0) return baseline;
     return baseline.map((p) => {
-      const prayerDelta = interactions.filter((i) => i.requestId === p.id).length;
+      const prayerDelta = USE_FIREBASE_INTERACTIONS
+        ? 0
+        : interactions.filter((i) => i.requestId === p.id).length;
       const reportDelta = reports.filter((r) => r.requestId === p.id).length;
       if (prayerDelta === 0 && reportDelta === 0) return p;
       return {
@@ -255,19 +292,24 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     [prayers],
   );
 
-  // Active requests the user has prayed for (from the deduped interaction list).
+  // Active requests the user has prayed for. Firebase mode uses the hydrated prayedIds set; local
+  // mode uses the on-device interaction list. Either way, only the current user's own prayers.
   const getPrayedRequests = useCallback(
     (userId: string) =>
-      prayers.filter((p) =>
-        interactions.some((i) => i.requestId === p.id && i.userId === userId),
-      ),
-    [prayers, interactions],
+      USE_FIREBASE_INTERACTIONS
+        ? prayers.filter((p) => prayedIds.has(p.id))
+        : prayers.filter((p) =>
+            interactions.some((i) => i.requestId === p.id && i.userId === userId),
+          ),
+    [prayers, interactions, prayedIds],
   );
 
   const hasPrayed = useCallback(
     (requestId: string, userId: string) =>
-      interactions.some((i) => i.requestId === requestId && i.userId === userId),
-    [interactions],
+      USE_FIREBASE_INTERACTIONS
+        ? prayedIds.has(requestId)
+        : interactions.some((i) => i.requestId === requestId && i.userId === userId),
+    [interactions, prayedIds],
   );
 
   const pray = useCallback(async (requestId: string, userId: string) => {
@@ -276,6 +318,33 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     if (prayedKeys.current.has(key)) return;
     prayedKeys.current.add(key);
 
+    if (USE_FIREBASE_INTERACTIONS) {
+      try {
+        // Firestore: create the one-per-user interaction + increment the count, atomically.
+        const { created } = await prayForRequest(userId, requestId);
+        // Mark prayed locally for immediate already-prayed UI.
+        setPrayedIds((prev) => {
+          const next = new Set(prev);
+          next.add(requestId);
+          return next;
+        });
+        // Optimistically reflect the +1 (only when a NEW interaction was created, never on a
+        // no-op repeat). A later refresh reconciles with the authoritative Firestore count.
+        if (created) {
+          setBaseline((prev) =>
+            prev.map((p) => (p.id === requestId ? { ...p, prayerCount: p.prayerCount + 1 } : p)),
+          );
+        }
+      } catch (e) {
+        // Release the synchronous guard so a transient failure can be retried, and rethrow the
+        // safe copy for the screen to surface.
+        prayedKeys.current.delete(key);
+        throw e;
+      }
+      return;
+    }
+
+    // Local/mock mode: append to the on-device interaction list (derived count handles the rest).
     const interaction = await recordPrayerInteraction(userId, requestId);
     setInteractions((prev) => {
       const next = [...prev, interaction];
@@ -307,17 +376,14 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   );
 
   const resetLocalData = useCallback(async () => {
-    // Clears LOCAL prototype activity only (prayed marks, reports, and any local submitted/edited/
-    // removed requests). In Firebase mode the Firestore requests are the source of truth and are
-    // not affected; only the local prayed/report marks clear, then the feed reloads from the seam.
+    // Clears LOCAL prototype activity only (local prayed/report marks and any local submitted/edited/
+    // removed requests). In Firebase mode the Firestore requests AND prayer interactions are the
+    // source of truth and are NOT cleared here (only the local report marks reset). Reloading
+    // rehydrates everything from the active source: the feed baseline, the user's prayed-for set,
+    // and the synchronous guards, so nothing is left stale or out of sync.
     await clearLocalPrayerData();
-    prayedKeys.current = new Set();
-    reportedKeys.current = new Set();
-    setInteractions([]);
-    setReports([]);
-    const list = await listActiveRequests();
-    setBaseline(list);
-  }, []);
+    await load();
+  }, [load]);
 
   const value = useMemo<PrayerContextValue>(
     () => ({

@@ -35,4 +35,10 @@ export { firebaseUserService } from './userService';
 export { firebasePrayerRequestService } from './prayerRequestService';
 export { PRAYER_ERROR_COPY, prayerRequestError, type PrayerOp } from './prayerErrors';
 export { firebasePrayerInteractionService } from './prayerInteractionService';
+export {
+  INTERACTION_ERROR_COPY,
+  PrayerInteractionError,
+  prayerInteractionError,
+  type InteractionErrorCode,
+} from './interactionErrors';
 export { firebaseReportService } from './reportService';

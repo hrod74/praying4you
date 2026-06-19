@@ -3,12 +3,16 @@ rules_version = '2';
 // Praying For You — Firestore Security Rules (Alpha)
 //
 // Scope so far:
-//   - users/{uid}          private profile document (Phase J.2c) — owner-only.
-//   - prayerRequests/{id}  prayer requests (Phase J.2e) — signed-in read of active requests;
-//                          owner-only create/edit/soft-remove.
+//   - users/{uid}              private profile document (Phase J.2c) — owner-only.
+//   - prayerRequests/{id}      prayer requests (Phase J.2e) — signed-in read of active requests;
+//                              owner-only create/edit/soft-remove; a controlled +1 to prayerCount
+//                              tied to a new interaction (Phase J.2f.3).
+//   - prayerInteractions/{id}  "I prayed for this" (Phase J.2f.3) — one per user+request, id is
+//                              `{uid}_{requestId}`; owner can create + read only their own; no
+//                              client update/delete; AGGREGATE-ONLY (no "who prayed" listing).
 //
-// Prayer INTERACTIONS ("I prayed for this") and REPORTS are NOT in Firestore yet; they stay local
-// and remain denied by the catch-all rule below until their own phases add explicit rules + tests.
+// REPORTS are NOT in Firestore yet; they stay local and remain denied by the catch-all rule below
+// until their own phase adds explicit rules + tests.
 //
 // IMPORTANT: these rules are NOT auto-deployed. The owner must publish the FULL contents of this
 // file in the Firebase Console (Firestore Database > Rules > Publish) or via the Firebase CLI for
@@ -16,11 +20,16 @@ rules_version = '2';
 //
 // Privacy invariants enforced/assumed here:
 //   - users/{uid} is owner-only; no user can read another user's profile.
-//   - Email is never stored in Firestore (Auth owns it), and a prayer request may not contain an
-//     `email` field (enforced on create + update below).
+//   - Email is never stored in Firestore (Auth owns it), and neither a prayer request nor a prayer
+//     interaction may contain an `email` field (enforced on create + update below).
 //   - prayerRequests carry `authorUid` for ownership/moderation; it is an opaque UID and is never
 //     shown in the UI. The real name behind an anonymous post is not stored on the request.
-//   - There is no "who prayed" data anywhere in these rules.
+//   - prayerInteractions store only the user's own `userUid`, the `requestId`, and metadata — never
+//     an email or a display name. A user can read only their OWN interaction; there is no query or
+//     rule that exposes the list of who prayed for a request. The only cross-user signal is the
+//     aggregate `prayerCount` on the request.
+//   - prayerCount can only ever change by exactly +1, and only in the same atomic commit that
+//     creates the praying user's brand-new interaction doc (so it can never be inflated directly).
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -63,8 +72,8 @@ service cloud.firestore {
 
       // UPDATE (edit + soft-remove): owner only. Protected fields (authorUid, createdAt,
       // prayerCount) must not change, status must stay within the allowed set, and no email may be
-      // introduced. There is deliberately no rule that lets a client raise prayerCount here; the
-      // aggregate count belongs to the future interactions phase, not to client edits.
+      // introduced. This rule never lets a client change prayerCount; the controlled +1 lives in the
+      // separate "pray" rule below.
       allow update: if isSignedIn()
         && resource.data.authorUid == request.auth.uid
         && request.resource.data.authorUid == resource.data.authorUid
@@ -73,12 +82,52 @@ service cloud.firestore {
         && request.resource.data.status in ['active', 'removed']
         && !('email' in request.resource.data);
 
+      // UPDATE (pray): any signed-in user may raise prayerCount by exactly +1 — and ONLY
+      // prayerCount — on an ACTIVE request, but only in the SAME atomic commit that creates their
+      // own brand-new interaction doc. `existsAfter` requires the interaction to exist after the
+      // commit; `!exists` requires it did not exist before (so a given user can do this at most
+      // once per request). This is what makes the count tamper-resistant: it can never be inflated
+      // without a matching, first-time, per-user interaction. Multiple `allow update` blocks are
+      // OR'd, so this does not weaken the owner-only edit rule above.
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prayerCount'])
+        && request.resource.data.prayerCount == resource.data.prayerCount + 1
+        && resource.data.status == 'active'
+        && !exists(/databases/$(database)/documents/prayerInteractions/$(request.auth.uid + '_' + requestId))
+        && existsAfter(/databases/$(database)/documents/prayerInteractions/$(request.auth.uid + '_' + requestId));
+
       // No client deletes: removal is a soft remove (status -> removed), never a hard delete.
       allow delete: if false;
     }
 
-    // Everything else (prayerInteractions, reports, ...) is denied until its phase adds explicit
-    // rules + tests. No broad public access, no unauthenticated access.
+    // Prayer interactions ("I prayed for this") — Phase J.2f.3. One doc per user+request, with the
+    // deterministic id `{uid}_{requestId}` so a user can never create a duplicate. AGGREGATE-ONLY to
+    // others: a user may read only their OWN interaction, and there is no rule that lets anyone list
+    // who prayed for a request.
+    match /prayerInteractions/{interactionId} {
+      // READ: own interaction only (drives the user's own already-prayed state + "Prayers I've
+      // prayed for"). A query is allowed only when constrained to the caller's own userUid, so no
+      // one can enumerate who prayed.
+      allow read: if isSignedIn() && resource.data.userUid == request.auth.uid;
+
+      // CREATE: a signed-in user may create only their OWN interaction. The doc id must be
+      // `{uid}_{requestId}`, userUid must be the caller, no email may be stored, and the target
+      // request must exist and be ACTIVE (so no one can pray for a removed/missing request). The
+      // matching +1 to prayerCount is authorized by the "pray" update rule above, in the same commit.
+      allow create: if isSignedIn()
+        && request.resource.data.userUid == request.auth.uid
+        && interactionId == (request.auth.uid + '_' + request.resource.data.requestId)
+        && !('email' in request.resource.data)
+        && exists(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId))
+        && get(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId)).data.status == 'active';
+
+      // No client updates or deletes: an interaction is immutable from the client (no "un-pray" in
+      // this phase), which also keeps the aggregate prayerCount consistent.
+      allow update, delete: if false;
+    }
+
+    // Everything else (reports, ...) is denied until its phase adds explicit rules + tests.
+    // No broad public access, no unauthenticated access.
     match /{document=**} {
       allow read, write: if false;
     }

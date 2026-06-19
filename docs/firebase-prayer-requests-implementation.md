@@ -47,7 +47,7 @@ before; only the source of the request list changed.
 | `body` | string | The request text. |
 | `category` | string | One of the controlled `PrayerCategory` keys. |
 | `status` | string | `"active"` or `"removed"` (soft remove). |
-| `prayerCount` | number | Starts at `0`. Not raised by client edits in this phase (interactions are still local). |
+| `prayerCount` | number | Starts at `0`. Raised only by a controlled +1 tied to a new `prayerInteractions` doc (Phase J.2f.3); never by a client edit. |
 | `schemaVersion` | number | `1`. For future migrations. |
 | `createdAt` | server timestamp | Set on create. |
 | `updatedAt` | server timestamp | Updated on edit / remove. |
@@ -158,10 +158,11 @@ Alpha.
 
 ## What remains out of scope (next phases)
 
-- **Prayer interactions in Firestore** (aggregate prayer count + one-per-user interaction doc,
-  AGGREGATE-ONLY to others, never "who prayed"). This is the recommended next phase (J.2f). When it
-  lands, `prayerCount` becomes server-incremented and the rules gain an interactions collection.
-- **Reports in Firestore** (store-for-manual-review, admin-read, duplicate-prevented).
+- **Prayer interactions in Firestore** — done in **Phase J.2f.3**: a one-per-user
+  `prayerInteractions/{uid}_{requestId}` doc plus a server-side `prayerCount` increment, AGGREGATE-ONLY
+  to others (never "who prayed"). `prayerCount` is now raised only by a controlled +1 tied to a new
+  interaction, enforced in the rules. See `docs/firebase-prayer-interactions-implementation.md`.
+- **Reports in Firestore** (store-for-manual-review, admin-read, duplicate-prevented) — still pending.
 - Account deletion was **revisited in Phase J.2f.2**: deleting an account now **soft-removes** the
   user's own active prayer requests (`status: removed`, `removedReason: accountDeleted`) before
   deleting the profile and Auth user. See `docs/firebase-account-deletion-implementation.md`. It will

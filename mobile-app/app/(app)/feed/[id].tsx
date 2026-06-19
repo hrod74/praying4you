@@ -94,8 +94,14 @@ export default function PrayerDetailScreen() {
     try {
       await pray(prayer.id, profile.id);
       showSuccess('You prayed for this.');
-    } catch {
-      showError('We could not record that just now. Please try again.');
+    } catch (e) {
+      // Surface the interaction layer's calm, safe copy (e.g. removed request / network); never a
+      // raw Firebase error.
+      showError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not mark this as prayed for right now. Please try again.',
+      );
     } finally {
       setPending(false);
     }

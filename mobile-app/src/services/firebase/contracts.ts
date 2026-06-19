@@ -1,6 +1,5 @@
 import type {
   PrayerCategory,
-  PrayerInteraction,
   PrayerRequest,
   Report,
   ReportReason,
@@ -132,17 +131,26 @@ export interface PrayerRequestService {
 }
 
 /**
- * "I prayed for this" interactions. AGGREGATE-ONLY to other users: the only cross-user signal
- * is the request's prayerCount. Individual interactions are owner-private and never listable to
- * others; there is deliberately no "list who prayed" method.
+ * "I prayed for this" interactions (Phase J.2f.3). AGGREGATE-ONLY to other users: the only
+ * cross-user signal is the request's prayerCount. Individual interactions are owner-private and
+ * never listable to others; there is deliberately no "list who prayed" method, and no email or
+ * display name is ever stored on an interaction.
  */
 export interface PrayerInteractionService {
-  /** Record a one-per-user interaction and increment the request's prayerCount. Idempotent. */
-  pray(userId: string, requestId: string): Promise<PrayerInteraction>;
+  /**
+   * Record a one-per-user interaction at `prayerInteractions/{uid}_{requestId}` AND increment the
+   * request's `prayerCount`, atomically in a transaction. Idempotent: if the user already prayed it
+   * makes no change and returns `{ created: false }`. Throws a `PrayerInteractionError` if the
+   * request is missing or not active.
+   */
+  pray(userUid: string, requestId: string): Promise<{ created: boolean }>;
   /** Whether the signed-in user has already prayed for a request (own record only). */
-  hasPrayed(userId: string, requestId: string): Promise<boolean>;
-  /** Requests the signed-in user has prayed for (own records only) — for "Prayers I've prayed for". */
-  listMinePrayedFor(userId: string): Promise<PrayerRequest[]>;
+  hasPrayed(userUid: string, requestId: string): Promise<boolean>;
+  /**
+   * The ids of requests the signed-in user has prayed for (own records only) — for
+   * "Prayers I've prayed for". Returns request ids, not who-prayed data. AGGREGATE-ONLY to others.
+   */
+  listMinePrayedFor(userUid: string): Promise<string[]>;
 }
 
 /** Lightweight reporting: store for manual console review; admin-read only; duplicates prevented. */
