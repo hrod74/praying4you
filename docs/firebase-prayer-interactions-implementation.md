@@ -196,7 +196,20 @@ hard-deleting requests; reading another user's `users/{uid}` profile; any listin
 - `app/(app)/feed/index.tsx`, `app/(app)/feed/[id].tsx` — surface the safe interaction error copy.
 - `firestore.rules` — `prayerInteractions` rules + the controlled `prayerCount` +1 rule.
 
-## Testing steps
+## Automated rules tests (Phase J.2f.4)
+
+The interaction rules (including the two J.2f.3 bug fixes — the literal `+1` increment and the
+get-own-interaction-before-it-exists read) are now covered by the **Firestore rules test harness** in
+`mobile-app/firebase-tests/`. Run with `cd mobile-app/firebase-tests && npm test` (requires
+**Java 11+** for the emulator). See [`docs/firebase-rules-test-harness.md`](./firebase-rules-test-harness.md)
+and the **Backend QA Gate** in [`docs/workflows.md`](./workflows.md) §9.
+
+> Backend QA gate: TypeScript must pass, Firebase rules tests must pass when rules change, and Expo
+> must start. If the rules tests cannot run (e.g. no Java 11+), the phase summary must state: *"Rules
+> were not fully validated by automation. Manual Firebase QA is required before this phase is
+> considered complete."*
+
+## Testing steps (manual QA)
 
 See [`docs/QA_prayer_interaction_scenarios.md`](./QA_prayer_interaction_scenarios.md) for the full
 owner checklist. Quick summary: with `.env.local` present and the updated rules **published**, create

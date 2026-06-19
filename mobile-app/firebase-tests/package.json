@@ -1,0 +1,17 @@
+{
+  "name": "praying4you-firebase-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Firestore security-rules test harness for Praying For You. Isolated from the Expo app: its own dependencies, never imported by the app, never bundled by Metro. Runs against the Firebase Local Emulator Suite (no production data, no service account, no real config).",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-praying4you \"node --test\"",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-praying4you \"node --test\"",
+    "emulator": "firebase emulators:start --only firestore --project demo-praying4you"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "firebase": "^12.15.0",
+    "firebase-tools": "^14.0.0"
+  }
+}

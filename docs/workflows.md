@@ -213,3 +213,29 @@ committed.
   Advisor** confirms tester selection and feedback goals are set.
 - Share the build only after the checklist passes; record readiness (and a go/no-go) per
   the Release Notes and Git Commit workflows above.
+
+---
+
+## 9. Backend QA Gate (Firestore rules)
+
+**Purpose:** Catch Firestore rules / transaction / permission regressions **before** manual device
+QA, not during it (added in Phase J.2f.4 after a pray-flow permission bug was found only on-device).
+See `docs/firebase-rules-test-harness.md`.
+
+**Gate (run before a Firestore-touching phase is considered complete):**
+
+- **TypeScript must pass:** `cd mobile-app && npx tsc --noEmit`.
+- **Firebase rules tests must pass when rules change:** `cd mobile-app/firebase-tests && npm test`
+  (equivalently `cd mobile-app && npm run test:rules`). This boots the Firestore emulator and runs
+  the rules tests for `users`, `prayerRequests`, and `prayerInteractions`.
+  - The emulator requires **Java 11+**. If the tests cannot run locally (e.g. only Java 8 present),
+    the phase summary must state, verbatim: *"Rules were not fully validated by automation. Manual
+    Firebase QA is required before this phase is considered complete."* and the fix is to install
+    Java 11+ and rerun.
+- **Expo must start:** `cd mobile-app && npx expo start -c`.
+- **Manual device QA still happens** (the per-feature `docs/QA_*` checklists), but it should not be
+  the first place a rules failure is discovered.
+
+**Project rule:** any future change to `mobile-app/firestore.rules` must include or update the
+corresponding emulator rules tests in `mobile-app/firebase-tests/`, **or** the change description must
+explicitly state why the tests could not be run and what manual QA was done instead.

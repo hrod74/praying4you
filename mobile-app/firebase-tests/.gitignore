@@ -1,0 +1,9 @@
+# Harness dependencies (installed locally; never committed).
+node_modules/
+
+# Firebase emulator artifacts / debug logs (never contain app secrets, but no need to commit).
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+.firebase/

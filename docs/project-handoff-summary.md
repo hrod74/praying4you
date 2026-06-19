@@ -405,3 +405,26 @@ listing, create is still own-only with the deterministic id + active request + n
 stay denied, reports stay denied, and prayerRequests stay protected from hard delete and arbitrary
 count changes. **Owner MUST republish the full `mobile-app/firestore.rules`** before retesting. Commit:
 `fix: allow own prayer interaction check`.
+
+**Phase J.2f.4 — Firebase rules test harness + backend QA gate (testing infra; no app/rules behavior
+change).** Added an isolated Firestore security-rules test harness so rules/transaction regressions
+are caught before manual device QA (the J.2f.3 pray bugs were found only on-device). Lives in
+`mobile-app/firebase-tests/` with its **own** `package.json`/`package-lock.json`/deps
+(`@firebase/rules-unit-testing` v5, `firebase` v12, a **local** `firebase-tools` v14 — avoids the
+broken global one under Node 24); never imported by the app, never bundled by Metro. Tests load the
+**real** `mobile-app/firestore.rules` and cover `users` (owner-only, no email required), `prayerRequests`
+(active read, owner-only create/edit/soft-remove, no email, no hard delete, protected fields, removed
+not readable by others), and `prayerInteractions` (get own doc even before it exists, no who-prayed
+list, valid first-time pray = interaction + literal +1, duplicate/same-user blocked, multi-user count,
+no email, no cross-user create, no praying for removed, no arbitrary count change). Uses **no
+production data, no service account, no real config** (fake `demo-praying4you` project id). Run with
+`cd mobile-app/firebase-tests && npm test` (or `cd mobile-app && npm run test:rules`); added
+`typecheck`/`test:rules`/`test:rules:install` scripts to `mobile-app/package.json` (existing scripts
+untouched). **Tests could NOT be executed in this environment:** harness installs and the emulator jar
+downloads, but the Firestore emulator needs **Java 11+** and local Java is **1.8**
+(`UnsupportedClassVersionError`, class file 55.0 vs 52.0). Fix: install Java 11+/17 and rerun. **Rules
+were not fully validated by automation. Manual Firebase QA is required before this phase is considered
+complete.** New backend QA gate documented (workflows §9): TypeScript passes, rules tests pass when
+rules change (or state the Java blocker), Expo starts, manual QA still happens; **project rule: any
+future `firestore.rules` change must ship rules tests or state why they could not run.** See
+`docs/firebase-rules-test-harness.md`. Commit: `test: add Firebase rules harness`.
