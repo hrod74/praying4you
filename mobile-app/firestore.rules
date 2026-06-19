@@ -111,10 +111,21 @@ service cloud.firestore {
     // others: a user may read only their OWN interaction, and there is no rule that lets anyone list
     // who prayed for a request.
     match /prayerInteractions/{interactionId} {
-      // READ: own interaction only (drives the user's own already-prayed state + "Prayers I've
-      // prayed for"). A query is allowed only when constrained to the caller's own userUid, so no
-      // one can enumerate who prayed.
-      allow read: if isSignedIn() && resource.data.userUid == request.auth.uid;
+      // GET (single doc): a user may read ONLY their own deterministic interaction doc, identified by
+      // the id prefix `{uid}_`. This is authorized from the document ID, NOT from `resource.data`, so
+      // it works even when the document does NOT exist yet. That matters because the pray transaction
+      // reads `prayerInteractions/{uid}_{requestId}` first to prevent a duplicate: a get of a missing
+      // doc has `resource == null`, so a `resource.data.userUid` check alone would error and deny it
+      // (the permission-denied seen on BatchGetDocuments). The prefix check still blocks reading
+      // another user's doc, because a doc id starting with someone else's uid can never match.
+      allow get: if isSignedIn()
+        && interactionId[0:(request.auth.uid.size() + 1)] == (request.auth.uid + '_');
+
+      // LIST (query): allowed only when every matched doc is the caller's own (userUid == uid), which
+      // is exactly how `listMinePrayedFor` queries. Matched docs always exist, so the resource check
+      // is valid here. There is deliberately no rule that lets anyone enumerate who prayed for a
+      // request.
+      allow list: if isSignedIn() && resource.data.userUid == request.auth.uid;
 
       // CREATE: a signed-in user may create only their OWN interaction. The doc id must be
       // `{uid}_{requestId}`, userUid must be the caller, no email may be stored, and the target

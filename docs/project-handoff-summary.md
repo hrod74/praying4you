@@ -390,3 +390,18 @@ possible cause of the same symptom). Behavior now: first pray creates the intera
 duplicate is a no-op; another user adds a separate interaction + count +1; removed requests cannot be
 prayed for. See `docs/firebase-prayer-interactions-implementation.md`. Commit: `fix: create Firestore
 prayer interactions`.
+
+**Phase J.2f.3 bug fix #2 — permission-denied on the interaction duplicate check (rules-only).** After
+the literal-count fix, QA hit `permission-denied` on `BatchGetDocuments`. Root cause: the pray
+transaction reads `prayerInteractions/{uid}_{requestId}` **before** creating it (to prevent a
+double-count), but the interaction read rule was `resource.data.userUid == request.auth.uid`; for a
+not-yet-existing doc `resource` is `null`, so that check errored and the get was denied — and inside
+the transaction that failed the whole pray (so no interaction doc, no count change). Fix (rules only,
+no app code change): split the interaction `read` into `allow get` authorized by the **document id
+prefix** (`interactionId[0:(uid.size()+1)] == uid + '_'`, which works even when the doc does not
+exist) and `allow list` keyed on `resource.data.userUid == uid` (for the `listMinePrayedFor` query).
+Privacy is unchanged: a user can still read only their own deterministic doc, there is no who-prayed
+listing, create is still own-only with the deterministic id + active request + no email, update/delete
+stay denied, reports stay denied, and prayerRequests stay protected from hard delete and arbitrary
+count changes. **Owner MUST republish the full `mobile-app/firestore.rules`** before retesting. Commit:
+`fix: allow own prayer interaction check`.

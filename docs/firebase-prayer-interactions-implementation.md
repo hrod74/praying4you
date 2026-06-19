@@ -133,13 +133,25 @@ Firebase Console (Firestore Database > Rules > Publish) **before QA**.
 
 What changed:
 
-- **New `prayerInteractions/{interactionId}` block:**
-  - `read`: only the caller's own interaction (`resource.data.userUid == request.auth.uid`). A query
-    is allowed only when constrained to the caller's own `userUid`, so no one can enumerate who
-    prayed.
+- **`prayerInteractions/{interactionId}` block:**
+  - `get` (single doc): authorized from the **document id prefix** —
+    `interactionId[0:(uid.size()+1)] == uid + '_'` — so a user may read only their own deterministic
+    doc, **and it works even when that doc does not exist yet**. This is what the pray transaction's
+    duplicate-check read needs (see the bug fix below).
+  - `list` (query): only when constrained to the caller's own `userUid`
+    (`resource.data.userUid == request.auth.uid`), exactly how `listMinePrayedFor` queries, so no one
+    can enumerate who prayed.
   - `create`: signed-in, `userUid == request.auth.uid`, the doc id must equal
     `{uid}_{requestId}`, no `email` field, and the target request must **exist and be active**.
   - `update`, `delete`: denied (interactions are immutable from the client; no "un-pray").
+
+  > **Bug fix (permission-denied on the duplicate check):** the read rule was originally a single
+  > `allow read: if isSignedIn() && resource.data.userUid == request.auth.uid`. The pray transaction
+  > reads `prayerInteractions/{uid}_{requestId}` **before** creating it, to avoid a double-count. For
+  > a not-yet-existing doc, `resource` is `null`, so `resource.data.userUid` errors and the get is
+  > denied — surfacing as `permission-denied` on `BatchGetDocuments`, which (inside the transaction)
+  > failed the whole pray. Splitting `read` into an id-prefix-based `get` (works when the doc is
+  > missing) and a `userUid`-based `list` fixes it while keeping the same privacy guarantees.
 - **"pray" `allow update` on `prayerRequests`:** a signed-in user may raise `prayerCount` by
   **exactly +1**, and change **only** `prayerCount`, on an **active** request, but only in the same
   commit that creates their **brand-new** interaction doc (`!exists` before + `existsAfter`). This

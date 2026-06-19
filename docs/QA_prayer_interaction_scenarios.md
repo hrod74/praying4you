@@ -35,10 +35,14 @@ What is out of scope here (do not test these):
 > watch an interaction doc appear and the `prayerCount` rise as you pray.
 
 > Troubleshooting: if tapping 🙏 Pray creates no interaction document and the count does not move,
-> first re-publish `mobile-app/firestore.rules` (above). A prior build also had a bug where the count
-> was written with a server-side `increment()` transform that the rules could not validate, which
-> rolled back the whole write; that is fixed (the count is now written as a literal `+ 1`). Make sure
-> you are running the latest app build with `npx expo start -c`.
+> first re-publish `mobile-app/firestore.rules` (above). Two prior bugs caused exactly this symptom
+> and are now fixed, but BOTH fixes live in the rules and/or app, so you must publish the latest rules
+> and run the latest build (`npx expo start -c`):
+> 1. The count was written with a server-side `increment()` transform the rules could not validate,
+>    which rolled back the whole write. Fixed: the count is written as a literal `+ 1`.
+> 2. The interaction read rule denied the transaction's pre-create duplicate check for a not-yet-
+>    existing doc (`permission-denied` on `BatchGetDocuments`). Fixed: a user may `get` their own
+>    deterministic interaction doc by id prefix, even before it exists.
 
 ## Scenario 1: Pray From Feed Card
 
