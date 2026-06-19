@@ -26,11 +26,19 @@ What is out of scope here (do not test these):
 - [ ] Testing uses throwaway accounts
 - [ ] At least one active prayer request exists
 
-> Important: the rules were updated this phase. Publish the FULL `mobile-app/firestore.rules` in the
-> Firebase Console (Firestore Database → Rules → Publish) before testing, or praying will be denied.
+> Important: the rules were updated for this phase. Publish the FULL `mobile-app/firestore.rules` in
+> the Firebase Console (Firestore Database → Rules → Publish) before testing, or praying will be
+> denied (the interaction write and the count increment commit together, so a blocked count update
+> rolls back the interaction too, and you will see no `prayerInteractions` document appear).
 
 > Tip: keep a Firestore tab on the `prayerInteractions` and `prayerRequests` collections so you can
 > watch an interaction doc appear and the `prayerCount` rise as you pray.
+
+> Troubleshooting: if tapping 🙏 Pray creates no interaction document and the count does not move,
+> first re-publish `mobile-app/firestore.rules` (above). A prior build also had a bug where the count
+> was written with a server-side `increment()` transform that the rules could not validate, which
+> rolled back the whole write; that is fixed (the count is now written as a literal `+ 1`). Make sure
+> you are running the latest app build with `npx expo start -c`.
 
 ## Scenario 1: Pray From Feed Card
 

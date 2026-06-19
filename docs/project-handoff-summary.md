@@ -373,3 +373,20 @@ auth added. See `docs/firebase-prayer-interactions-implementation.md` and the ow
 `docs/QA_prayer_interaction_scenarios.md`. **Next: J.2g — Firestore reports (admin-read,
 duplicate-prevented, no public listing); then revisit account deletion to also clean up the user's
 interactions/reports.**
+
+**Phase J.2f.3 bug fix — prayer count / interaction not being written.** QA found that tapping 🙏 Pray
+created no `prayerInteractions` doc and did not raise `prayerCount`. Root cause: the pray transaction
+incremented the count with a server-side `FieldValue.increment(1)` transform, but the "pray"
+`prayerRequests` update rule validates the exact value (`prayerCount == resource.data.prayerCount + 1`);
+a transform is not a concrete number during rule evaluation, so the update was rejected, and because
+the interaction `set` and the count update commit atomically in the transaction, **both** were rolled
+back (no interaction doc, no count change). Fix: write a **literal** `currentCount + 1` (read inside
+the same transaction, so still race-safe) instead of `increment()`; removed the `increment` import;
+added `__DEV__`-only logging of the Firestore error **code** (e.g. `permission-denied`) with a
+republish hint (no uid/email/config/private values logged). `firestore.rules` logic is unchanged
+(only a clarifying comment added that the client must write a literal, not a transform); the owner
+should still **republish the full rules file** if the J.2f.3 rules were never published (a second
+possible cause of the same symptom). Behavior now: first pray creates the interaction + count +1;
+duplicate is a no-op; another user adds a separate interaction + count +1; removed requests cannot be
+prayed for. See `docs/firebase-prayer-interactions-implementation.md`. Commit: `fix: create Firestore
+prayer interactions`.

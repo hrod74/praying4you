@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  increment,
   query,
   runTransaction,
   serverTimestamp,
@@ -77,6 +76,15 @@ export const firebasePrayerInteractionService: PrayerInteractionService = {
           // Already prayed: no double-count, no write.
           return { created: false };
         }
+        // Compute the new count as a LITERAL from the value we just read in this transaction. We
+        // deliberately do NOT use FieldValue.increment() here: increment() is a server-side
+        // transform whose result is not a concrete number during security-rule evaluation, so the
+        // rule's exact-value check (`prayerCount == resource.data.prayerCount + 1`) would fail and
+        // reject the update. Because the update and the interaction set commit atomically, that
+        // rejection would roll back BOTH writes, so no interaction doc would be created either. The
+        // transaction's read/retry semantics keep this literal `+ 1` race-safe.
+        const currentCount =
+          typeof requestSnap.data().prayerCount === 'number' ? requestSnap.data().prayerCount : 0;
         // No email, no display name — only the user's own UID, the request id, and metadata.
         tx.set(interactionRef, {
           id: interactionDocId(userUid, requestId),
@@ -85,10 +93,21 @@ export const firebasePrayerInteractionService: PrayerInteractionService = {
           schemaVersion: SCHEMA_VERSION,
           createdAt: serverTimestamp(),
         });
-        tx.update(requestRef, { prayerCount: increment(1) });
+        tx.update(requestRef, { prayerCount: currentCount + 1 });
         return { created: true };
       });
     } catch (error) {
+      // Dev-only diagnostics: log the Firestore error CODE only (e.g. "permission-denied"), which is
+      // non-sensitive. Never log the uid, request body, email, config, or any private value.
+      if (__DEV__) {
+        const code = (error as { code?: string })?.code ?? 'unknown';
+        if (code !== 'unknown' || !(error instanceof PrayerInteractionError)) {
+          console.warn(
+            `[pray] interaction write failed (code: ${code}). If this is "permission-denied", ` +
+              'republish mobile-app/firestore.rules in the Firebase Console (Firestore Database > Rules).',
+          );
+        }
+      }
       throw prayerInteractionError(error);
     }
   },

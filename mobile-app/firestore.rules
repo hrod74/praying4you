@@ -89,6 +89,12 @@ service cloud.firestore {
       // once per request). This is what makes the count tamper-resistant: it can never be inflated
       // without a matching, first-time, per-user interaction. Multiple `allow update` blocks are
       // OR'd, so this does not weaken the owner-only edit rule above.
+      //
+      // NOTE for the client: the +1 MUST be written as a literal number (resource.data.prayerCount
+      // + 1), NOT FieldValue.increment(1). A server-side increment transform is not a concrete value
+      // during rule evaluation, so the exact-value check below would fail and reject the update —
+      // and, since pray runs in a transaction, that would roll back the interaction create too. See
+      // prayerInteractionService.pray.
       allow update: if isSignedIn()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prayerCount'])
         && request.resource.data.prayerCount == resource.data.prayerCount + 1

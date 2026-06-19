@@ -64,8 +64,18 @@ interaction creation and the count increment are consistent (both happen, or nei
    `PrayerInteractionError('unavailable')` — never create an interaction, never increment.
 3. Read `prayerInteractions/{uid}_{requestId}`. If it already exists, return `{ created: false }` —
    no double-count, no write.
-4. Otherwise `set` the interaction doc and `update` the request with
-   `prayerCount: increment(1)`, atomically. Return `{ created: true }`.
+4. Otherwise `set` the interaction doc and `update` the request with a **literal**
+   `prayerCount: currentCount + 1` (computed from the value read in step 2), atomically. Return
+   `{ created: true }`.
+
+> **Important (bug fix):** the update writes a **literal number**, not `FieldValue.increment(1)`. A
+> server-side `increment()` transform is not a concrete value during security-rule evaluation, so the
+> rule's exact-value check (`request.resource.data.prayerCount == resource.data.prayerCount + 1`)
+> fails and the update is rejected. Because the count update and the interaction `set` commit
+> atomically in the transaction, that rejection rolled back **both** writes — so during QA **no
+> interaction document was created and the count never moved**. Writing the literal `currentCount + 1`
+> (race-safe inside the transaction) makes the rule's check pass. This was the root cause fixed in the
+> "fix: create Firestore prayer interactions" change.
 
 `PrayerContext` then marks the request prayed locally and, only when a new interaction was created,
 optimistically bumps the displayed count by 1. A later refresh reconciles with the authoritative
@@ -130,11 +140,13 @@ What changed:
   - `create`: signed-in, `userUid == request.auth.uid`, the doc id must equal
     `{uid}_{requestId}`, no `email` field, and the target request must **exist and be active**.
   - `update`, `delete`: denied (interactions are immutable from the client; no "un-pray").
-- **New "pray" `allow update` on `prayerRequests`:** a signed-in user may raise `prayerCount` by
+- **"pray" `allow update` on `prayerRequests`:** a signed-in user may raise `prayerCount` by
   **exactly +1**, and change **only** `prayerCount`, on an **active** request, but only in the same
   commit that creates their **brand-new** interaction doc (`!exists` before + `existsAfter`). This
   ties the increment to a real, first-time, per-user interaction so the count cannot be inflated on
-  its own.
+  its own. The rule logic is unchanged by the bug fix; only its comment was clarified to require the
+  client to write a **literal** `+ 1` (not an `increment()` transform) so the exact-value check
+  passes.
 
 What the rules still **block**: unauthenticated access; creating an interaction for another user;
 duplicate interactions (deterministic id + create-only); praying for a removed request; arbitrary or
