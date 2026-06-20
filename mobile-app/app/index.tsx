@@ -1,3 +1,4 @@
+import { FontAwesome5 } from '@expo/vector-icons';
 import { Redirect, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,11 +14,11 @@ import { colors, spacing, typography } from '../src/theme/theme';
  * app. Otherwise it offers a calm introduction and two clear paths: create an account,
  * or sign in to an existing one.
  *
- * Alpha polish: a soft sunrise rising over a gentle horizon sits above the title, so the
- * first screen feels warm and hopeful rather than plain. It is a single warm sun disc with
- * one soft halo, clipped at the horizon so it reads as a calm dawn (not a target/bullseye).
- * It is built from plain Views (no extra assets or libraries, so it stays Expo Go friendly
- * and tiny) and is hidden from screen readers as decoration.
+ * Alpha polish: a small, warm open-hands illustration sits above the title, so the first
+ * screen feels like care and prayer rather than plain. It is open cupped hands (a vector
+ * glyph from the icon set the tab bar already uses, so it is lightweight and never clips)
+ * in a warm gold tone, with a small soft glow held just above them. It lives in its own
+ * centered box with room beneath it, and is hidden from screen readers as decoration.
  */
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -35,18 +36,17 @@ export default function WelcomeScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.hero}>
-          {/* Decorative sunrise. Marked non-accessible so it is skipped by screen readers. */}
+          {/* Decorative open hands with a small warm glow. Hidden from screen readers. */}
           <View
             style={styles.art}
             importantForAccessibility="no-hide-descendants"
             accessibilityElementsHidden
           >
-            {/* The sky clips the halo and sun at its bottom edge, so they rise over the horizon. */}
-            <View style={styles.sky}>
-              <View style={styles.halo} />
-              <View style={styles.sun} />
+            {/* A small soft glow held just above the open hands. */}
+            <View style={styles.glowHalo}>
+              <View style={styles.glowCore} />
             </View>
-            <View style={styles.horizon} />
+            <FontAwesome5 name="hands" size={66} color={colors.gold} />
           </View>
 
           <Text style={styles.title}>Praying For You</Text>
@@ -93,43 +93,31 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     alignItems: 'center',
   },
-  // The decorative sunrise sits centered above the title, with room to breathe beneath it.
+  // The illustration sits centered in its own box above the title, with room to breathe beneath
+  // it so it never touches the title. Nothing here clips: the hands are a fully drawn vector glyph.
   art: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.xl,
+    paddingTop: spacing.xs,
   },
-  // Fixed-width stage; `overflow: hidden` cuts the halo and sun at the bottom so they "rise".
-  sky: {
-    width: 240,
-    height: 96,
+  // A small, soft warm glow (gentle halo) held just above the hands; sized to feel like light,
+  // not a target. The small gap below separates it from the hands.
+  glowHalo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: spacing.sm,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(208, 162, 86, 0.18)',
   },
-  // A single soft glow behind the sun (one halo, not concentric rings) for gentle warmth.
-  halo: {
-    position: 'absolute',
-    left: 10,
-    bottom: -110,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(196, 156, 74, 0.12)',
-  },
-  // The sun; its lower half is clipped by the sky, leaving a warm dome resting on the horizon.
-  sun: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    marginBottom: -52,
-    backgroundColor: 'rgba(208, 162, 86, 0.95)',
-  },
-  // A soft warm horizon line, flush with the clipped sun, suggesting dawn without literal scenery.
-  horizon: {
-    width: 232,
-    height: 1.5,
-    borderRadius: 1,
-    backgroundColor: 'rgba(156, 122, 46, 0.30)',
+  // A brighter warm core inside the halo, so the glow reads as a small light rather than a ring.
+  glowCore: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(208, 162, 86, 0.92)',
   },
   title: { ...typography.title, textAlign: 'center' },
   subtitle: { ...typography.body, textAlign: 'center' },
