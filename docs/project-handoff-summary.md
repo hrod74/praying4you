@@ -494,3 +494,17 @@ email anywhere; no raw UIDs in UI. See `docs/QA_delete_scenarios.md`,
 `docs/firebase-prayer-interactions-implementation.md`, and `docs/firebase-reports-implementation.md`.
 **Next:** consider a minimal owner-facing manual-moderation workflow doc. Commit:
 `fix: clean up account deletion data`.
+
+**Phase J.2h follow-up — Alpha Readiness QA checklist (docs only).** With J.2h complete, the Firestore
+rules **republished**, and on-device QA confirming "Reset prototype data" is gone from Settings and that
+account-deletion cleanup still works, added **`docs/QA_alpha_readiness.md`** — the owner-run **release
+gate** to run before inviting 3–4 trusted Alpha testers. It is an end-to-end confidence pass that rolls
+up the per-feature checklists (account: sign up/in/out, forgot + change password, edit name, delete;
+prayer requests: create named + anonymous, edit, remove, leaves feed; interactions: pray from feed +
+detail, count up, no double-count, another user counts, no who-prayed; reports: report, duplicate/own/
+removed blocked, doc fields, no email, no who-reported; Settings: no reset, edit profile / change
+password / sign out / delete remain; polish: no raw errors, no raw UIDs, no prototype copy, calm &
+trustworthy, nav reads `Feed | Pray | Verse | Settings`, name "Praying For You") with a Go/No-Go gate.
+**No app code or Firestore rules changed** (docs only). Validation: rules suite **55/55**, `tsc` clean,
+Expo (Metro) starts cleanly. See `docs/QA_alpha_readiness.md`. **Next:** run the Alpha Readiness pass on
+a device, then invite 3–4 trusted testers. Commit: `docs: add alpha readiness QA`.
