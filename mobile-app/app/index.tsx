@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '../src/components/Button';
 import { useAuth } from '../src/context/AuthContext';
-import { colors, radius, spacing, typography } from '../src/theme/theme';
+import { colors, spacing, typography } from '../src/theme/theme';
 
 /**
  * Welcome / entry screen.
@@ -13,10 +13,11 @@ import { colors, radius, spacing, typography } from '../src/theme/theme';
  * app. Otherwise it offers a calm introduction and two clear paths: create an account,
  * or sign in to an existing one.
  *
- * Alpha polish: a soft "sunrise" glow (layered translucent gold light) sits above the
- * title to make the first screen feel warm and reverent without imagery that is busy or
- * denomination-specific. It is built from plain Views (no extra assets or libraries, so it
- * stays Expo Go friendly and tiny) and is hidden from screen readers as decoration.
+ * Alpha polish: a soft sunrise rising over a gentle horizon sits above the title, so the
+ * first screen feels warm and hopeful rather than plain. It is a single warm sun disc with
+ * one soft halo, clipped at the horizon so it reads as a calm dawn (not a target/bullseye).
+ * It is built from plain Views (no extra assets or libraries, so it stays Expo Go friendly
+ * and tiny) and is hidden from screen readers as decoration.
  */
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -34,16 +35,16 @@ export default function WelcomeScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.hero}>
-          {/* Decorative warm sunrise glow. Marked non-accessible so it is skipped by screen readers. */}
+          {/* Decorative sunrise. Marked non-accessible so it is skipped by screen readers. */}
           <View
             style={styles.art}
             importantForAccessibility="no-hide-descendants"
             accessibilityElementsHidden
           >
-            <View style={styles.glowOuter}>
-              <View style={styles.glowMid}>
-                <View style={styles.sun} />
-              </View>
+            {/* The sky clips the halo and sun at its bottom edge, so they rise over the horizon. */}
+            <View style={styles.sky}>
+              <View style={styles.halo} />
+              <View style={styles.sun} />
             </View>
             <View style={styles.horizon} />
           </View>
@@ -68,6 +69,7 @@ export default function WelcomeScreen() {
             variant="secondary"
             onPress={() => router.push('/(auth)/sign-in')}
             accessibilityHint="Sign in to your existing account"
+            style={styles.secondaryButton}
           />
           <Text style={styles.footnote}>A quiet place to carry one another in prayer.</Text>
         </View>
@@ -91,42 +93,43 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     alignItems: 'center',
   },
-  // The decorative sunrise sits centered above the title, sized to feel present but unhurried.
+  // The decorative sunrise sits centered above the title, with room to breathe beneath it.
   art: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  // Concentric translucent rings read as soft light rays / warmth radiating from the sun.
-  glowOuter: {
-    width: 216,
-    height: 216,
-    borderRadius: 108,
-    backgroundColor: 'rgba(156, 122, 46, 0.08)',
+  // Fixed-width stage; `overflow: hidden` cuts the halo and sun at the bottom so they "rise".
+  sky: {
+    width: 240,
+    height: 96,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
   },
-  glowMid: {
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    backgroundColor: 'rgba(156, 122, 46, 0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  // A single soft glow behind the sun (one halo, not concentric rings) for gentle warmth.
+  halo: {
+    position: 'absolute',
+    left: 10,
+    bottom: -110,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(196, 156, 74, 0.12)',
   },
+  // The sun; its lower half is clipped by the sky, leaving a warm dome resting on the horizon.
   sun: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: 'rgba(196, 156, 74, 0.95)',
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    marginBottom: -52,
+    backgroundColor: 'rgba(208, 162, 86, 0.95)',
   },
-  // A soft warm horizon line under the glow, suggesting a gentle dawn without literal scenery.
+  // A soft warm horizon line, flush with the clipped sun, suggesting dawn without literal scenery.
   horizon: {
-    width: 200,
-    height: 1,
-    marginTop: spacing.md,
-    backgroundColor: colors.border,
-    borderRadius: radius.sm,
+    width: 232,
+    height: 1.5,
+    borderRadius: 1,
+    backgroundColor: 'rgba(156, 122, 46, 0.30)',
   },
   title: { ...typography.title, textAlign: 'center' },
   subtitle: { ...typography.body, textAlign: 'center' },
@@ -135,13 +138,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     textAlign: 'center',
   },
+  // Pulled away from the supporting text so the primary CTA has clear breathing room.
   actions: {
     gap: spacing.md,
+    marginTop: spacing.xl,
     marginBottom: spacing.lg,
   },
+  // A slightly more defined outline (calm blue) so the secondary action stays easy to see.
+  secondaryButton: {
+    borderColor: 'rgba(59, 70, 99, 0.35)',
+  },
+  // Given its own space so the closing line feels intentional, not crowded under the buttons.
   footnote: {
     ...typography.muted,
     textAlign: 'center',
-    marginTop: spacing.xs,
+    marginTop: spacing.lg,
   },
 });
