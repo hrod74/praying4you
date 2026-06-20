@@ -143,7 +143,11 @@ What changed:
     can enumerate who prayed.
   - `create`: signed-in, `userUid == request.auth.uid`, the doc id must equal
     `{uid}_{requestId}`, no `email` field, and the target request must **exist and be active**.
-  - `update`, `delete`: denied (interactions are immutable from the client; no "un-pray").
+  - `update`: denied (interactions are immutable from the client; no "un-pray").
+  - `delete`: **owner-self-scoped** (Phase J.2h) — a user may delete **only their own** interaction
+    docs (`resource.data.userUid == request.auth.uid`), used by account-deletion cleanup. The delete
+    touches only the interaction doc and **never changes `prayerCount`** (aggregate counts are
+    preserved); it can never delete another user's interaction.
 
   > **Bug fix (permission-denied on the duplicate check):** the read rule was originally a single
   > `allow read: if isSignedIn() && resource.data.userUid == request.auth.uid`. The pray transaction
@@ -196,6 +200,27 @@ hard-deleting requests; reading another user's `users/{uid}` profile; any listin
 - `app/(app)/feed/index.tsx`, `app/(app)/feed/[id].tsx` — surface the safe interaction error copy.
 - `firestore.rules` — `prayerInteractions` rules + the controlled `prayerCount` +1 rule.
 
+### Phase J.2h additions (account-deletion cleanup)
+
+- `src/services/firebase/prayerInteractionService.ts` — added `deleteAllMine(userUid)` (owner-scoped
+  list + batch delete; never touches `prayerCount`).
+- `src/services/firebase/contracts.ts` — added `deleteAllMine` to `PrayerInteractionService`.
+- `src/services/prayerInteractions.ts` — added `deleteMyInteractionsForAccountDeletion(uid)` (seam).
+- `src/context/AuthContext.tsx` — `deleteAccount` calls the cleanup best-effort while authenticated.
+- `firestore.rules` — `prayerInteractions` block now allows owner-self-scoped `delete`.
+- `firebase-tests/tests/prayerInteractions.test.mjs` — added delete-own / count-preserved (and denial)
+  tests; the immutability test now asserts update-only.
+
+### Account-deletion cleanup behavior (Phase J.2h)
+
+When a user deletes their account, their own interaction docs are removed so the records that identify
+them as someone who prayed do not linger. `deleteMyInteractionsForAccountDeletion(uid)` (Firebase mode
+only) is called **best-effort** by `AuthContext.deleteAccount` while the user is still authenticated;
+a failure is logged in dev and never blocks deletion. **`prayerCount` is deliberately preserved** — no
+"who prayed" UI exists, so a count that is not decremented exposes nothing, and avoiding a transactional
+decrement keeps the change simple and safe for MVP. The new delete rule **must be republished** in the
+Firebase Console for cleanup to take effect.
+
 ## Automated rules tests (Phase J.2f.4)
 
 The interaction rules (including the two J.2f.3 bug fixes — the literal `+1` increment and the
@@ -230,8 +255,8 @@ email stored, no raw UIDs, and no "who prayed" UI. Optionally test the local/moc
 
 ## Next recommended phase
 
-Reports moved into Firestore in **Phase J.2g** (store-for-manual-review, duplicate-prevented, no
-public listing, no client list/read of others) — see
-[`docs/firebase-reports-implementation.md`](./firebase-reports-implementation.md). Next: revisit
-**account deletion** to also clean up a deleting user's own interactions and reports (the requests are
-already soft-removed), with matching rules tests.
+Reports moved into Firestore in **Phase J.2g**, and **Phase J.2h** added account-deletion cleanup for
+a deleting user's own interactions and reports (see
+[`docs/firebase-reports-implementation.md`](./firebase-reports-implementation.md) and
+[`docs/QA_delete_scenarios.md`](./QA_delete_scenarios.md)). Next: consider a minimal owner-facing
+moderation workflow doc for manual Console review.

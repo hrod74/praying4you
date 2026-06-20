@@ -36,3 +36,14 @@ export async function reportRequest(input: {
 }): Promise<void> {
   return firebaseReportService.report(input);
 }
+
+/**
+ * Account-deletion cleanup (Phase J.2h): delete ALL of the user's own report docs so the records that
+ * identify them as the reporter are removed. Firebase mode only — in local mode reports live on-device
+ * under the single local profile and there is no backend to clean, so this is a no-op. Reports filed
+ * by OTHER users are never touched. Run while the user is still authenticated.
+ */
+export async function deleteMyReportsForAccountDeletion(reporterUid: string): Promise<void> {
+  if (!useFirebase()) return;
+  await firebaseReportService.deleteAllMine(reporterUid);
+}

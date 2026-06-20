@@ -39,13 +39,17 @@ unit-testing library against the emulator. Coverage:
   batch: interaction create + literal `prayerCount` +1) succeeds and raises the count by exactly 1;
   duplicates and same-user repeats are blocked; another user adds a separate interaction and raises
   the count again; no interaction may contain an email, be created for another user, or target a
-  removed request; `prayerCount` cannot be changed arbitrarily; interactions are immutable from the
-  client.
+  removed request; `prayerCount` cannot be changed arbitrarily; interactions are immutable to **update**
+  from the client. **Phase J.2h:** a user can **delete their own** interaction (account-deletion
+  cleanup) and that delete leaves the request's `prayerCount` unchanged; a user **cannot** delete
+  another user's interaction or delete while unauthenticated.
 - **`reports/{uid}_{requestId}`** (`tests/reports.test.mjs`, Phase J.2g): a reporter can report another
   user's active request and `get` only their own report doc (even before it exists); cannot report
   their own or a removed request; cannot report twice; cannot file for another `reporterUid`; no email;
   reason must be allowed; status must be `open`; `requestAuthorUid` must match the real author; cannot
-  update a report's status, delete a report, list reports, or read another user's report.
+  update a report's status or read another user's report. **Phase J.2h:** a reporter can **delete** and
+  **list only their own** reports (account-deletion cleanup); cannot delete/list another user's reports,
+  list reports unfiltered, or delete/list while unauthenticated.
 
 > The two J.2f.3 bugs above are now directly covered: the "exactly +1" increment test (uses a literal
 > value in a batch) and the "get own interaction doc before it exists" test.
@@ -104,13 +108,14 @@ Java 21+, so a future "Java < 21" deprecation warning is expected and harmless.
 
 ## Status of the test run (current)
 
-**The suite runs and passes: 47/47 tests, exit 0**, on Java 17, with no missing-rules warning (33
-from J.2f.4 plus 14 `reports` tests added in J.2g). The earlier Java 1.8 blocker is **resolved** (Java
-17 is now installed). The automation gap is closed.
+**The suite runs and passes: 55/55 tests, exit 0**, on Java 17, with no missing-rules warning (33 from
+J.2f.4, plus 14 `reports` tests from J.2g, plus **8 account-deletion-cleanup tests added in J.2h** —
+4 interaction delete/count-preserved and 4 report delete/list, with matching denials). The earlier Java
+1.8 blocker is **resolved** (Java 17 is now installed). The automation gap is closed.
 
 ```sh
 cd mobile-app && npm run test:rules
-# ... ℹ tests 47 / ℹ pass 47 / ℹ fail 0 ✔ Script exited successfully (code 0)
+# ... ℹ tests 55 / ℹ pass 55 / ℹ fail 0 ✔ Script exited successfully (code 0)
 ```
 
 > The only remaining emulator notice is the benign future warning that `firebase-tools@15` will drop
@@ -126,7 +131,8 @@ Manual device QA via the per-feature checklists remains part of the process:
 - `docs/QA_prayer_request_scenarios.md` (create/edit/soft-remove/ownership/no email).
 - `docs/QA_report_scenarios.md` (report active request, duplicate/self/removed blocked, no email, no
   who-reported).
-- `docs/QA_delete_scenarios.md` (account deletion soft-removes the user's requests).
+- `docs/QA_delete_scenarios.md` (account deletion soft-removes the user's requests and cleans up the
+  user's own interactions/reports; prayerCount preserved; Settings has no "Reset prototype data").
 
 ## Backend QA gate (project rule)
 

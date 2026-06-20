@@ -19,12 +19,12 @@ What is out of scope here (do not test these):
 
 ## Before You Start
 
-- [ ] Expo is running with `npx expo start -c`
-- [ ] Firebase Console is open to Firestore Database → Data
-- [ ] Firebase Console is open to Authentication → Users
-- [ ] Current Firestore rules are published (the updated `mobile-app/firestore.rules`, J.2g)
-- [ ] Testing uses throwaway accounts
-- [ ] At least one active prayer request exists, created by a different account than the reporter
+- [x] Expo is running with `npx expo start -c`
+- [x] Firebase Console is open to Firestore Database → Data
+- [x] Firebase Console is open to Authentication → Users
+- [x] Current Firestore rules are published (the updated `mobile-app/firestore.rules`, J.2g)
+- [x] Testing uses throwaway accounts
+- [x] At least one active prayer request exists, created by a different account than the reporter
 
 > Important: the rules were updated for this phase. Publish the FULL `mobile-app/firestore.rules` in
 > the Firebase Console (Firestore Database → Rules → Publish) before testing, or reporting will be
@@ -36,54 +36,54 @@ What is out of scope here (do not test these):
 
 ## Scenario 1: Report Another User's Active Request
 
-- [ ] Sign in as Account B (not the request's author)
-- [ ] Open a request created by Account A
-- [ ] Tap "Report this request"
-- [ ] Pick a reason (optionally add a note)
-- [ ] Submit the report
-- [ ] Confirm a calm thank-you / confirmation appears
-- [ ] Confirm `reports/{uid}_{requestId}` exists in Firestore
-- [ ] Confirm the report has `status: open` and a valid `reason`
-- [ ] Confirm no list of who reported is shown anywhere in the app
+- [x] Sign in as Account B (not the request's author)
+- [x] Open a request created by Account A
+- [x] Tap "Report this request"
+- [x] Pick a reason (optionally add a note)
+- [x] Submit the report
+- [x] Confirm a calm thank-you / confirmation appears
+- [x] Confirm `reports/{uid}_{requestId}` exists in Firestore
+- [x] Confirm the report has `status: open` and a valid `reason`
+- [x] Confirm no list of who reported is shown anywhere in the app
 
 ## Scenario 2: Attempt Duplicate Report
 
-- [ ] As the same account, open the same request again
-- [ ] Try to report it again
-- [ ] Confirm the app shows the calm "already reported" thank-you (no error)
-- [ ] Confirm no second/duplicate report document is created in Firestore
+- [x] As the same account, open the same request again
+- [x] Try to report it again
+- [x] Confirm the app shows the calm "already reported" thank-you (no error)
+- [x] Confirm no second/duplicate report document is created in Firestore
 
 ## Scenario 3: Attempt To Report Own Request
 
-- [ ] Sign in as the request's author (Account A)
-- [ ] Open your own request
-- [ ] Confirm there is no report entry point, or that reporting is blocked calmly
-- [ ] Confirm no report document is created for your own request
+- [x] Sign in as the request's author (Account A)
+- [x] Open your own request
+- [x] Confirm there is no report entry point, or that reporting is blocked calmly
+- [x] Confirm no report document is created for your own request
 
 ## Scenario 4: Attempt To Report A Removed Request
 
-- [ ] As the author, remove one of your requests
-- [ ] Confirm it leaves the feed
-- [ ] As another account, attempt to report that removed request (e.g. via a stale view)
-- [ ] Confirm reporting is blocked calmly ("no longer available")
-- [ ] Confirm no report document is created for the removed request
+- [x] As the author, remove one of your requests
+- [x] Confirm it leaves the feed
+- [x] As another account, attempt to report that removed request (e.g. via a stale view)
+- [x] Confirm reporting is blocked calmly ("no longer available")
+- [x] Confirm no report document is created for the removed request
 
 ## Scenario 5: Firestore Report Document Check
 
-- [ ] In Firestore, open a created report document
-- [ ] Confirm `reporterUid`, `requestId`, `requestAuthorUid`, `reason`, `status`, `createdAt`,
+- [x] In Firestore, open a created report document
+- [x] Confirm `reporterUid`, `requestId`, `requestAuthorUid`, `reason`, `status`, `createdAt`,
       `schemaVersion` are present
-- [ ] Confirm there is NO email field
-- [ ] Confirm there is NO display name or phone field
-- [ ] Confirm `status` is `open`
+- [x] Confirm there is NO email field
+- [x] Confirm there is NO display name or phone field
+- [x] Confirm `status` is `open`
 
 ## Scenario 6: Privacy / Data Boundary Check
 
-- [ ] Confirm the app never shows a list of reports
-- [ ] Confirm the app never shows who reported a request
-- [ ] Confirm raw user IDs are not shown anywhere in the UI
-- [ ] Confirm no email is stored in `reports`, `prayerRequests`, or `prayerInteractions`
-- [ ] Confirm who-prayed data is still not exposed
+- [x] Confirm the app never shows a list of reports
+- [x] Confirm the app never shows who reported a request
+- [x] Confirm raw user IDs are not shown anywhere in the UI
+- [x] Confirm no email is stored in `reports`, `prayerRequests`, or `prayerInteractions`
+- [x] Confirm who-prayed data is still not exposed
 
 ## Scenario 7: Calm Success / Error Copy
 
@@ -106,11 +106,11 @@ comfortable temporarily moving the config.
 
 ## Pass / Fail Summary
 
-- [ ] Report another user's active request passed
-- [ ] Duplicate report blocked (calm)
-- [ ] Report own request blocked
-- [ ] Report removed request blocked
-- [ ] Report document has the right fields and `status: open`
+- [x] Report another user's active request passed
+- [x] Duplicate report blocked (calm)
+- [x] Report own request blocked
+- [x] Report removed request blocked
+- [x] Report document has the right fields and `status: open`
 - [ ] No email / display name / phone stored
 - [ ] No who-reported list or raw user IDs shown
 - [ ] Calm success/error copy (no raw Firebase errors)

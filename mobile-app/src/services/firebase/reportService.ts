@@ -1,4 +1,15 @@
-import { doc, getDoc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+  writeBatch,
+  type Firestore,
+} from 'firebase/firestore';
 
 import { getFirebaseDb } from './firebaseApp';
 import { REPORT_ERROR_COPY, ReportError, reportError } from './reportErrors';
@@ -76,6 +87,29 @@ export const firebaseReportService: ReportService = {
       return snap.exists();
     } catch (error) {
       throw reportError(error);
+    }
+  },
+
+  async deleteAllMine(reporterUid) {
+    const db = requireDb();
+    // Account-deletion cleanup (Phase J.2h): remove ONLY this user's own report docs, so deleting an
+    // account removes the records that identify them as the reporter. The list query is owner-scoped
+    // (the rule allows listing only reports where reporterUid == the caller), and each delete is
+    // owner-scoped too — reports filed by OTHER users are never touched and remain for manual review.
+    // The raw Firebase error propagates so the caller (the account-deletion seam) can handle it;
+    // deletion treats this as best-effort.
+    const snap = await getDocs(
+      query(collection(db, COLLECTION), where('reporterUid', '==', reporterUid)),
+    );
+    if (snap.empty) return;
+    // Firestore caps a write batch at 500 operations; chunk to stay well under that.
+    const CHUNK = 450;
+    for (let i = 0; i < snap.docs.length; i += CHUNK) {
+      const batch = writeBatch(db);
+      for (const d of snap.docs.slice(i, i + CHUNK)) {
+        batch.delete(d.ref);
+      }
+      await batch.commit();
     }
   },
 };

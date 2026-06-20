@@ -8,12 +8,16 @@ rules_version = '2';
 //                              owner-only create/edit/soft-remove; a controlled +1 to prayerCount
 //                              tied to a new interaction (Phase J.2f.3).
 //   - prayerInteractions/{id}  "I prayed for this" (Phase J.2f.3) — one per user+request, id is
-//                              `{uid}_{requestId}`; owner can create + read only their own; no
-//                              client update/delete; AGGREGATE-ONLY (no "who prayed" listing).
+//                              `{uid}_{requestId}`; owner can create + read only their own; never
+//                              updatable; a user may DELETE ONLY their own interactions, solely as
+//                              account-deletion cleanup (Phase J.2h). AGGREGATE-ONLY (no "who prayed"
+//                              listing); deleting an interaction never changes prayerCount.
 //   - reports/{id}             "report this request" (Phase J.2g) — one per reporter+request, id is
-//                              `{uid}_{requestId}`; reporter-only create + read-own; no list, no
-//                              client status change/delete. Private moderation record reviewed
-//                              MANUALLY in the Firebase Console (no "who reported" surface anywhere).
+//                              `{uid}_{requestId}`; reporter-only create + read-own; never updatable.
+//                              A reporter may LIST and DELETE ONLY their own reports, solely so
+//                              account deletion (Phase J.2h) can remove the records that identify them
+//                              as the reporter. Still a private moderation record reviewed MANUALLY in
+//                              the Firebase Console, with no cross-user "who reported" surface.
 //
 // IMPORTANT: these rules are NOT auto-deployed. The owner must publish the FULL contents of this
 // file in the Firebase Console (Firestore Database > Rules > Publish) or via the Firebase CLI for
@@ -139,9 +143,20 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId))
         && get(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId)).data.status == 'active';
 
-      // No client updates or deletes: an interaction is immutable from the client (no "un-pray" in
-      // this phase), which also keeps the aggregate prayerCount consistent.
-      allow update, delete: if false;
+      // No client UPDATE: an interaction is immutable from the client (no "un-pray" in this phase),
+      // which also keeps the aggregate prayerCount consistent.
+      allow update: if false;
+
+      // DELETE (account-deletion cleanup, Phase J.2h): a user may delete ONLY their own interaction
+      // docs, identified by `resource.data.userUid == request.auth.uid`. This removes the records that
+      // directly identify the deleting user as someone who prayed. It is narrow and owner-only: it can
+      // never touch another user's interaction. It does NOT (and cannot) change the request's
+      // prayerCount — the delete only affects this doc — so aggregate counts are intentionally
+      // preserved (acceptable for MVP: there is no "who prayed" UI, so a count that is not decremented
+      // reveals nothing about anyone). This does not weaken the duplicate-prevention rule above (that
+      // is enforced on CREATE via `!exists`), and a deleting user's account is removed in the same
+      // flow, so they cannot use a delete to "un-pray" and pray again to inflate a count.
+      allow delete: if isSignedIn() && resource.data.userUid == request.auth.uid;
     }
 
     // Reports ("report this request") — Phase J.2g. One doc per reporter+request, deterministic id
@@ -156,8 +171,12 @@ service cloud.firestore {
       allow get: if isSignedIn()
         && reportId[0:(request.auth.uid.size() + 1)] == (request.auth.uid + '_');
 
-      // LIST: never. There is deliberately no "who reported" surface anywhere in the app.
-      allow list: if false;
+      // LIST: a reporter may list ONLY their own reports (`resource.data.reporterUid ==
+      // request.auth.uid`), which is exactly how account-deletion cleanup (Phase J.2h) enumerates the
+      // reports it must remove. This is owner-self-scoped, NOT a "who reported" surface: a caller can
+      // only ever see reports they filed themselves, so no one can learn who reported any given
+      // request. A query without that reporterUid filter (or filtered to another user) is denied.
+      allow list: if isSignedIn() && resource.data.reporterUid == request.auth.uid;
 
       // CREATE: a signed-in user may file ONLY their own report, on someone else's ACTIVE request,
       // once. The doc id must be `{uid}_{requestId}`; reporterUid must be the caller; status starts
@@ -179,8 +198,17 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/prayerRequests/$(request.resource.data.requestId)).data.authorUid == request.resource.data.requestAuthorUid
         && request.resource.data.requestAuthorUid != request.auth.uid;
 
-      // No client status changes and no deletes: moderation/review is manual via the Console.
-      allow update, delete: if false;
+      // No client status changes: moderation/review is manual via the Console (a reporter can never
+      // change a report's status, reason, or any field once filed).
+      allow update: if false;
+
+      // DELETE (account-deletion cleanup, Phase J.2h): a reporter may delete ONLY their own reports
+      // (`resource.data.reporterUid == request.auth.uid`), so deleting an account removes the records
+      // that identify that user as the reporter. It is narrow and owner-only — it can never delete a
+      // report filed by someone else (including reports filed by other users against the deleting
+      // user's requests, which remain for manual review). This is the MVP choice over anonymizing the
+      // reporter, since reports are private moderation records with no cross-user surface.
+      allow delete: if isSignedIn() && resource.data.reporterUid == request.auth.uid;
     }
 
     // Everything else is denied until its phase adds explicit rules + tests.

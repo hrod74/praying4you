@@ -18,6 +18,8 @@ import {
 } from '../services/firebase/authErrors';
 import { firebaseUserService } from '../services/firebase/userService';
 import { removeOwnRequestsForAccountDeletion } from '../services/prayerRequests';
+import { deleteMyInteractionsForAccountDeletion } from '../services/prayerInteractions';
+import { deleteMyReportsForAccountDeletion } from '../services/reports';
 import type { UserProfile } from '../models/types';
 
 /**
@@ -44,6 +46,34 @@ function syncProfileDoc(label: string, run: () => Promise<unknown>): void {
         `Auth still succeeded; will retry on next sign-in.${hint} Detail: ${message}`,
     );
   });
+}
+
+/**
+ * Run an account-deletion cleanup step BEST-EFFORT, awaiting it but swallowing failures (Phase J.2h).
+ *
+ * The cleanup of the user's own `prayerInteractions` and `reports` removes the records that identify
+ * them as an actor, but it must NEVER trap a user in an undeletable account: if a cleanup write fails
+ * (for example because the new delete rules have not been republished yet, or a transient network
+ * error), we log in dev and continue, so the critical steps (profile-doc delete, Auth delete) still
+ * run. Any orphaned interaction/report doc is low-risk — it carries only an opaque UID, is never
+ * listable across users, and has no "who prayed"/"who reported" surface. The dev log records only the
+ * Firebase error code (non-sensitive); never a uid, email, or any private value.
+ */
+async function cleanupBestEffort(label: string, run: () => Promise<unknown>): Promise<void> {
+  try {
+    await run();
+  } catch (error) {
+    if (!__DEV__) return;
+    const code = (error as { code?: string })?.code ?? 'unknown';
+    const hint =
+      code === 'permission-denied'
+        ? ' Republish mobile-app/firestore.rules in the Firebase Console (Firestore Database > Rules).'
+        : '';
+    console.warn(
+      `[delete] best-effort cleanup "${label}" failed (code: ${code}); continuing with account ` +
+        `deletion.${hint}`,
+    );
+  }
 }
 
 /**
@@ -120,10 +150,14 @@ interface AuthContextValue {
    *
    * Firebase mode (in order, while still authenticated): soft-removes the user's active
    * `prayerRequests` (status -> removed, removedReason -> accountDeleted; never hard-deleted), then
-   * deletes the private `users/{uid}` profile doc, then deletes the Firebase Auth user, then clears
-   * any local session state. Local mode: soft-removes the user's own submitted requests, then clears
-   * the on-device profile/session. On failure it throws an AccountDeletionError with safe copy (and
-   * `requiresRecentLogin` when a fresh sign-in is needed); a blocked step leaves the account intact.
+   * best-effort deletes the records that identify the user as an actor — their own
+   * `prayerInteractions` and their own `reports` (Phase J.2h; aggregate `prayerCount` is preserved by
+   * design) — then deletes the private `users/{uid}` profile doc, then deletes the Firebase Auth user,
+   * then clears any local session state. Local mode: soft-removes the user's own submitted requests,
+   * then clears the on-device profile/session. On failure of a CRITICAL step (request soft-remove,
+   * profile-doc delete, Auth delete) it throws an AccountDeletionError with safe copy (and
+   * `requiresRecentLogin` when a fresh sign-in is needed) and leaves the account intact; the
+   * interaction/report cleanup is best-effort and never blocks deletion.
    */
   deleteAccount: () => Promise<void>;
 }
@@ -310,7 +344,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           throw accountDeletionError(error);
         }
-        // 2. Delete the private Firestore profile doc, still while authenticated (owner-only rules).
+        // 2. Clean up the records that directly identify this user as an actor (Phase J.2h):
+        //    their own prayerInteractions and their own reports. BEST-EFFORT — a failure here (e.g.
+        //    the new delete rules not yet republished) must never trap the user in an undeletable
+        //    account, and any orphaned doc is low-risk (opaque UID, never listable across users, no
+        //    who-prayed/who-reported surface). prayerCount is intentionally NOT decremented.
+        await cleanupBestEffort('prayerInteractions', () =>
+          deleteMyInteractionsForAccountDeletion(uid),
+        );
+        await cleanupBestEffort('reports', () => deleteMyReportsForAccountDeletion(uid));
+        // 3. Delete the private Firestore profile doc, still while authenticated (owner-only rules).
         //    We stop here on failure so we never orphan the doc by deleting Auth first.
         try {
           await firebaseUserService.deleteOwnProfile(uid);
@@ -318,9 +361,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw accountDeletionError(error);
         }
       }
-      // 3. Delete the Firebase Auth user (throws AccountDeletionError, e.g. requires-recent-login).
+      // 4. Delete the Firebase Auth user (throws AccountDeletionError, e.g. requires-recent-login).
       await firebaseAuthService.deleteAccount();
-      // 4. onAuthStateChanged will clear profile/isSignedIn; also clear any local fallback state.
+      // 5. onAuthStateChanged will clear profile/isSignedIn; also clear any local fallback state.
       try {
         await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY]);
       } catch {

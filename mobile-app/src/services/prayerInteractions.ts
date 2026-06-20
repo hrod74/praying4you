@@ -44,3 +44,15 @@ export async function prayForRequest(
 export async function listMyPrayedRequestIds(userUid: string): Promise<string[]> {
   return firebasePrayerInteractionService.listMinePrayedFor(userUid);
 }
+
+/**
+ * Account-deletion cleanup (Phase J.2h): delete ALL of the user's own prayer-interaction docs so the
+ * records that identify them as someone who prayed are removed. Firebase mode only — in local mode
+ * interactions live on-device under the single local profile and there is no backend to clean, so
+ * this is a no-op. Deliberately does NOT change any request's aggregate `prayerCount` (no "who prayed"
+ * UI exists, so preserving counts for MVP exposes nothing). Run while the user is still authenticated.
+ */
+export async function deleteMyInteractionsForAccountDeletion(userUid: string): Promise<void> {
+  if (!useFirebase()) return;
+  await firebasePrayerInteractionService.deleteAllMine(userUid);
+}
