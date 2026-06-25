@@ -27,14 +27,18 @@ function PrayerCardComponent({
   prayed = false,
 }: {
   prayer: PrayerRequest;
-  /** Open the full prayer detail screen. */
-  onPress: () => void;
   /**
-   * Record an "I prayed for this" interaction directly from the card. Omitted when the
-   * action does not apply (e.g. the viewer's own request), in which case no CTA is shown
-   * unless the request is already prayed for.
+   * Open the full prayer detail screen. Receives the request id so the parent can pass ONE stable
+   * callback for every card (instead of a fresh per-item closure), which keeps `React.memo` below
+   * effective: unchanged cards keep identical props and skip re-rendering when the feed updates.
    */
-  onPray?: () => void;
+  onPress: (id: string) => void;
+  /**
+   * Record an "I prayed for this" interaction directly from the card. Receives the request id, for
+   * the same stable-callback reason as `onPress`. Omitted when the action does not apply (e.g. the
+   * viewer's own request), in which case no CTA is shown unless the request is already prayed for.
+   */
+  onPray?: (id: string) => void;
   /** Whether the current user has prayed for this request (lightweight feed indicator). */
   prayed?: boolean;
 }) {
@@ -49,7 +53,7 @@ function PrayerCardComponent({
   return (
     <View style={styles.card}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPress(prayer.id)}
         accessibilityRole="button"
         accessibilityLabel={`${PRAYER_CATEGORY_LABELS[prayer.category]} prayer request from ${shownName}.`}
         accessibilityHint="Opens the full prayer request"
@@ -86,7 +90,7 @@ function PrayerCardComponent({
           </View>
         ) : showInteractivePray ? (
           <Pressable
-            onPress={onPray}
+            onPress={() => onPray?.(prayer.id)}
             accessibilityRole="button"
             accessibilityLabel="Pray for this request"
             accessibilityHint="Marks that you prayed for this request"

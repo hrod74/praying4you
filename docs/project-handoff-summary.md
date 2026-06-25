@@ -508,3 +508,40 @@ trustworthy, nav reads `Feed | Pray | Verse | Settings`, name "Praying For You")
 **No app code or Firestore rules changed** (docs only). Validation: rules suite **55/55**, `tsc` clean,
 Expo (Metro) starts cleanly. See `docs/QA_alpha_readiness.md`. **Next:** run the Alpha Readiness pass on
 a device, then invite 3–4 trusted testers. Commit: `docs: add alpha readiness QA`.
+
+**Phase — Feed Scale Readiness (sorting, filtering, feed performance) (implemented).** Early Alpha
+feedback asked for (1) simple feed sorting/filtering so the feed stays manageable as requests grow, and
+(2) a fix for React Native's `VirtualizedList: ... slow to update` warning seen while viewing the feed.
+**Root cause of the warning:** the feed `renderItem` was defined inline and built a fresh per-item
+`onPress`/`onPray` closure on every render, which defeated the existing `React.memo` on `PrayerCard` —
+so any state change (e.g. one prayer-count update) re-rendered **every** visible card on a large list.
+**Sorting/filtering** is pure and DERIVED on-device by `src/feed/feedQuery.ts` (`applyFeedControls`),
+never touching stored data: three sorts (**Newest** default, **Oldest**, **Most prayed**) and three
+combinable filters (**Category**, **To pray for** = requests the viewer has not prayed for, excluding
+their own; **My requests** = backend ownership by `userId`, never by name). Removed requests are
+defensively excluded in the logic as well as the data layer. New `src/components/FeedControls.tsx` is a
+compact, calm pill bar (same parchment/navy chips as `CategorySelect`, horizontally scrollable category
+row, 44pt targets, accessibility roles/labels, no em dashes); a status line + single **Reset** appear
+only once the feed is customized. **Performance fixes:** `PrayerCard` now takes id-based **stable**
+callbacks (`onPress(id)`, `onPray(id)`) so `React.memo` actually holds; the feed memoizes the
+sorted/filtered array, and `renderItem`/`keyExtractor`/row callbacks are `useCallback`-stable; a
+module-level `Separator`; and conservative FlatList virtualization (`initialNumToRender`/
+`maxToRenderPerBatch` 8, `windowSize` 11, `updateCellsBatchingPeriod` 50, `removeClippedSubviews` only on
+Android). `getItemLayout` is intentionally **not** used (variable row height). Net effect: after praying,
+only the one affected card re-renders. The `my-requests` and `prayed-for` screens were updated to the new
+stable `onPress` signature. **Pagination decision (no Firestore change this phase):** the feed still
+loads the **full** active set and sorts/filters the whole set on-device, which is honest for pre-beta
+(client-side sort/filter == the complete active dataset, not a partial page). Server-side cursor
+pagination was deliberately deferred because Oldest/Most-prayed would each need a composite index
+(`status` + `orderBy`) and client-combined filters over a partial page would mislead. **Future server-
+side work (before the active feed grows large, ~hundreds of requests):** Firestore cursor pagination
+(page size ~20 + Load more) with the per-sort composite indexes, and server-side filtering where
+practical. **No Firestore rules or indexes changed; nothing to republish for this phase.** **Tests:**
+added `src/feed/feedQuery.test.ts` (11 cases, Node built-in runner via `npm run test:feed`) covering
+default/oldest/most-prayed, each filter, combined controls, removed-excluded, reset, empty result, and
+no-mutation; rules suite still **55/55**; `tsc` clean (test files excluded from `tsc`, validated by
+running). Security/scope unchanged: no Auth change, no rules weakening, no who-prayed/who-reported
+surface, no raw UIDs, no monetization/ads/org-accounts/admin/remote-analytics, no Expo SDK bump, Expo Go
+compatible. **Manual QA still needed on-device:** `docs/QA_feed_sort_filter_performance.md` (the
+VirtualizedList before/after must be retested on a device with a large feed; small + large iPhone
+checks). Commit: `feat: add feed sorting and filtering`.

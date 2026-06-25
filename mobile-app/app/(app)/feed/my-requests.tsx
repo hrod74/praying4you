@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { EmptyState } from '../../../src/components/EmptyState';
@@ -22,6 +23,12 @@ export default function MyRequestsScreen() {
 
   const mine = profile ? getMyRequests(profile.id) : [];
 
+  // Stable callback so memoized cards keep identical props across renders.
+  const handlePress = useCallback(
+    (id: string) => router.push(`/(app)/feed/${id}`),
+    [router],
+  );
+
   return (
     <FlatList
       data={mine}
@@ -40,7 +47,7 @@ export default function MyRequestsScreen() {
         <PrayerCard
           prayer={item}
           prayed={profile ? hasPrayed(item.id, profile.id) : false}
-          onPress={() => router.push(`/(app)/feed/${item.id}`)}
+          onPress={handlePress}
         />
       )}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
