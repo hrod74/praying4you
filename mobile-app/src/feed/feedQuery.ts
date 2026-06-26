@@ -65,6 +65,36 @@ export function isFeedCustomized(controls: FeedControls): boolean {
   return controls.sort !== DEFAULT_FEED_CONTROLS.sort || isFeedFiltered(controls);
 }
 
+/**
+ * The single "Show" scope the UI presents (all / to-pray-for / my-requests). The two underlying
+ * booleans (`onlyUnprayed`, `onlyMine`) are mutually exclusive in this UI, so they collapse to one
+ * choice. Kept here (not in the component) so it is centralized and unit-tested alongside the rest of
+ * the feed logic. `onlyMine` wins if both were ever set, so the value is always well defined.
+ */
+export type FeedShow = 'all' | 'unprayed' | 'mine';
+
+/** Derive the current "Show" scope from the controls. */
+export function feedShowOf(controls: FeedControls): FeedShow {
+  if (controls.onlyMine) return 'mine';
+  if (controls.onlyUnprayed) return 'unprayed';
+  return 'all';
+}
+
+/** Return new controls with the given "Show" scope applied (the two booleans stay exclusive). */
+export function withFeedShow(controls: FeedControls, show: FeedShow): FeedControls {
+  return { ...controls, onlyUnprayed: show === 'unprayed', onlyMine: show === 'mine' };
+}
+
+/**
+ * How many FILTERS are active, for the "Filters · N" badge: the category counts as one, and a
+ * non-default Show scope counts as one (max 2). Sort is shown separately and is never counted here.
+ */
+export function activeFilterCount(controls: FeedControls): number {
+  return (
+    (controls.category !== CATEGORY_ALL ? 1 : 0) + (feedShowOf(controls) !== 'all' ? 1 : 0)
+  );
+}
+
 const newestFirst = (a: PrayerRequest, b: PrayerRequest): number =>
   new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 

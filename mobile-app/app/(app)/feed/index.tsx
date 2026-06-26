@@ -155,12 +155,7 @@ export default function FeedScreen() {
               Read what others are carrying, and lift them up in prayer.
             </Text>
           </View>
-          <FeedControls
-            controls={controls}
-            onChange={setControls}
-            onReset={onReset}
-            resultCount={visiblePrayers.length}
-          />
+          <FeedControls controls={controls} onChange={setControls} onReset={onReset} />
         </View>
       }
       ItemSeparatorComponent={Separator}

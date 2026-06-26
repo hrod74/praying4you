@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  activeFilterCount,
   applyFeedControls,
   DEFAULT_FEED_CONTROLS,
+  feedShowOf,
   isFeedCustomized,
   isFeedFiltered,
+  withFeedShow,
   type FeedControls,
   type FeedViewerContext,
 } from './feedQuery.ts';
@@ -148,4 +151,43 @@ test('isFeedFiltered / isFeedCustomized reflect control state', () => {
   // A filter is both.
   assert.equal(isFeedFiltered(controls({ onlyMine: true })), true);
   assert.equal(isFeedCustomized(controls({ onlyMine: true })), true);
+});
+
+test('feedShowOf collapses the two scope booleans to one choice', () => {
+  assert.equal(feedShowOf(DEFAULT_FEED_CONTROLS), 'all');
+  assert.equal(feedShowOf(controls({ onlyUnprayed: true })), 'unprayed');
+  assert.equal(feedShowOf(controls({ onlyMine: true })), 'mine');
+  // Mine wins if both were somehow set, so the value is always well defined.
+  assert.equal(feedShowOf(controls({ onlyUnprayed: true, onlyMine: true })), 'mine');
+});
+
+test('withFeedShow sets exclusive scope booleans', () => {
+  const mine = withFeedShow(DEFAULT_FEED_CONTROLS, 'mine');
+  assert.deepEqual({ onlyMine: mine.onlyMine, onlyUnprayed: mine.onlyUnprayed }, {
+    onlyMine: true,
+    onlyUnprayed: false,
+  });
+  const unprayed = withFeedShow(mine, 'unprayed');
+  assert.deepEqual({ onlyMine: unprayed.onlyMine, onlyUnprayed: unprayed.onlyUnprayed }, {
+    onlyMine: false,
+    onlyUnprayed: true,
+  });
+  const all = withFeedShow(unprayed, 'all');
+  assert.deepEqual({ onlyMine: all.onlyMine, onlyUnprayed: all.onlyUnprayed }, {
+    onlyMine: false,
+    onlyUnprayed: false,
+  });
+  // Sort and category are preserved when only the scope changes.
+  const fromSorted = withFeedShow(controls({ sort: 'oldest', category: 'health' }), 'mine');
+  assert.equal(fromSorted.sort, 'oldest');
+  assert.equal(fromSorted.category, 'health');
+});
+
+test('activeFilterCount counts category and scope, never sort (max 2)', () => {
+  assert.equal(activeFilterCount(DEFAULT_FEED_CONTROLS), 0);
+  assert.equal(activeFilterCount(controls({ sort: 'mostPrayed' })), 0); // sort is not a filter
+  assert.equal(activeFilterCount(controls({ category: 'health' })), 1);
+  assert.equal(activeFilterCount(controls({ onlyUnprayed: true })), 1);
+  assert.equal(activeFilterCount(controls({ onlyMine: true })), 1);
+  assert.equal(activeFilterCount(controls({ category: 'family', onlyMine: true })), 2);
 });

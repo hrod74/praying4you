@@ -54,50 +54,83 @@ required for THIS phase.
 > new, one with a high prayer count, a couple in the same category, one of your own, and one you have
 > already prayed for.
 
+## Compact toolbar (new layout)
+
+The Sort, Show, and Category sections are no longer permanently expanded. The feed now shows ONE
+compact toolbar below the description: a **Filters** button on the left and the current sort value
+(for example **Newest**) on the right. Tapping either opens a bottom sheet.
+
+- [ ] Open the Feed. Below the title and one line of description there is a single short row: a
+      **Filters** button and a sort button reading **Newest**.
+- [ ] The first prayer card is visible high on the screen (roughly where the old Category row used to
+      be). Compare to the old build: the first card is significantly higher.
+- [ ] With no filters active, there is no chip row and no count badge. The toolbar is one row only.
+
 ## Sort scenarios
 
-- [ ] Open the Feed. The default sort is **Newest** and the most recently shared request is at the
+- [ ] Open the Feed. The default sort is **Newest** (the sort button reads Newest) and the most
+      recently shared request is at the top.
+- [ ] Tap the sort button. A bottom sheet titled **Sort** slides up with Newest, Oldest, and Most
+      prayed. The current choice has a checkmark.
+- [ ] Tap **Oldest**. The sheet closes, the button now reads Oldest, and the oldest request is at the
       top.
-- [ ] Tap **Oldest**. The list reverses: the oldest request is now at the top.
-- [ ] Tap **Most prayed**. The request with the highest prayer count is at the top; ties fall back to
-      newest first.
-- [ ] Tap **Newest** again. The feed returns to newest first.
-- [ ] The selected sort pill is clearly highlighted (navy) and the other two are quiet (parchment).
+- [ ] Open the sort sheet again and tap **Most prayed**. The request with the highest prayer count is
+      at the top; ties fall back to newest first.
+- [ ] Tap the sort button, choose **Newest**. The feed returns to newest first.
+- [ ] In the sort sheet, the selected option is clearly indicated (bold navy text plus a checkmark).
+- [ ] Tap outside the sheet (on the dimmed area). It closes without changing the sort.
 
 ## Filter scenarios
 
-- [ ] Tap a **Category** chip (for example Health). Only requests in that category appear.
-- [ ] Tap **All**. Every category appears again.
-- [ ] Tap **To pray for**. Only requests you have NOT prayed for appear. Your OWN requests do not
-      appear here (you cannot pray for your own).
+All filters live in the **Filters** bottom sheet. Open it by tapping **Filters**.
+
+- [ ] Tap **Filters**. A bottom sheet titled **Filters** slides up with a **Show** group (All
+      requests, To pray for, My requests) and a **Category** group (All plus every category). The
+      category chips WRAP onto multiple lines; none is cut off at the screen edge.
+- [ ] In **Category**, tap Health, then tap **Apply filters**. The sheet closes and only Health
+      requests appear.
+- [ ] Open **Filters**, set **Category** back to All, Apply. Every category appears again.
+- [ ] Open **Filters**, choose **Show: To pray for**, Apply. Only requests you have NOT prayed for
+      appear. Your OWN requests do not appear here (you cannot pray for your own).
 - [ ] Pray for one of the listed requests. It leaves the "To pray for" list (after the pray
       registers), confirming the filter reflects your own interaction data.
-- [ ] Tap **My requests**. Only requests you created appear (matched by account ownership, never by
-      display name). An anonymous request you made still appears here for you.
-- [ ] While "My requests" is on, confirm no other person's request is shown.
+- [ ] Open **Filters**, choose **Show: My requests**, Apply. Only requests you created appear (matched
+      by account ownership, never by display name). An anonymous request you made still appears here
+      for you. No other person's request is shown.
+- [ ] Confirm **Show** is single choice: selecting My requests clears To pray for, and vice versa.
 
 ## Combined control scenarios
 
-- [ ] Turn on **Category = Family** and sort **Most prayed**. Only Family requests appear, ordered by
-      prayer count. Confirm filtering and sorting work together.
-- [ ] Turn on **To pray for** and **Category = Health**. Only Health requests you have not prayed for
-      (and are not your own) appear.
-- [ ] Turn on **My requests** and change the sort to **Oldest**. Your requests appear oldest first.
-- [ ] A clear indication appears when a filter is active: the status line reads "Filters on. N
-      requests shown." and a **Reset** button is visible.
+- [ ] Open **Filters**, set **Category: Family**, Apply, then open the sort sheet and choose **Most
+      prayed**. Only Family requests appear, ordered by prayer count. Filtering and sorting work
+      together.
+- [ ] Open **Filters**, set **Show: To pray for** and **Category: Health**, Apply. Only Health
+      requests you have not prayed for (and are not your own) appear.
+- [ ] Set **Show: My requests** and sort **Oldest**. Your requests appear oldest first.
+- [ ] When filters are active, the **Filters** button shows a small count (for example a badge of 2),
+      and removable chips appear below the toolbar (for example "To pray for" and "Health"), each with
+      an x.
+
+## Active filter chips
+
+- [ ] With one or more filters active, confirm a chip appears below the toolbar for each active filter
+      (the Show scope and the Category), and NO chips appear when nothing is filtered.
+- [ ] Tap the x on a chip (for example Health). That single filter is removed immediately and the feed
+      updates; other active filters remain.
+- [ ] The Filters count badge decreases as chips are removed, and disappears at zero.
 
 ## Reset
 
-- [ ] With one or more filters and a non-default sort active, tap **Reset**.
-- [ ] The feed returns to the default: Newest first, All categories, no scope filters. The status line
-      and Reset button disappear.
+- [ ] With one or more filters and a non-default sort active, open **Filters** and tap **Reset**.
+- [ ] The sheet closes and the feed returns to the default: Show All requests, Category All, Sort
+      Newest. The count badge and all active chips disappear.
 
 ## Empty state
 
-- [ ] Apply a filter combination that matches nothing (for example **My requests** + a category none
-      of your requests use). A calm empty state appears: "Nothing matches yet ... Try Reset to see the
-      whole feed." It is warm and quiet, not an error.
-- [ ] Tap **Reset**. The full feed returns.
+- [ ] Apply a filter combination that matches nothing (for example **Show: My requests** plus a
+      category none of your requests use). A calm empty state appears: "Nothing matches yet ... Try
+      Reset to see the whole feed." It is warm and quiet, not an error.
+- [ ] Open **Filters** and tap **Reset**. The full feed returns.
 
 ## Removed requests
 
@@ -151,13 +184,14 @@ retested on a device with a large enough feed.
 
 ## Small and large iPhone checks
 
-- [ ] Small iPhone (for example iPhone SE / mini): the Sort row, Show toggles, and Category row all
-      fit and stay readable. The Category row scrolls horizontally; no chip is clipped. Touch targets
-      are comfortable (44pt).
-- [ ] Large iPhone (for example Pro Max): the controls do not feel sparse or stretched; the feed
-      remains a calm single column.
-- [ ] With larger system text (Accessibility text size up), labels remain legible and chips do not
-      overlap. Controls still tap reliably.
+- [ ] Small iPhone (for example iPhone SE / mini): the toolbar is one row and both buttons fit. The
+      Filters and Sort bottom sheets open from the bottom, respect the home-indicator safe area, and
+      the category chips wrap (no chip is clipped). If the filter sheet content is tall, it scrolls
+      inside the sheet while Reset and Apply stay reachable. Touch targets are comfortable (44pt).
+- [ ] Large iPhone (for example Pro Max): the toolbar does not feel sparse or stretched; the feed
+      remains a calm single column; the sheet sits at the bottom within reach.
+- [ ] With larger system text (Accessibility text size up), labels remain legible, chips wrap rather
+      than overlap, and the sheets still scroll. Controls still tap reliably.
 
 ## Existing flows still work (regression)
 
@@ -167,6 +201,42 @@ retested on a device with a large enough feed.
 - [ ] Pray for another person's request still works (count rises, "Prayed" badge shows).
 - [ ] Report another person's request still works.
 - [ ] No raw account IDs (UIDs) appear anywhere on the feed or controls.
+
+## UI/UX review findings (compact toolbar refactor)
+
+Reviewed against the goal of keeping prayer requests the primary content. Findings from the code-level
+review (to be confirmed on a device):
+
+- **Vertical space usage:** the old layout stacked three labeled groups of 44pt pills plus a status
+  row above the feed (roughly 260 to 290pt of controls). The new closed state is a single 44pt
+  toolbar row (about 44pt, around 68pt including its bottom margin). That is roughly a 200pt
+  reduction, so the first prayer card moves up by close to the height of one full card on a small
+  iPhone.
+- **Hierarchy:** title (large) then one quiet description line then a low-emphasis outlined toolbar
+  then the cards. The cards keep the only elevated/shadowed surface, so they stay the visual priority;
+  the toolbar reads as secondary chrome.
+- **Discoverability:** the left control is labeled "Filters" with a funnel icon; the right control
+  shows the current sort value with a down chevron, signaling it is tappable. Both open standard
+  bottom sheets.
+- **Small iPhone layout:** toolbar is two short buttons with space between, comfortably fitting SE
+  width ("Most prayed" is the longest label and still short). The filter sheet wraps categories and
+  scrolls internally under an 85 percent height cap, with Reset and Apply pinned below, so it works on
+  small screens and respects the bottom safe area.
+- **Active filter clarity:** a count badge appears on the Filters button and removable chips appear
+  below the toolbar, each labeled (for example "Health", "To pray for") with an x. Chips never show
+  when nothing is filtered.
+- **Ease of resetting:** two paths. Remove a single filter by tapping its chip x, or clear everything
+  (Show, Category, Sort) in one tap with Reset inside the filter sheet.
+- **First card appears quickly enough:** yes. With the toolbar collapsed, the first card sits just
+  below one description line and the toolbar, much higher than the previous three-section layout.
+
+Open considerations (acceptable for this phase, noted for future polish):
+
+- Show is presented as a single choice (All / To pray for / My requests); the two underlying booleans
+  can no longer be enabled at once from the UI. That combination previously yielded an empty list
+  anyway, so no useful capability was lost, and all sort/filter logic is unchanged.
+- The Filters count badge uses a number badge rather than the literal "Filters · 2" text. Same meaning,
+  cleaner at small sizes; revisit if the text form is preferred.
 
 ## Notes / observations
 

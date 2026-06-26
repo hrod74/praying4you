@@ -545,3 +545,24 @@ surface, no raw UIDs, no monetization/ads/org-accounts/admin/remote-analytics, n
 compatible. **Manual QA still needed on-device:** `docs/QA_feed_sort_filter_performance.md` (the
 VirtualizedList before/after must be retested on a device with a large feed; small + large iPhone
 checks). Commit: `feat: add feed sorting and filtering`.
+
+**Phase — Feed filter UI refactor (compact toolbar + bottom sheets) (implemented).** Early feedback:
+the expanded Sort/Show/Category pill sections ate most of the first screen before any prayer request
+showed. Replaced that permanently-expanded UI (no longer retained) with a single compact toolbar below
+the feed description: a **Filters** button (with an active-count badge) on the left and the current
+sort value (e.g. **Newest**) on the right. Tapping **Sort** opens a calm bottom sheet (RN `Modal`,
+slide up, safe-area aware) with Newest/Oldest/Most prayed (checkmark on the selected, applies on tap);
+tapping **Filters** opens a bottom sheet with **Show** (All requests / To pray for / My requests, now a
+single-select that maps to the existing `onlyUnprayed`/`onlyMine` booleans) and **Category** (All plus
+every category, WRAPPED so nothing is horizontally clipped), with **Reset** and **Apply filters**.
+Active filters also show as small removable chips below the toolbar (none when nothing is filtered).
+This drops the pre-feed controls from ~260-290pt to a single ~44pt row, so the first card sits roughly
+one card-height higher on a small iPhone. **All sort/filter logic is unchanged** (`src/feed/feedQuery.ts`);
+added pure helpers `feedShowOf` / `withFeedShow` / `activeFilterCount` (+3 unit tests, suite now 14).
+No backend/query/rules change; performance optimizations from the prior phase remain intact (PrayerCard
+memo, stable callbacks, FlatList tuning). Files: rewrote `src/components/FeedControls.tsx`, extended
+`src/feed/feedQuery.ts` (+ tests), updated `app/(app)/feed/index.tsx` (drop unused `resultCount` prop),
+refreshed `docs/QA_feed_sort_filter_performance.md` (new interaction model + UI/UX review findings).
+Validation: rules **55/55**, `tsc` clean, feed tests **14/14**, Expo (Metro) starts + bundles cleanly.
+**Manual QA still needed on-device:** the compact-toolbar checklist (first-card height, sheets on small
++ large iPhone, safe area, VirtualizedList no-regression). Commit: `refactor: simplify feed filters`.
