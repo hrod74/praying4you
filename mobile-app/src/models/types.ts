@@ -113,6 +113,27 @@ export interface Report {
   createdAt: string;
 }
 
+/**
+ * An account the signed-in user has hidden ("Hide requests from this account," a one-directional,
+ * account-level control; see `docs/firebase-hidden-accounts-implementation.md`). Internal only:
+ * `id` and `hiddenUid` are opaque identifiers and must never be rendered in the UI.
+ */
+export interface HiddenAccount {
+  /** `${blockerUid}_${hiddenUid}`. Internal only, never rendered. */
+  id: string;
+  /** The hidden account's internal identifier. Internal only, never rendered. */
+  hiddenUid: string;
+  createdAt: string;
+  /** Whether the request that triggered this hide was shown as Anonymous. */
+  fromAnonymous: boolean;
+  /**
+   * A private snapshot of the already-public display name at the time of hiding, so the blocker
+   * can recognize the entry in Settings. Present ONLY when the triggering request was NOT
+   * anonymous. Never the real name behind an anonymous post.
+   */
+  displayLabelSnapshot?: string;
+}
+
 export interface Verse {
   /** e.g., "John 3:16". */
   reference: string;

@@ -24,6 +24,10 @@ import {
   type FeedControls as FeedControlsState,
 } from '../../../src/feed/feedQuery';
 import { colors, spacing, typography } from '../../../src/theme/theme';
+import {
+  confirmHideAccount,
+  HIDE_ACCOUNT_SUCCESS_MESSAGE,
+} from '../../../src/utils/hideAccountCopy';
 import type { PrayerRequest } from '../../../src/models/types';
 
 /**
@@ -52,7 +56,8 @@ function Separator() {
 export default function FeedScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { prayers, isLoading, error, refresh, hasPrayed, pray } = usePrayers();
+  const { prayers, isLoading, error, refresh, hasPrayed, pray, hideAccountForRequest } =
+    usePrayers();
   const { showSuccess, showError } = useFeedback();
 
   const [controls, setControls] = useState<FeedControlsState>(DEFAULT_FEED_CONTROLS);
@@ -101,12 +106,37 @@ export default function FeedScreen() {
     [profile, pray, showSuccess, showError],
   );
 
+  // "Hide requests from this account" from a feed card. Confirms, then hides the author (looked
+  // up from the request id by context), never the request alone. The card disappears on its own
+  // once `hiddenAccounts` updates, since `prayers` is filtered by hidden authors upstream.
+  const handleHide = useCallback(
+    (id: string) => {
+      if (!profile) return;
+      confirmHideAccount(() => {
+        void (async () => {
+          try {
+            await hideAccountForRequest(id, profile.id);
+            showSuccess(HIDE_ACCOUNT_SUCCESS_MESSAGE);
+          } catch (e) {
+            showError(
+              e instanceof Error && e.message
+                ? e.message
+                : 'We could not update this right now. Please try again.',
+            );
+          }
+        })();
+      });
+    },
+    [profile, hideAccountForRequest, showSuccess, showError],
+  );
+
   const keyExtractor = useCallback((item: PrayerRequest) => item.id, []);
 
   const renderItem = useCallback<ListRenderItem<PrayerRequest>>(
     ({ item }) => {
       // You cannot pray for your own request (mirrors the detail screen), so the CTA is only offered
       // on others' requests. `undefined` here is a stable value, so memo still holds for own cards.
+      // The hide affordance is offered on the same basis, and never on the viewer's own request.
       const isOwn = Boolean(userId && item.userId === userId);
       return (
         <PrayerCard
@@ -114,10 +144,11 @@ export default function FeedScreen() {
           prayed={userId ? hasPrayed(item.id, userId) : false}
           onPress={handlePress}
           onPray={isOwn ? undefined : handlePray}
+          onHide={isOwn ? undefined : handleHide}
         />
       );
     },
-    [userId, hasPrayed, handlePress, handlePray],
+    [userId, hasPrayed, handlePress, handlePray, handleHide],
   );
 
   const onReset = useCallback(() => setControls(DEFAULT_FEED_CONTROLS), []);

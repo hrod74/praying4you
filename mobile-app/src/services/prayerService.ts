@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { mockPrayers } from '../data/mockPrayers';
+import { selectRequestsForDisplayNameRename } from '../utils/displayNameRenamePlan';
 import type {
   PrayerCategory,
   PrayerInteraction,
@@ -10,12 +11,12 @@ import type {
 } from '../models/types';
 
 /**
- * prayerService — the data-access seam for prayer requests.
+ * prayerService, the data-access seam for prayer requests.
  *
  * Screens and context call this module; it is the ONLY place that knows where prayer
  * data comes from. Today it reads from bundled mock data (`src/data/mockPrayers.ts`) and
  * layers any locally-submitted requests / interactions / reports on top from on-device
- * storage (AsyncStorage). When the Firebase-backed MVP arrives, only this file changes —
+ * storage (AsyncStorage). When the Firebase-backed MVP arrives, only this file changes,
  * the queries here map directly onto Firestore reads:
  *   - listActivePrayers()  ->  prayerRequests where status == "active", orderBy createdAt desc
  *   - getPrayerById(id)    ->  prayerRequests/{id}
@@ -29,7 +30,7 @@ import type {
  * BASE values (submitted requests at count 0); the displayed prayer/report counts are
  * derived in PrayerContext from the interaction/report lists, so a refresh or restart can
  * never double-count. Storage is best-effort: a failure degrades to seed-only, never a
- * crash. Nothing private is stored here — no email ever touches prayer/interaction/report
+ * crash. Nothing private is stored here; no email ever touches prayer/interaction/report
  * data. Keys are namespaced `p4u.*`, matching the local profile keys in AuthContext.
  *
  * Owner controls (Phase H.1): the owner of a request can edit or remove it.
@@ -204,7 +205,7 @@ export async function listActivePrayers(): Promise<PrayerRequest[]> {
  * A single prayer request by id, or null if it does not exist / is removed (including a
  * soft remove by its owner). Checks locally-submitted requests first, then the seed (a
  * self-sufficient fallback for the detail screen on a direct link). Owner edits are applied;
- * returns a BASE record otherwise — live counts are derived in PrayerContext.
+ * returns a BASE record otherwise; live counts are derived in PrayerContext.
  */
 export async function getPrayerById(id: string): Promise<PrayerRequest | null> {
   const [submitted, overrides, removedIds] = await Promise.all([
@@ -220,8 +221,57 @@ export async function getPrayerById(id: string): Promise<PrayerRequest | null> {
 }
 
 /**
+ * Propagates a display-name rename to every active, named local request owned by `userId`,
+ * mirroring the Firebase-mode atomic batch (`../services/firebase/displayNameRenameService.ts`).
+ * Uses the exact same pure `selectRequestsForDisplayNameRename` predicate against the current
+ * merged (override-applied, removed-filtered) view from `listActivePrayers`, so local and
+ * Firebase mode select the same requests using the same rules. Anonymous and removed requests
+ * are left untouched.
+ *
+ * A locally-submitted request's `displayName` is updated directly. A seed request never has its
+ * bundled data mutated; instead a `displayName` override is written (or merged into an existing
+ * override), the same way an owner edit already works. Unlike the general-purpose storage
+ * helpers above, these writes are NOT best-effort: renaming a profile must not silently report
+ * success if persisting the propagated names fails, so any `AsyncStorage` error here is allowed
+ * to propagate to the caller.
+ */
+export async function renameLocalPrayers(userId: string, displayName: string): Promise<void> {
+  const trimmed = displayName.trim();
+  const [active, submitted, overrides] = await Promise.all([
+    listActivePrayers(),
+    loadSubmittedPrayers(),
+    loadOverrides(),
+  ]);
+  const eligibleIds = new Set(selectRequestsForDisplayNameRename(active, userId).map((p) => p.id));
+  if (eligibleIds.size === 0) return;
+  const submittedIds = new Set(submitted.map((p) => p.id));
+
+  let submittedChanged = false;
+  const nextSubmitted = submitted.map((p) => {
+    if (!eligibleIds.has(p.id)) return p;
+    submittedChanged = true;
+    return { ...p, displayName: trimmed };
+  });
+
+  let overridesChanged = false;
+  const nextOverrides = { ...overrides };
+  for (const id of eligibleIds) {
+    if (submittedIds.has(id)) continue; // handled above; a seed record needs an override instead
+    nextOverrides[id] = { ...overrides[id], displayName: trimmed };
+    overridesChanged = true;
+  }
+
+  if (submittedChanged) {
+    await AsyncStorage.setItem(SUBMITTED_KEY, JSON.stringify(nextSubmitted));
+  }
+  if (overridesChanged) {
+    await AsyncStorage.setItem(OVERRIDES_KEY, JSON.stringify(nextOverrides));
+  }
+}
+
+/**
  * Input for creating a new prayer request. The owner (userId) and the owner's display
- * name are always supplied — ownership is retained even when posting anonymously.
+ * name are always supplied; ownership is retained even when posting anonymously.
  */
 export interface NewPrayerInput {
   userId: string;
@@ -241,7 +291,7 @@ function generateLocalId(): string {
  * Create a new prayer request (local/mock). Mirrors a Firestore `add` that returns the
  * created document: it assigns the id/timestamp/initial counters and caches the display
  * name ("Anonymous" when posting anonymously, per the PRD). When Firebase replaces this
- * seam, only this function changes — call sites stay the same.
+ * seam, only this function changes; call sites stay the same.
  */
 export async function createPrayer(input: NewPrayerInput): Promise<PrayerRequest> {
   return {

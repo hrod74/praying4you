@@ -1,8 +1,10 @@
+import { FontAwesome5 } from '@expo/vector-icons';
 import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PRAYER_CATEGORY_LABELS, type PrayerRequest } from '../models/types';
 import { colors, radius, spacing, typography } from '../theme/theme';
+import { HIDE_ACCOUNT_ACTION_LABEL } from '../utils/hideAccountCopy';
 import { formatPrayerCount, formatShortDate, truncate } from '../utils/format';
 import { CategoryTag } from './CategoryTag';
 
@@ -19,11 +21,17 @@ import { CategoryTag } from './CategoryTag';
  * "Pray" action. The body and the Pray action are SIBLING pressables inside a plain View
  * (not nested), so each is an independent touch + accessibility target: tapping the body
  * opens detail, tapping "Pray" only records the prayer and never navigates.
+ *
+ * "Hide requests from this account" (account-level user-blocking): an optional small overflow
+ * button in the header, shown ONLY when `onHide` is supplied (never on the viewer's own request).
+ * It is a single-action affordance, not a multi-item menu, so its accessible label IS the required
+ * menu-action copy; tapping it goes straight to the confirmation the parent screen owns.
  */
 function PrayerCardComponent({
   prayer,
   onPress,
   onPray,
+  onHide,
   prayed = false,
 }: {
   prayer: PrayerRequest;
@@ -39,6 +47,12 @@ function PrayerCardComponent({
    * viewer's own request), in which case no CTA is shown unless the request is already prayed for.
    */
   onPray?: (id: string) => void;
+  /**
+   * "Hide requests from this account", scoped to this request's author. Receives the request id,
+   * for the same stable-callback reason as `onPress`/`onPray`; the parent resolves the id to an
+   * author. Omitted for the viewer's own request, which hides the affordance entirely.
+   */
+  onHide?: (id: string) => void;
   /** Whether the current user has prayed for this request (lightweight feed indicator). */
   prayed?: boolean;
 }) {
@@ -52,6 +66,21 @@ function PrayerCardComponent({
 
   return (
     <View style={styles.card}>
+      {onHide ? (
+        // A SIBLING pressable to the card-body Pressable below (not nested), so it is an
+        // independent touch + accessibility target that never triggers "open detail".
+        <Pressable
+          onPress={() => onHide(prayer.id)}
+          accessibilityRole="button"
+          accessibilityLabel={HIDE_ACCOUNT_ACTION_LABEL}
+          accessibilityHint="Stops showing prayer requests from this account"
+          hitSlop={8}
+          style={({ pressed }) => [styles.hideButton, pressed && styles.pressed]}
+        >
+          <FontAwesome5 name="ellipsis-h" size={16} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
+
       <Pressable
         onPress={() => onPress(prayer.id)}
         accessibilityRole="button"
@@ -59,7 +88,7 @@ function PrayerCardComponent({
         accessibilityHint="Opens the full prayer request"
         style={({ pressed }) => [styles.cardBody, pressed && styles.pressed]}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, onHide && styles.headerWithHideButton]}>
           <CategoryTag category={prayer.category} />
           <Text style={styles.date}>{formatShortDate(prayer.createdAt)}</Text>
         </View>
@@ -134,11 +163,28 @@ const styles = StyleSheet.create({
   cardBody: {
     gap: spacing.sm,
   },
+  // "Hide requests from this account" overflow button. Absolutely positioned in the card's top
+  // right corner, sized well under the touch-target minimum on its own, but reaches 44x44+ via
+  // hitSlop, matching the pattern used for other lightweight icon-only affordances in this app.
+  hideButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    zIndex: 1,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  // Reserves room so the date never sits under the absolutely-positioned hide button.
+  headerWithHideButton: {
+    paddingRight: 36,
   },
   name: {
     ...typography.muted,

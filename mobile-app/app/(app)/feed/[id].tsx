@@ -20,6 +20,11 @@ import type { PrayerRequest } from '../../../src/models/types';
 import { getRequestById } from '../../../src/services/prayerRequests';
 import { colors, radius, spacing, typography } from '../../../src/theme/theme';
 import { formatLongDate, formatPrayerCount } from '../../../src/utils/format';
+import {
+  confirmHideAccount,
+  HIDE_ACCOUNT_ACTION_LABEL,
+  HIDE_ACCOUNT_SUCCESS_MESSAGE,
+} from '../../../src/utils/hideAccountCopy';
 
 /**
  * Prayer detail (Phase C, read path).
@@ -37,11 +42,13 @@ export default function PrayerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuth();
-  const { getById, hasPrayed, pray, hasReported, removePrayer } = usePrayers();
+  const { getById, hasPrayed, pray, hasReported, removePrayer, hideAccountForRequest, isAccountHidden } =
+    usePrayers();
   const { showSuccess, showError } = useFeedback();
   const fromContext = getById(id);
 
   const [pending, setPending] = useState(false);
+  const [hiding, setHiding] = useState(false);
 
   // undefined = still resolving the fallback; null = confirmed not found.
   const [fetched, setFetched] = useState<PrayerRequest | null | undefined>(undefined);
@@ -51,7 +58,11 @@ export default function PrayerDetailScreen() {
     let active = true;
     void getRequestById(id)
       .then((p) => {
-        if (active) setFetched(p);
+        // This fallback bypasses PrayerContext's `prayers` filtering (it exists specifically for
+        // a direct/deep link not already in the loaded feed), so hidden-account safety has to be
+        // re-checked here explicitly: a stale or shared link to a now-hidden account's request
+        // must resolve to the same calm "not found" state as a removed request, never render it.
+        if (active) setFetched(p && !isAccountHidden(p.userId) ? p : null);
       })
       .catch(() => {
         // A lookup failure resolves to the calm "not found" state rather than a raw error.
@@ -60,7 +71,7 @@ export default function PrayerDetailScreen() {
     return () => {
       active = false;
     };
-  }, [id, fromContext]);
+  }, [id, fromContext, isAccountHidden]);
 
   const prayer = fromContext ?? fetched;
 
@@ -105,6 +116,31 @@ export default function PrayerDetailScreen() {
     } finally {
       setPending(false);
     }
+  };
+
+  // "Hide requests from this account" from the detail screen. On success, per the required
+  // behavior, this completes the hide, removes the request from visible state (it already
+  // disappears from `prayers` once `hiddenAccounts` updates), and returns the user safely to the
+  // feed rather than leaving them on a detail screen for content they just chose to stop seeing.
+  const handleHideAccount = () => {
+    if (!profile) return;
+    confirmHideAccount(() => {
+      void (async () => {
+        setHiding(true);
+        try {
+          await hideAccountForRequest(prayer.id, profile.id);
+          showSuccess(HIDE_ACCOUNT_SUCCESS_MESSAGE);
+          router.replace('/(app)/feed');
+        } catch (e) {
+          setHiding(false);
+          showError(
+            e instanceof Error && e.message
+              ? e.message
+              : 'We could not update this right now. Please try again.',
+          );
+        }
+      })();
+    });
   };
 
   const handleRemove = () => {
@@ -184,7 +220,7 @@ export default function PrayerDetailScreen() {
         )}
       </View>
 
-      {/* Reporting — quiet and understated; hidden on the user's own request. */}
+      {/* Reporting and hiding: quiet and understated; hidden on the user's own request. */}
       {!isOwnRequest ? (
         <View style={styles.reportRow}>
           {alreadyReported ? (
@@ -199,6 +235,17 @@ export default function PrayerDetailScreen() {
               <Text style={styles.reportLink}>Report this request</Text>
             </Pressable>
           )}
+          <Pressable
+            onPress={handleHideAccount}
+            disabled={hiding}
+            accessibilityRole="button"
+            accessibilityLabel={HIDE_ACCOUNT_ACTION_LABEL}
+            accessibilityHint="Stops showing prayer requests from this account and returns to the feed"
+            hitSlop={8}
+            style={styles.hideLinkSpacing}
+          >
+            <Text style={styles.reportLink}>{HIDE_ACCOUNT_ACTION_LABEL}</Text>
+          </Pressable>
         </View>
       ) : null}
     </ScrollView>
@@ -266,10 +313,15 @@ const styles = StyleSheet.create({
   reportRow: {
     alignItems: 'center',
     paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   reportLink: {
     ...typography.muted,
     textDecorationLine: 'underline',
+  },
+  hideLinkSpacing: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   reportedNote: typography.muted,
   centered: {

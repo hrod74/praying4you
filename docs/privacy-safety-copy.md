@@ -1,7 +1,7 @@
 # Privacy and Safety Copy: Praying For You
 
 **Lenses:** Legal / Compliance Advisor (`agents/legal-compliance-advisor.md`), Product Owner, UI/UX Designer.
-**Status:** planning and product copy only. No Firebase project, EAS project, code, dependencies, or secrets exist yet.
+**Status (updated 2026-08-06):** product copy, still not a legal policy. *(This line previously said no Firebase project/code/secrets existed yet; that was written before the Firebase MVP was built and is now stale. A real Firebase backend now exists: Firebase Authentication, Firestore-backed prayer requests/interactions/reports, and account deletion.)* This copy is accurate to how the app actually behaves today and is the intended raw material for the real privacy policy and terms of use that `docs/reviews/Pre_Developer_Account_Readiness_Plan.md` (section 4) identifies as still needing to be drafted and published before beta.
 
 **What this is:** plain-language, product-ready copy that can later be used in the app, beta instructions, onboarding, settings, and as raw material for policy drafts.
 

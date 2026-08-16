@@ -1,18 +1,30 @@
 # Praying For You — Mobile App
 
 A React Native / **Expo (managed workflow)** app, written in **TypeScript** with
-**Expo Router** (file-based navigation). This is the functional local prototype of
-Praying For You — built **mock-data-first**, with **no backend**. Firebase, AdMob, and
-app-store configuration are intentionally deferred to later milestones.
+**Expo Router** (file-based navigation).
 
-> **Status: Phase G — Navigation, Settings/About, Reporting.** The bottom navigation now
-> has four tabs with quiet, concept-matched icons (a dove for **Feed**, a quill for
-> **Share**, a Bible for **Verse**, a person for **Settings**), and **Create/Share Prayer
-> is a persistent tab** so it's always reachable — even after scrolling. **Settings** is a
-> fuller Profile/Privacy/About screen, and the prayer **detail** screen has a calm, local
-> **Report request** flow (reason + optional note → gentle confirmation; flagged locally;
-> hidden on your own posts). Still **local/mock only — no backend**. Polish + demo capture
-> is Phase H.
+> **Status correction (2026-08-06):** This README was written for the original local
+> prototype milestone (Phases A-H) and was not updated afterward. It still describes that
+> milestone below, which remains useful as historical context for the original UI/UX
+> design, but **the "no backend" / "local/mock only" framing throughout this file is no
+> longer accurate.** The app now has a real Firebase backend: Firebase Authentication,
+> Firestore-backed prayer requests/interactions/reports, published security rules, and
+> account deletion. Authentication and password reset have been manually verified on a
+> physical device (2026-08-06). For the current, accurate state, see
+> `docs/project-handoff-summary.md`, `docs/QA_alpha_readiness.md`, and
+> `docs/reviews/Beta_Readiness_Assessment.md`. This correction does not itself verify
+> every detail below against the current codebase; treat the walkthrough that follows as
+> "how the prototype looked at the local-only milestone," not as a current feature
+> inventory.
+
+> **Original status note (written for Phase G: Navigation, Settings/About, Reporting):**
+> The bottom navigation has four tabs with quiet, concept-matched icons (a dove for
+> **Feed**, a quill for **Share**, a Bible for **Verse**, a person for **Settings**), and
+> **Create/Share Prayer is a persistent tab** so it's always reachable — even after
+> scrolling. **Settings** is a fuller Profile/Privacy/About screen, and the prayer
+> **detail** screen has a calm, local **Report request** flow (reason + optional note →
+> gentle confirmation; flagged locally; hidden on your own posts). This note describes the
+> local-prototype milestone only; see the status correction above for the current state.
 
 ## Requirements
 
@@ -78,8 +90,10 @@ tabs — **Feed** (dove), **Share** (quill), **Verse** (Bible), **Settings** (pe
 - **Settings** shows your **Profile** (display name + private email), plain-language
   **Privacy** guidance, an **About** section, and **Sign out**.
 
-Everything is local mock data — submitted requests, prayed-state, and reports live in
-memory for the session; no backend, no real auth.
+*(Original local-prototype note, superseded; see the status correction near the top of
+this file):* at the local-prototype milestone, everything was local mock data:
+submitted requests, prayed-state, and reports lived in memory for the session, with no
+backend and no real auth. That is no longer the current state.
 
 ## Project structure
 

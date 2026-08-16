@@ -40,8 +40,10 @@ export function profileDoc(uid, displayName = 'Test User') {
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedInAt: new Date(),
-    profileVersion: 1,
+    profileVersion: 2,
     accountStatus: 'active',
+    termsAcceptedVersion: '2026-08-15',
+    termsAcceptedAt: new Date(),
   };
 }
 
@@ -86,6 +88,23 @@ export function reportDoc(reporterUid, requestId, requestAuthorUid, overrides = 
     requestAuthorUid,
     reason: 'inappropriate',
     status: 'open',
+    schemaVersion: 1,
+    createdAt: new Date(),
+    ...overrides,
+  };
+}
+
+/**
+ * A minimal valid hiddenAccounts doc ("Hide requests from this account"). Id must be
+ * `{blockerUid}_{hiddenUid}`. Never stores an email, prayer-request text, the real name behind an
+ * anonymous post, device information, or a reason.
+ */
+export function hiddenAccountDoc(blockerUid, hiddenUid, overrides = {}) {
+  return {
+    id: `${blockerUid}_${hiddenUid}`,
+    blockerUid,
+    hiddenUid,
+    fromAnonymous: false,
     schemaVersion: 1,
     createdAt: new Date(),
     ...overrides,

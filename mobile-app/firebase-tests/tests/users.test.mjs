@@ -48,6 +48,19 @@ test('owner can update their own profile', async () => {
   await assertSucceeds(updateDoc(doc(alice, 'users/alice'), { displayName: 'Alice B.' }));
 });
 
+test('owner can record a versioned Terms acceptance on their private profile', async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'users/alice'), profileDoc('alice'));
+  });
+  const alice = testEnv.authenticatedContext('alice').firestore();
+  await assertSucceeds(
+    updateDoc(doc(alice, 'users/alice'), {
+      termsAcceptedVersion: '2026-08-15',
+      termsAcceptedAt: new Date(),
+    }),
+  );
+});
+
 test('a signed-in user cannot read another user profile', async () => {
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'users/alice'), profileDoc('alice'));

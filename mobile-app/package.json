@@ -32,6 +32,11 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test:feed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/feed/feedQuery.test.ts\"",
+    "test:hidden-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/utils/hiddenAccountFilter.test.ts\" \"src/utils/hiddenAccountStorage.test.ts\"",
+    "test:content-filter": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/utils/contentFilter.test.ts\"",
+    "test:submission-gate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/utils/prayerSubmissionGate.test.ts\"",
+    "test:display-name-gate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/utils/displayNameSubmissionGate.test.ts\"",
+    "test:display-name-rename-plan": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/utils/displayNameRenamePlan.test.ts\"",
     "test:rules": "npm --prefix firebase-tests test",
     "test:rules:install": "npm --prefix firebase-tests install"
   },

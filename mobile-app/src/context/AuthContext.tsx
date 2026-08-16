@@ -17,9 +17,13 @@ import {
   PasswordChangeError,
 } from '../services/firebase/authErrors';
 import { firebaseUserService } from '../services/firebase/userService';
+import { renamePublicDisplayName } from '../services/firebase/displayNameRenameService';
 import { removeOwnRequestsForAccountDeletion } from '../services/prayerRequests';
+import { renameLocalPrayers } from '../services/prayerService';
 import { deleteMyInteractionsForAccountDeletion } from '../services/prayerInteractions';
 import { deleteMyReportsForAccountDeletion } from '../services/reports';
+import { deleteMyHiddenAccountsForAccountDeletion } from '../services/hiddenAccounts';
+import { RENAME_PROPAGATION_ERROR_MESSAGE } from '../utils/displayNameRenamePlan';
 import type { UserProfile } from '../models/types';
 
 /**
@@ -51,13 +55,14 @@ function syncProfileDoc(label: string, run: () => Promise<unknown>): void {
 /**
  * Run an account-deletion cleanup step BEST-EFFORT, awaiting it but swallowing failures (Phase J.2h).
  *
- * The cleanup of the user's own `prayerInteractions` and `reports` removes the records that identify
- * them as an actor, but it must NEVER trap a user in an undeletable account: if a cleanup write fails
- * (for example because the new delete rules have not been republished yet, or a transient network
- * error), we log in dev and continue, so the critical steps (profile-doc delete, Auth delete) still
- * run. Any orphaned interaction/report doc is low-risk — it carries only an opaque UID, is never
- * listable across users, and has no "who prayed"/"who reported" surface. The dev log records only the
- * Firebase error code (non-sensitive); never a uid, email, or any private value.
+ * The cleanup of the user's own `prayerInteractions`, `reports`, and outgoing `hiddenAccounts`
+ * removes the records that identify them as an actor, but it must NEVER trap a user in an
+ * undeletable account: if a cleanup write fails (for example because the new delete rules have not
+ * been republished yet, or a transient network error), we log in dev and continue, so the critical
+ * steps (profile-doc delete, Auth delete) still run. Any orphaned interaction/report/hide doc is
+ * low-risk: it carries only an opaque UID, is never listable across users, and has no "who
+ * prayed"/"who reported"/"who hid" surface. The dev log records only the Firebase error code
+ * (non-sensitive); never a uid, email, or any private value.
  */
 async function cleanupBestEffort(label: string, run: () => Promise<unknown>): Promise<void> {
   try {
@@ -77,7 +82,7 @@ async function cleanupBestEffort(label: string, run: () => Promise<unknown>): Pr
 }
 
 /**
- * AuthContext — the single auth seam, with two interchangeable modes behind one API.
+ * AuthContext, the single auth seam, with two interchangeable modes behind one API.
  *
  * - Firebase mode (when `EXPO_PUBLIC_FIREBASE_*` is configured): real Firebase Auth
  *   (email/password, by the book), with the session persisted across restarts via AsyncStorage.
@@ -95,7 +100,9 @@ async function cleanupBestEffort(label: string, run: () => Promise<unknown>): Pr
 
 const PROFILE_KEY = 'p4u.profile';
 const SIGNED_IN_KEY = 'p4u.signedIn';
+const TERMS_VERSION_KEY = 'p4u.termsAcceptedVersion';
 const LOCAL_USER_ID = 'local-user';
+export const CURRENT_TERMS_VERSION = '2026-08-15';
 
 /** Active auth mode, decided once at load from whether Firebase config is present. */
 export type AuthMode = 'firebase' | 'local';
@@ -106,6 +113,8 @@ export interface CreateProfileInput {
   email: string;
   /** Required in Firebase mode (email/password). Ignored in local mode. */
   password?: string;
+  /** Must be true after an explicit, non-skippable account-creation acknowledgment. */
+  acceptedTerms: boolean;
 }
 
 export interface SignInCredentials {
@@ -150,9 +159,9 @@ interface AuthContextValue {
    *
    * Firebase mode (in order, while still authenticated): soft-removes the user's active
    * `prayerRequests` (status -> removed, removedReason -> accountDeleted; never hard-deleted), then
-   * best-effort deletes the records that identify the user as an actor — their own
+   * best-effort deletes the records that identify the user as an actor, their own
    * `prayerInteractions` and their own `reports` (Phase J.2h; aggregate `prayerCount` is preserved by
-   * design) — then deletes the private `users/{uid}` profile doc, then deletes the Firebase Auth user,
+   * design), then deletes the private `users/{uid}` profile doc, then deletes the Firebase Auth user,
    * then clears any local session state. Local mode: soft-removes the user's own submitted requests,
    * then clears the on-device profile/session. On failure of a CRITICAL step (request soft-remove,
    * profile-doc delete, Auth delete) it throws an AccountDeletionError with safe copy (and
@@ -160,6 +169,10 @@ interface AuthContextValue {
    * interaction/report cleanup is best-effort and never blocks deletion.
    */
   deleteAccount: () => Promise<void>;
+  /** Whether the current account has accepted the currently published Terms version. */
+  hasAcceptedCurrentTerms: boolean;
+  /** One-time catch-up for accounts created before versioned acceptance was introduced. */
+  acceptCurrentTerms: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -168,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
+  const [termsAcceptedVersion, setTermsAcceptedVersion] = useState<string | null>(null);
 
   // Hydrate the session on startup. Firebase mode subscribes to auth state (restores a persisted
   // session); local mode reads the simulated profile from AsyncStorage.
@@ -184,14 +198,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     (async () => {
       try {
-        const [[, storedProfile], [, storedSignedIn]] = await AsyncStorage.multiGet([
+        const [[, storedProfile], [, storedSignedIn], [, storedTermsVersion]] = await AsyncStorage.multiGet([
           PROFILE_KEY,
           SIGNED_IN_KEY,
+          TERMS_VERSION_KEY,
         ]);
         if (!active) return;
         if (storedProfile) {
           setProfile(JSON.parse(storedProfile) as UserProfile);
           setIsSignedIn(storedSignedIn === 'true');
+          setTermsAcceptedVersion(storedTermsVersion);
         }
       } catch {
         // Best-effort: a storage read failure just means we start signed out.
@@ -204,7 +220,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const createProfile = useCallback(async ({ displayName, email, password }: CreateProfileInput) => {
+  // Firebase Auth is the UI session source, while the private profile doc carries versioned consent.
+  useEffect(() => {
+    if (AUTH_MODE !== 'firebase' || !profile || !isSignedIn) {
+      if (!isSignedIn) setTermsAcceptedVersion(null);
+      return;
+    }
+    let active = true;
+    void firebaseUserService.getOwnProfile(profile.id).then((stored) => {
+      if (active) setTermsAcceptedVersion(stored?.termsAcceptedVersion ?? null);
+    }).catch(() => {
+      if (active) setTermsAcceptedVersion(null);
+    });
+    return () => { active = false; };
+  }, [profile?.id, isSignedIn]);
+
+  const createProfile = useCallback(async ({ displayName, email, password, acceptedTerms }: CreateProfileInput) => {
+    if (!acceptedTerms) throw new Error('You must accept the Terms of Use to create an account.');
     if (AUTH_MODE === 'firebase') {
       // By the book: Firebase owns account creation + email uniqueness. Errors arrive as safe copy.
       const created = await firebaseAuthService.signUp({
@@ -215,10 +247,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set eagerly for a snappy UI; onAuthStateChanged will also confirm this shortly.
       setProfile(created);
       setIsSignedIn(true);
-      // Create the private Firestore profile doc (best-effort; never blocks account creation).
-      syncProfileDoc('sign-up', () =>
-        firebaseUserService.ensureProfileForSignUp(created.id, created.displayName),
-      );
+      // Await the trust record. If Firestore is temporarily unavailable, the Auth account still
+      // exists; leave the version unset so the one-time catch-up gate retries before first posting.
+      try {
+        await firebaseUserService.ensureProfileForSignUp(
+          created.id,
+          created.displayName,
+          CURRENT_TERMS_VERSION,
+        );
+        setTermsAcceptedVersion(CURRENT_TERMS_VERSION);
+      } catch (error) {
+        if (__DEV__) {
+          const code = (error as { code?: string })?.code ?? 'unknown';
+          console.warn(`[profile] Terms acceptance sync will retry before first post (${code}).`);
+        }
+      }
       return;
     }
 
@@ -234,23 +277,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await AsyncStorage.multiSet([
         [PROFILE_KEY, JSON.stringify(newProfile)],
         [SIGNED_IN_KEY, 'true'],
+        [TERMS_VERSION_KEY, CURRENT_TERMS_VERSION],
       ]);
+      setTermsAcceptedVersion(CURRENT_TERMS_VERSION);
     } catch {
       // Non-fatal: the session still works for this run, just not across restarts.
     }
   }, []);
 
-  // Edit profile. Firebase mode updates the display name only (email change is deferred to a later
-  // phase as it needs verification/reauth). Local mode updates name + email on-device.
+  const acceptCurrentTerms = useCallback(async () => {
+    if (!profile) throw new Error('Sign in before accepting the Terms of Use.');
+    if (AUTH_MODE === 'firebase') {
+      await firebaseUserService.ensureProfileForSignUp(
+        profile.id,
+        profile.displayName,
+        CURRENT_TERMS_VERSION,
+      );
+    } else {
+      await AsyncStorage.setItem(TERMS_VERSION_KEY, CURRENT_TERMS_VERSION);
+    }
+    setTermsAcceptedVersion(CURRENT_TERMS_VERSION);
+  }, [profile]);
+
+  // Edit profile. A display name represents the account's current public identity: changing it
+  // must also rename every active, non-Anonymous prayer request this account owns, everywhere
+  // that name is shown. Firebase mode updates the display name only (email change is deferred to
+  // a later phase as it needs verification/reauth); local mode updates name + email on-device.
+  //
+  // Cross-service honesty (Firebase mode): Firebase Authentication (the display name on the Auth
+  // user record) and the Firestore batch that renames the profile doc plus every matching request
+  // are two separate products and cannot be committed as one atomic operation across both. Auth is
+  // updated first, since it is the sign-in source of truth; success and in-memory profile state
+  // are reported only once the Firestore batch has ALSO succeeded, never treating that batch as
+  // best-effort. If Auth succeeds but the batch fails, the thrown error (calm, safe copy) is
+  // rethrown to the caller instead of being swallowed, so the Settings screen shows a retryable
+  // error rather than a false "Profile updated." Both halves are idempotent (each writes an
+  // absolute value, not a delta), so retrying with the same desired name is always safe. Local
+  // mode mirrors the same honesty: the on-device profile write and the request-propagation write
+  // both happen before in-memory state is updated, and neither is swallowed as best-effort.
   const updateProfile = useCallback(
     async ({ displayName, email }: { displayName: string; email: string }) => {
       if (AUTH_MODE === 'firebase') {
         const updated = await firebaseAuthService.updateDisplayName(displayName);
+        await renamePublicDisplayName(updated.id, updated.displayName);
         setProfile(updated);
-        // Mirror the display name into the private Firestore profile doc (best-effort).
-        syncProfileDoc('update-display-name', () =>
-          firebaseUserService.updateDisplayName(updated.id, updated.displayName),
-        );
         return;
       }
 
@@ -260,12 +330,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName: displayName.trim(),
         email: email.trim(),
       };
-      setProfile(next);
       try {
         await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(next));
+        await renameLocalPrayers(next.id, next.displayName);
       } catch {
-        // Non-fatal.
+        throw new Error(RENAME_PROPAGATION_ERROR_MESSAGE);
       }
+      setProfile(next);
     },
     [profile],
   );
@@ -345,7 +416,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw accountDeletionError(error);
         }
         // 2. Clean up the records that directly identify this user as an actor (Phase J.2h):
-        //    their own prayerInteractions and their own reports. BEST-EFFORT — a failure here (e.g.
+        //    their own prayerInteractions and their own reports. BEST-EFFORT: a failure here (e.g.
         //    the new delete rules not yet republished) must never trap the user in an undeletable
         //    account, and any orphaned doc is low-risk (opaque UID, never listable across users, no
         //    who-prayed/who-reported surface). prayerCount is intentionally NOT decremented.
@@ -353,6 +424,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           deleteMyInteractionsForAccountDeletion(uid),
         );
         await cleanupBestEffort('reports', () => deleteMyReportsForAccountDeletion(uid));
+        // Also remove this user's own OUTGOING hides ("Hide requests from this account"), same
+        // best-effort treatment. INCOMING hides (other users' hides of this account) are
+        // intentionally left untouched; see docs/firebase-hidden-accounts-implementation.md.
+        await cleanupBestEffort('hiddenAccounts', () =>
+          deleteMyHiddenAccountsForAccountDeletion(uid),
+        );
         // 3. Delete the private Firestore profile doc, still while authenticated (owner-only rules).
         //    We stop here on failure so we never orphan the doc by deleting Auth first.
         try {
@@ -365,7 +442,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseAuthService.deleteAccount();
       // 5. onAuthStateChanged will clear profile/isSignedIn; also clear any local fallback state.
       try {
-        await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY]);
+        await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY, TERMS_VERSION_KEY]);
       } catch {
         // Non-fatal: the Firebase session is already gone.
       }
@@ -381,11 +458,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         // Non-fatal: local soft-remove is best-effort and must never block account deletion.
       }
+      try {
+        // Also remove the on-device "Hide requests from this account" storage, same best-effort
+        // treatment as the soft-remove above.
+        await deleteMyHiddenAccountsForAccountDeletion(uid);
+      } catch {
+        // Non-fatal: local cleanup is best-effort and must never block account deletion.
+      }
     }
     setProfile(null);
     setIsSignedIn(false);
     try {
-      await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY]);
+      await AsyncStorage.multiRemove([PROFILE_KEY, SIGNED_IN_KEY, TERMS_VERSION_KEY]);
     } catch {
       // Non-fatal: state is already cleared for this run.
     }
@@ -405,6 +489,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sendPasswordReset,
       changePassword,
       deleteAccount,
+      hasAcceptedCurrentTerms: termsAcceptedVersion === CURRENT_TERMS_VERSION,
+      acceptCurrentTerms,
     }),
     [
       profile,
@@ -417,6 +503,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sendPasswordReset,
       changePassword,
       deleteAccount,
+      termsAcceptedVersion,
+      acceptCurrentTerms,
     ],
   );
 

@@ -1,13 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
+import { PolicyLinks, TERMS_URL } from '../../src/components/PolicyLinks';
 import { Screen } from '../../src/components/Screen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
 import { colors, spacing, typography } from '../../src/theme/theme';
+import { evaluateDisplayNameSubmission } from '../../src/utils/displayNameSubmissionGate';
 import {
   DISPLAY_NAME_MAX,
   PASSWORD_MIN,
@@ -20,7 +22,7 @@ import {
  * Create local profile (display name + email).
  *
  * Phase B: collects a display name (shown publicly) and an email (kept private). On
- * submit it creates the local profile and enters the app. No backend, no password —
+ * submit it creates the local profile and enters the app. No backend, no password;
  * this is a simulated local profile only.
  *
  * Keyboard behavior (Phase H.2): the profile is created only by an intentional tap on the
@@ -41,6 +43,10 @@ export default function CreateProfileScreen() {
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // Set only when the content filter (not ordinary validation) rejected the current display
+  // name. Cleared as soon as the user edits the field, so stale feedback never lingers.
+  const [nameFilterError, setNameFilterError] = useState<string | null>(null);
 
   // Validation errors are only surfaced after the first submit attempt, then update live.
   const nameError = submitted ? validateDisplayName(displayName) : null;
@@ -51,7 +57,13 @@ export default function CreateProfileScreen() {
     displayName.trim().length > 0 &&
     email.trim().length > 0 &&
     (!requiresPassword || password.length > 0) &&
+    acceptedTerms &&
     !saving;
+
+  const handleDisplayNameChange = (value: string) => {
+    setDisplayName(value);
+    if (nameFilterError) setNameFilterError(null);
+  };
 
   const handleSubmit = async () => {
     setSubmitted(true);
@@ -62,12 +74,21 @@ export default function CreateProfileScreen() {
     ) {
       return;
     }
+    // Only after all ordinary validation has passed does the content filter run, and only on the
+    // public display name; this happens before any Firebase Auth or local persistence call below.
+    const nameGate = evaluateDisplayNameSubmission(displayName);
+    if (nameGate.status !== 'ready') {
+      setNameFilterError(nameGate.message);
+      return;
+    }
+    setNameFilterError(null);
     setSaving(true);
     try {
       await createProfile({
         displayName,
         email,
         password: requiresPassword ? password : undefined,
+        acceptedTerms,
       });
       showSuccess('Profile created.');
       router.replace('/(app)/feed');
@@ -95,10 +116,10 @@ export default function CreateProfileScreen() {
       <TextField
         label="Display name"
         value={displayName}
-        onChangeText={setDisplayName}
+        onChangeText={handleDisplayNameChange}
         placeholder="e.g. Jordan"
         helperText={`Shown publicly on your prayer requests. Up to ${DISPLAY_NAME_MAX} characters.`}
-        errorText={nameError}
+        errorText={nameError ?? nameFilterError}
         autoCapitalize="words"
         maxLength={DISPLAY_NAME_MAX}
         returnKeyType="next"
@@ -153,6 +174,53 @@ export default function CreateProfileScreen() {
         </Text>
       </View>
 
+      <View style={styles.betaNotice}>
+        <Text style={styles.betaTitle}>Controlled beta eligibility</Text>
+        <Text style={styles.privacyText}>
+          This initial controlled beta is for invited testers who are 18 or older. This is a
+          temporary beta requirement, not the app's permanent audience positioning.
+        </Text>
+        <PolicyLinks />
+      </View>
+
+      <Pressable
+        onPress={() => setAcceptedTerms((accepted) => !accepted)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: acceptedTerms }}
+        accessibilityLabel="I agree to the Terms of Use and community rules"
+        accessibilityHint="Required to create your account"
+        style={styles.termsRow}
+      >
+        <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+          <Text style={styles.checkmark}>{acceptedTerms ? '✓' : ''}</Text>
+        </View>
+        <Text style={styles.termsText}>
+          I agree to the{' '}
+          <Text
+            style={styles.inlineLink}
+            accessibilityRole="link"
+            onPress={(event) => {
+              event.stopPropagation();
+              void Linking.openURL(TERMS_URL);
+            }}
+          >
+            Terms of Use
+          </Text>{' '}
+          and{' '}
+          <Text
+            style={styles.inlineLink}
+            accessibilityRole="link"
+            onPress={(event) => {
+              event.stopPropagation();
+              void Linking.openURL(TERMS_URL);
+            }}
+          >
+            community rules
+          </Text>
+          .
+        </Text>
+      </Pressable>
+
       <Button
         label="Create profile"
         onPress={handleSubmit}
@@ -188,6 +256,41 @@ const styles = StyleSheet.create({
   privacyText: {
     ...typography.muted,
     color: colors.text,
+  },
+  betaNotice: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  betaTitle: {
+    ...typography.body,
+    fontWeight: '600',
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    minHeight: 44,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: { backgroundColor: colors.primary },
+  checkmark: { color: colors.primaryText, fontWeight: '700' },
+  termsText: { ...typography.muted, color: colors.text, flex: 1 },
+  inlineLink: {
+    color: colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   signInRow: {
     alignItems: 'center',

@@ -35,8 +35,16 @@ import {
 } from '../services/prayerInteractions';
 import { reportsUseFirebase, reportRequest } from '../services/reports';
 import { ReportError } from '../services/firebase/reportErrors';
+import {
+  hideAccount as hideAccountSeam,
+  listMyHiddenAccounts,
+  unhideAccount as unhideAccountSeam,
+} from '../services/hiddenAccounts';
+import { HiddenAccountError } from '../services/firebase/hiddenAccountErrors';
+import { filterHiddenAccounts } from '../utils/hiddenAccountFilter';
 import { useAuth } from './AuthContext';
 import type {
+  HiddenAccount,
   PrayerCategory,
   PrayerInteraction,
   PrayerRequest,
@@ -45,11 +53,11 @@ import type {
 } from '../models/types';
 
 /**
- * PrayerContext — prayer-request state for the signed-in app, with local persistence.
+ * PrayerContext, prayer-request state for the signed-in app, with local persistence.
  *
  * Read path (Phase C): loads the active prayer requests (newest first) via
  * `prayerService` and exposes them, plus loading/error state and a refresh action, to
- * the Feed and Detail screens. Screens never import mock data directly — they read from
+ * the Feed and Detail screens. Screens never import mock data directly; they read from
  * here, which reads from the service seam.
  *
  * Write path (Phase D): `addPrayer` creates a new request via the service and prepends it
@@ -60,7 +68,7 @@ import type {
  *
  * Reporting (Phase G): `reportPrayer` records a one-per-user report (reason + optional
  * note) and flags the request; `hasReported` reports whether the user already reported it.
- * There is NO real moderation backend — this is local/mock only.
+ * There is NO real moderation backend; this is local/mock only.
  *
  * Persistence (Phase H): submitted requests, interactions, and reports are loaded from
  * on-device storage on startup and saved as they change, so local activity survives app
@@ -81,6 +89,13 @@ import type {
  * user's already-prayed set is hydrated from their own interaction docs. In local mode the original
  * on-device interaction list + derived counts are used, unchanged. REPORTS remain local/mock in both
  * modes. Interactions are AGGREGATE-ONLY to others: there is no "who prayed" data anywhere.
+ *
+ * Hidden accounts ("Hide requests from this account"): an account-level, one-directional
+ * user-blocking control (see `docs/firebase-hidden-accounts-implementation.md`). The signed-in
+ * user's own hidden-account list loads as part of the same `load()` batch as everything else, and
+ * `prayers` (the single list every screen reads from) filters out any request authored by a
+ * hidden account. Because every downstream read (feed, detail via getById, "Prayers I've prayed
+ * for") derives from `prayers`, hiding an account is enforced in exactly one place.
  */
 
 /** Interactions are Firestore-backed when Firebase is configured; else local/mock. Decided once. */
@@ -88,6 +103,10 @@ const USE_FIREBASE_INTERACTIONS = interactionsUseFirebase();
 
 /** Reports are Firestore-backed when Firebase is configured; else local/mock. Decided once. */
 const USE_FIREBASE_REPORTS = reportsUseFirebase();
+
+// Hidden accounts do not need their own USE_FIREBASE_HIDDEN flag here: unlike interactions and
+// reports, this context never branches on mode for hidden accounts: `hideAccountSeam` /
+// `listMyHiddenAccounts` / `unhideAccountSeam` already decide Firebase vs. local internally.
 
 /** Fields an owner may change when editing their own request. */
 export interface EditPrayerInput {
@@ -134,6 +153,19 @@ interface PrayerContextValue {
   ) => Promise<void>;
   /** Clear all local prototype activity (submitted requests, prayed marks, reports). */
   resetLocalData: () => Promise<void>;
+  /** The signed-in user's own hidden accounts (for the Settings "Hidden accounts" section). */
+  hiddenAccounts: HiddenAccount[];
+  /** Whether the given account is currently hidden by the signed-in user. */
+  isAccountHidden: (userId: string) => boolean;
+  /**
+   * Hide the author of the given request ("Hide requests from this account"). Looks up the
+   * author + anonymity/display-name from the loaded request, so callers only ever pass ids
+   * (mirroring `pray`/`reportPrayer`). Idempotent: hiding an already-hidden account succeeds
+   * silently. Throws a `HiddenAccountError` (e.g. `ownAccount`, `unavailable`) with safe copy.
+   */
+  hideAccountForRequest: (requestId: string, userId: string) => Promise<void>;
+  /** Reverse a hide ("Unhide"). Idempotent: unhiding an account that is not hidden is a no-op. */
+  unhideAccount: (hiddenUserId: string, userId: string) => Promise<void>;
 }
 
 const PrayerContext = createContext<PrayerContextValue | undefined>(undefined);
@@ -164,6 +196,10 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
   // Synchronous one-per-user guard (both modes).
   const reportedKeys = useRef<Set<string>>(new Set());
+  // The signed-in user's own outgoing hides ("Hide requests from this account"). Loaded as part
+  // of `load()` in BOTH modes so the very first render already has the filter applied (no flash
+  // of hidden content).
+  const [hiddenAccounts, setHiddenAccounts] = useState<HiddenAccount[]>([]);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -173,18 +209,26 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       // hydrate the current user's prayed-for set from their own interaction docs instead. Reports
       // are still local/mock in both modes. A prayed-for lookup failure must not break the feed, so
       // it degrades to an empty set rather than throwing.
-      const [list, storedInteractions, storedReports, myPrayedIds] = await Promise.all([
+      //
+      // Hidden accounts are loaded here too, but deliberately WITHOUT a `.catch(() => [])`
+      // fallback: a hidden-account load failure must never silently show content from a
+      // previously-hidden account, so it is left to propagate into the catch block below, which
+      // sets the same `error` state the feed already uses for any load failure (a safe, existing
+      // error state, not a new one).
+      const [list, storedInteractions, storedReports, myPrayedIds, storedHidden] = await Promise.all([
         listActiveRequests(),
         USE_FIREBASE_INTERACTIONS ? Promise.resolve<PrayerInteraction[]>([]) : loadInteractions(),
         loadReports(),
         USE_FIREBASE_INTERACTIONS && uid
           ? listMyPrayedRequestIds(uid).catch(() => [] as string[])
           : Promise.resolve<string[]>([]),
+        uid ? listMyHiddenAccounts(uid) : Promise.resolve<HiddenAccount[]>([]),
       ]);
       setBaseline(list);
       setInteractions(storedInteractions);
       setReports(storedReports);
       setPrayedIds(new Set(myPrayedIds));
+      setHiddenAccounts(storedHidden);
       // Rebuild the synchronous guards so restored/loaded marks aren't redone.
       prayedKeys.current = USE_FIREBASE_INTERACTIONS
         ? new Set(uid ? myPrayedIds.map((rid) => interactionKey(uid, rid)) : [])
@@ -209,17 +253,53 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     void load();
   }, [load]);
 
-  // Displayed list: layer interaction/report deltas onto each base record. Recomputing
-  // from the deduped lists (rather than mutating) guarantees no double-counting on
-  // refresh/restart, and flags any request that has at least one report.
+  // Keep the in-memory baseline in sync with the account's current public display name. A
+  // display name represents the account's current public identity: `AuthContext.updateProfile`
+  // only updates `profile.displayName` once persisting the rename (profile doc AND every active,
+  // non-Anonymous request it owns) has already succeeded, so reacting to that value changing here
+  // is safe and reflects an already-durable rename, not an optimistic guess. Anonymous requests
+  // are untouched (their `isAnonymous` stays true, so the filter below never matches them), and
+  // removed requests are not part of `baseline` in the first place. Depends on the whole `profile`
+  // object (simplest correct dependency for the guard above); the effect body is a no-op, and
+  // returns the same array reference, whenever the name has not actually changed, so this never
+  // causes extra work when an unrelated profile field (e.g. email) changes.
+  useEffect(() => {
+    if (!uid || !profile) return;
+    const name = profile.displayName;
+    setBaseline((prev) => {
+      let changed = false;
+      const next = prev.map((p) => {
+        if (p.userId === uid && !p.isAnonymous && p.displayName !== name) {
+          changed = true;
+          return { ...p, displayName: name };
+        }
+        return p;
+      });
+      return changed ? next : prev;
+    });
+  }, [profile, uid]);
+
+  // The signed-in user's hidden authors, derived from their own hide records. Requests from any
+  // of these accounts are excluded below, BEFORE interaction/report deltas are layered on, so
+  // every downstream consumer of `prayers` (feed, detail via getById, "Prayers I've prayed for")
+  // never sees them, including newly-loaded requests, since this recomputes on every `load()`.
+  const hiddenUids = useMemo(
+    () => new Set(hiddenAccounts.map((h) => h.hiddenUid)),
+    [hiddenAccounts],
+  );
+
+  // Displayed list: filter out hidden authors, then layer interaction/report deltas onto each
+  // remaining base record. Recomputing from the deduped lists (rather than mutating) guarantees
+  // no double-counting on refresh/restart, and flags any request that has at least one report.
   //
   // In FIREBASE mode the prayerCount already comes from Firestore (the source of truth, kept current
   // by the transaction + an optimistic +1 applied to the baseline on a new pray), so no local prayer
   // delta is layered here. Reports are still local/mock in both modes, so the report delta always
   // applies.
   const prayers = useMemo<PrayerRequest[]>(() => {
-    if (interactions.length === 0 && reports.length === 0) return baseline;
-    return baseline.map((p) => {
+    const visible = filterHiddenAccounts(baseline, hiddenUids);
+    if (interactions.length === 0 && reports.length === 0) return visible;
+    return visible.map((p) => {
       const prayerDelta = USE_FIREBASE_INTERACTIONS
         ? 0
         : interactions.filter((i) => i.requestId === p.id).length;
@@ -232,7 +312,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
         status: reportDelta > 0 ? 'flagged' : p.status,
       };
     });
-  }, [baseline, interactions, reports]);
+  }, [baseline, interactions, reports, hiddenUids]);
 
   const getById = useCallback(
     (id: string) => prayers.find((p) => p.id === id),
@@ -324,7 +404,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
 
   const pray = useCallback(async (requestId: string, userId: string) => {
     const key = interactionKey(userId, requestId);
-    // Claim the key synchronously; if already claimed, this is a duplicate — do nothing.
+    // Claim the key synchronously; if already claimed, this is a duplicate, do nothing.
     if (prayedKeys.current.has(key)) return;
     prayedKeys.current.add(key);
 
@@ -426,6 +506,55 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     [baseline],
   );
 
+  const isAccountHidden = useCallback(
+    (userId: string) => hiddenUids.has(userId),
+    [hiddenUids],
+  );
+
+  // Hide the AUTHOR of a given request ("Hide requests from this account"). Looks the author,
+  // anonymity flag, and cached display name up from the loaded request (mirroring how
+  // reportPrayer derives requestAuthorUid), so every entry point only ever has to pass ids. The
+  // display-name snapshot is included ONLY when the triggering request is not anonymous. For an
+  // anonymous request there is nothing to snapshot, so the real name is never touched here.
+  const hideAccountForRequest = useCallback(
+    async (requestId: string, userId: string) => {
+      const target = baseline.find((p) => p.id === requestId);
+      if (!target) throw new HiddenAccountError('unavailable');
+      if (target.userId === userId) throw new HiddenAccountError('ownAccount'); // defensive; UI never offers this
+      await hideAccountSeam({
+        blockerUid: userId,
+        hiddenUid: target.userId,
+        fromAnonymous: target.isAnonymous,
+        displayLabelSnapshot: target.isAnonymous ? undefined : target.displayName,
+      });
+      // Idempotent locally too: if this account is already in the hidden list (e.g. a rapid
+      // double-confirm), do not add a second entry.
+      setHiddenAccounts((prev) =>
+        prev.some((h) => h.hiddenUid === target.userId)
+          ? prev
+          : [
+              ...prev,
+              {
+                id: `${userId}_${target.userId}`,
+                hiddenUid: target.userId,
+                createdAt: new Date().toISOString(),
+                fromAnonymous: target.isAnonymous,
+                ...(target.isAnonymous ? {} : { displayLabelSnapshot: target.displayName }),
+              },
+            ],
+      );
+    },
+    [baseline],
+  );
+
+  // Reverse a hide. Requests from the account reappear immediately because `baseline` already
+  // holds them (filtering happens only in the derived `prayers`, never on `baseline` itself), so
+  // no refetch is required for them to become visible again.
+  const unhideAccount = useCallback(async (hiddenUserId: string, userId: string) => {
+    await unhideAccountSeam(userId, hiddenUserId);
+    setHiddenAccounts((prev) => prev.filter((h) => h.hiddenUid !== hiddenUserId));
+  }, []);
+
   const resetLocalData = useCallback(async () => {
     // Clears LOCAL prototype activity only (local prayed/report marks and any local submitted/edited/
     // removed requests). In Firebase mode the Firestore requests AND prayer interactions are the
@@ -453,6 +582,10 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       hasReported,
       reportPrayer,
       resetLocalData,
+      hiddenAccounts,
+      isAccountHidden,
+      hideAccountForRequest,
+      unhideAccount,
     }),
     [
       prayers,
@@ -470,6 +603,10 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       hasReported,
       reportPrayer,
       resetLocalData,
+      hiddenAccounts,
+      isAccountHidden,
+      hideAccountForRequest,
+      unhideAccount,
     ],
   );
 

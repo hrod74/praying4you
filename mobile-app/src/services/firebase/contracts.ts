@@ -6,7 +6,7 @@ import type {
 } from '../../models/types';
 
 /**
- * Firebase service contracts (Phase J.2a scaffold — interfaces only).
+ * Firebase service contracts (Phase J.2a scaffold, interfaces only).
  *
  * These typed boundaries describe how the future Firebase-backed services will look, mirroring
  * the local seam (`src/services/prayerService.ts`, `AuthContext`) and the documented plan
@@ -76,21 +76,30 @@ export interface StoredUserProfile {
   profileVersion: number;
   /** e.g. 'active'. Moderation/account-status changes are console/admin only (not client-writable). */
   accountStatus: string;
+  /** Version of the Terms explicitly accepted by this account, or null for legacy accounts. */
+  termsAcceptedVersion: string | null;
+  /** Server-recorded acceptance time, or null for legacy accounts. */
+  termsAcceptedAt: string | null;
 }
 
 /**
  * Private user profile docs at `users/{uid}` (owner-only). No email is stored (Auth owns it).
  * Writes are best-effort side effects of the auth flow and must never block sign-in/sign-up.
+ *
+ * There is deliberately no standalone `updateDisplayName` method here: the display name on this
+ * doc is renamed only through the atomic propagation batch (`../displayNameRenameService.ts`),
+ * together with every active, non-Anonymous prayer request the account owns. A standalone,
+ * profile-doc-only write would desynchronize the profile from those public requests.
  */
 export interface UserService {
   /** Read the signed-in user's own profile doc (own doc only), or null if missing/unavailable. */
   getOwnProfile(uid: string): Promise<StoredUserProfile | null>;
   /** Create the profile doc on sign-up if it does not already exist. */
-  ensureProfileForSignUp(uid: string, displayName: string): Promise<void>;
+  ensureProfileForSignUp(uid: string, displayName: string, termsVersion: string): Promise<void>;
   /** On sign-in: create the doc if missing (backfill), else update lastSignedInAt; return it. */
   recordSignIn(uid: string, displayName: string): Promise<StoredUserProfile | null>;
-  /** Update the user's own display name (and updatedAt) on their own doc. */
-  updateDisplayName(uid: string, displayName: string): Promise<void>;
+  /** Record explicit acceptance of a versioned Terms of Use on the private profile. */
+  acceptTerms(uid: string, termsVersion: string): Promise<void>;
   /** Delete the user's own profile doc (account deletion). Owner-only; no-op if missing. */
   deleteOwnProfile(uid: string): Promise<void>;
 }
@@ -146,7 +155,7 @@ export interface PrayerInteractionService {
   /** Whether the signed-in user has already prayed for a request (own record only). */
   hasPrayed(userUid: string, requestId: string): Promise<boolean>;
   /**
-   * The ids of requests the signed-in user has prayed for (own records only) — for
+   * The ids of requests the signed-in user has prayed for (own records only), for
    * "Prayers I've prayed for". Returns request ids, not who-prayed data. AGGREGATE-ONLY to others.
    */
   listMinePrayedFor(userUid: string): Promise<string[]>;
@@ -191,4 +200,56 @@ export interface ReportService {
    * the underlying Firebase error propagate so the caller can handle it (best-effort in deletion).
    */
   deleteAllMine(reporterUid: string): Promise<void>;
+}
+
+/**
+ * The `hiddenAccounts/{blockerUid}_{hiddenUid}` document shape ("Hide requests from this
+ * account," an account-level, one-directional user-blocking control; see
+ * `docs/firebase-hidden-accounts-implementation.md`). A PRIVATE per-user safety record: never
+ * an email, never prayer-request text, never the real name behind an anonymous post, never a
+ * reason, never device information.
+ */
+export interface StoredHiddenAccount {
+  id: string;
+  blockerUid: string;
+  hiddenUid: string;
+  createdAt: string | null;
+  schemaVersion: number;
+  /** Public display-name snapshot, or null when the triggering request was anonymous. */
+  displayLabelSnapshot: string | null;
+  fromAnonymous: boolean;
+}
+
+/**
+ * Account-level hiding ("Hide requests from this account"). One doc per blocker+hidden-account
+ * pair, deterministic id `{blockerUid}_{hiddenUid}`, so a hide is naturally idempotent and a
+ * user can never learn who has hidden them (only their own OUTGOING hides are ever
+ * creatable/listable/deletable by them). This is one-directional: it never affects what the
+ * hidden account can see.
+ */
+export interface HiddenAccountService {
+  /**
+   * Hide all current and future prayer requests from `hiddenUid`, for `blockerUid`. Idempotent:
+   * hiding an already-hidden account succeeds silently with no duplicate write. Throws a
+   * `HiddenAccountError` with code `ownAccount` if `blockerUid === hiddenUid` (defensive; the UI
+   * never offers this).
+   */
+  hide(input: {
+    blockerUid: string;
+    hiddenUid: string;
+    fromAnonymous: boolean;
+    displayLabelSnapshot?: string;
+  }): Promise<void>;
+  /** The signed-in user's own outgoing hides (own records only; never who-hid-them data). */
+  listMine(blockerUid: string): Promise<StoredHiddenAccount[]>;
+  /** Reverse a hide ("Unhide"). Idempotent: unhiding an account that is not hidden is a no-op. */
+  unhide(blockerUid: string, hiddenUid: string): Promise<void>;
+  /**
+   * Delete ALL of the signed-in user's own outgoing hide docs (account-deletion cleanup).
+   * Owner-only (each delete is allowed only where `blockerUid` is the caller). INCOMING hide
+   * records that reference this uid as `hiddenUid` (other users' hides of this account) are
+   * intentionally NOT touched here; see the implementation doc for why they must be preserved
+   * rather than silently claimed as deleted.
+   */
+  deleteAllMine(blockerUid: string): Promise<void>;
 }

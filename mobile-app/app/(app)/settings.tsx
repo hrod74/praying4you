@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
+import { PolicyLinks } from '../../src/components/PolicyLinks';
 import { Screen } from '../../src/components/Screen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
@@ -15,6 +16,8 @@ import {
   PasswordChangeError,
 } from '../../src/services/firebase/authErrors';
 import { colors, radius, spacing, typography } from '../../src/theme/theme';
+import { evaluateDisplayNameSubmission } from '../../src/utils/displayNameSubmissionGate';
+import { formatShortDate } from '../../src/utils/format';
 import {
   DISPLAY_NAME_MAX,
   validateDisplayName,
@@ -28,18 +31,25 @@ import {
  * An intentional settings screen: the profile (display name + email clearly marked private), a
  * quiet "Your prayer activity" summary with links to the user's own requests and the prayers they
  * have lifted up, plain-language privacy guidance, a sincere About section, password change (Firebase
- * mode), sign-out, and account deletion. Email appears only here, on the owner's own private screen —
+ * mode), sign-out, and account deletion. Email appears only here, on the owner's own private screen,
  * never on any public prayer surface.
  */
 export default function SettingsScreen() {
   const router = useRouter();
   const { profile, signOut, updateProfile, requiresPassword, changePassword, deleteAccount } =
     useAuth();
-  const { getMyRequests, getPrayedRequests } = usePrayers();
+  const {
+    getMyRequests,
+    getPrayedRequests,
+    hiddenAccounts,
+    isLoading: hiddenAccountsLoading,
+    error: hiddenAccountsError,
+    unhideAccount,
+  } = usePrayers();
   const { showSuccess, showError } = useFeedback();
   const [deleting, setDeleting] = useState(false);
 
-  // A quiet record of the user's own prayer activity — companionship, not a score.
+  // A quiet record of the user's own prayer activity, companionship, not a score.
   const sharedCount = profile ? getMyRequests(profile.id).length : 0;
   const liftedCount = profile ? getPrayedRequests(profile.id).length : 0;
 
@@ -51,6 +61,9 @@ export default function SettingsScreen() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Set only when the content filter (not ordinary validation) rejected the current display
+  // name. Cleared as soon as the user edits the field, so stale feedback never lingers.
+  const [nameFilterError, setNameFilterError] = useState<string | null>(null);
 
   // In Firebase mode the email is managed by Firebase Auth and is not editable here yet (an email
   // change needs verification/reauth, deferred to a later phase), so only the display name is edited.
@@ -86,7 +99,13 @@ export default function SettingsScreen() {
     setName(profile?.displayName ?? '');
     setEmail(profile?.email ?? '');
     setSubmitted(false);
+    setNameFilterError(null);
     setEditing(true);
+  };
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (nameFilterError) setNameFilterError(null);
   };
 
   const startChangePassword = () => {
@@ -143,11 +162,20 @@ export default function SettingsScreen() {
     Keyboard.dismiss();
     setEditing(false);
     setSubmitted(false);
+    setNameFilterError(null);
   };
 
   const handleSaveProfile = async () => {
     setSubmitted(true);
     if (validateDisplayName(name) || (!requiresPassword && validateEmail(email))) return;
+    // Only after all ordinary validation has passed does the content filter run, and only on the
+    // public display name; this happens before the Firebase/local persistence call below.
+    const nameGate = evaluateDisplayNameSubmission(name);
+    if (nameGate.status !== 'ready') {
+      setNameFilterError(nameGate.message);
+      return;
+    }
+    setNameFilterError(null);
     setSaving(true);
     try {
       // Firebase mode updates the display name only; the email stays as-is.
@@ -221,6 +249,38 @@ export default function SettingsScreen() {
     );
   };
 
+  // "Unhide" a previously hidden account, behind its own confirmation so it cannot be triggered
+  // by an accidental tap. Copy is not one of the task's required-verbatim strings, so it is
+  // written in the app's existing calm, plain tone (see confirmDeleteAccount above for the same
+  // pattern: a destructive-adjacent confirm dialog with a clear Cancel and a labeled action).
+  const confirmUnhide = (hiddenUserId: string) => {
+    Alert.alert(
+      'Unhide this account?',
+      'You will see current and future prayer requests from this account again. They will not be notified.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unhide',
+          onPress: () => {
+            void (async () => {
+              if (!profile) return;
+              try {
+                await unhideAccount(hiddenUserId, profile.id);
+                showSuccess('That account is no longer hidden.');
+              } catch (e) {
+                showError(
+                  e instanceof Error && e.message
+                    ? e.message
+                    : 'We could not update this right now. Please try again.',
+                );
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <Screen scroll>
       {/* Profile */}
@@ -231,10 +291,10 @@ export default function SettingsScreen() {
             <TextField
               label="Display name"
               value={name}
-              onChangeText={setName}
+              onChangeText={handleNameChange}
               placeholder="e.g. Jordan"
               helperText={`Shown publicly on your prayer requests. Up to ${DISPLAY_NAME_MAX} characters.`}
-              errorText={nameError}
+              errorText={nameError ?? nameFilterError}
               autoCapitalize="words"
               maxLength={DISPLAY_NAME_MAX}
               returnKeyType="next"
@@ -244,7 +304,7 @@ export default function SettingsScreen() {
             {requiresPassword ? (
               <View>
                 <Text style={styles.rowLabel}>Email</Text>
-                <Text style={styles.rowValue}>{profile?.email ?? '—'}</Text>
+                <Text style={styles.rowValue}>{profile?.email ?? '-'}</Text>
                 <Text style={styles.privateNote}>
                   🔒 Private. Your email is managed by your account sign-in and is not editable
                   here yet.
@@ -282,12 +342,12 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Display name</Text>
-              <Text style={styles.rowValue}>{profile?.displayName ?? '—'}</Text>
+              <Text style={styles.rowValue}>{profile?.displayName ?? '-'}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Email</Text>
-              <Text style={styles.rowValue}>{profile?.email ?? '—'}</Text>
+              <Text style={styles.rowValue}>{profile?.email ?? '-'}</Text>
             </View>
             <Text style={styles.privateNote}>
               🔒 Private. Only you can see your email. It is never shown on prayer requests.
@@ -302,7 +362,7 @@ export default function SettingsScreen() {
         )}
       </View>
 
-      {/* Change password — Firebase mode only (local profiles have no password to change). */}
+      {/* Change password: Firebase mode only (local profiles have no password to change). */}
       {requiresPassword ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Password</Text>
@@ -431,7 +491,7 @@ export default function SettingsScreen() {
             <Text style={styles.dot}>•</Text>
             <Text style={styles.bulletText}>
               Your prayer requests show either your <Text style={styles.bold}>display
-              name</Text> or <Text style={styles.bold}>“Anonymous”</Text> — your choice,
+              name</Text> or <Text style={styles.bold}>“Anonymous”</Text>, your choice,
               each time you post.
             </Text>
           </View>
@@ -449,6 +509,49 @@ export default function SettingsScreen() {
               is removed and your active prayer requests leave the feed.
             </Text>
           </View>
+          <View style={styles.divider} />
+          <PolicyLinks />
+        </View>
+      </View>
+
+      {/* Hidden accounts: "Hide requests from this account" is the app's account-level
+          user-blocking control (see docs/firebase-hidden-accounts-implementation.md). */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Hidden accounts</Text>
+        <View style={styles.card}>
+          {hiddenAccountsLoading ? (
+            <Text style={styles.aboutText}>Loading your hidden accounts…</Text>
+          ) : hiddenAccountsError ? (
+            // A load failure here must never be misread as "no accounts are hidden": show the
+            // same safe error state the feed uses, not an empty list.
+            <Text style={styles.dangerNote}>{hiddenAccountsError}</Text>
+          ) : hiddenAccounts.length === 0 ? (
+            <Text style={styles.aboutText}>
+              You haven't hidden any accounts. When you hide an account, it will appear here.
+            </Text>
+          ) : (
+            hiddenAccounts.map((entry, index) => (
+              <View key={entry.id}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <View style={styles.hiddenRow}>
+                  <View style={styles.activityText}>
+                    <Text style={styles.activityLabel} numberOfLines={1}>
+                      {/* Never the real name behind an Anonymous request: only an
+                          already-public display-name snapshot, or this calm placeholder. */}
+                      {entry.displayLabelSnapshot ?? 'Account hidden from an Anonymous request'}
+                    </Text>
+                    <Text style={styles.activitySub}>Hidden {formatShortDate(entry.createdAt)}</Text>
+                  </View>
+                  <Button
+                    label="Unhide"
+                    variant="secondary"
+                    onPress={() => confirmUnhide(entry.hiddenUid)}
+                    accessibilityHint="Shows current and future prayer requests from this account again"
+                  />
+                </View>
+              </View>
+            ))
+          )}
         </View>
       </View>
 
@@ -462,7 +565,7 @@ export default function SettingsScreen() {
             lift it in prayer.
           </Text>
           <Text style={styles.aboutText}>
-            It's built to feel calm and respectful — closer to an old, well-loved prayer
+            It's built to feel calm and respectful, closer to an old, well-loved prayer
             journal than a busy social feed. You're never asked to perform; you're simply
             invited to be present with one another.
           </Text>
@@ -479,7 +582,7 @@ export default function SettingsScreen() {
         accessibilityHint="Signs you out and returns to the welcome screen"
       />
 
-      {/* Delete account — placed last, behind a confirmation, so it is hard to tap by accident. */}
+      {/* Delete account: placed last, behind a confirmation, so it is hard to tap by accident. */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Delete account</Text>
         <View style={styles.dangerCard}>
@@ -551,6 +654,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     minHeight: 44,
+  },
+  hiddenRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
   activityText: {
     flexShrink: 1,

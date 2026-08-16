@@ -14,7 +14,7 @@ import { getFirebaseDb } from './firebaseApp';
 import type { StoredUserProfile, UserService } from './contracts';
 
 /**
- * Firebase user-profile service (Phase J.2c) — the private `users/{uid}` Firestore document.
+ * Firebase user-profile service (Phase J.2c): the private `users/{uid}` Firestore document.
  *
  * This is the ONLY Firestore collection wired so far. Prayer requests, interactions, and reports
  * remain local/mock and are never read or written here.
@@ -30,7 +30,7 @@ import type { StoredUserProfile, UserService } from './contracts';
  */
 
 /** Bumped when the stored profile shape changes, so future migrations can detect old docs. */
-const PROFILE_VERSION = 1;
+const PROFILE_VERSION = 2;
 
 /** Convert a Firestore Timestamp to an ISO string, or null if absent / still resolving. */
 function timestampToIso(value: unknown): string | null {
@@ -46,11 +46,14 @@ function mapProfile(uid: string, data: DocumentData): StoredUserProfile {
     lastSignedInAt: timestampToIso(data.lastSignedInAt),
     profileVersion: typeof data.profileVersion === 'number' ? data.profileVersion : PROFILE_VERSION,
     accountStatus: typeof data.accountStatus === 'string' ? data.accountStatus : 'active',
+    termsAcceptedVersion:
+      typeof data.termsAcceptedVersion === 'string' ? data.termsAcceptedVersion : null,
+    termsAcceptedAt: timestampToIso(data.termsAcceptedAt),
   };
 }
 
 /** The full field set for a brand-new profile doc (server timestamps + safe defaults). */
-function newProfileData(uid: string, displayName: string) {
+function newProfileData(uid: string, displayName: string, termsVersion?: string) {
   return {
     uid,
     displayName: displayName.trim(),
@@ -59,6 +62,8 @@ function newProfileData(uid: string, displayName: string) {
     lastSignedInAt: serverTimestamp(),
     profileVersion: PROFILE_VERSION,
     accountStatus: 'active',
+    termsAcceptedVersion: termsVersion ?? null,
+    termsAcceptedAt: termsVersion ? serverTimestamp() : null,
   };
 }
 
@@ -74,13 +79,25 @@ export const firebaseUserService: UserService = {
     return readProfile(db, uid);
   },
 
-  async ensureProfileForSignUp(uid, displayName) {
+  async ensureProfileForSignUp(uid, displayName, termsVersion) {
     const db = getFirebaseDb();
     if (!db) return;
     const ref = doc(db, 'users', uid);
     const snap = await getDoc(ref);
-    if (snap.exists()) return; // never overwrite an existing profile
-    await setDoc(ref, newProfileData(uid, displayName));
+    if (snap.exists()) {
+      // Legacy accounts may predate versioned Terms consent. Update only the consent metadata,
+      // never overwrite the rest of an existing private profile.
+      if (snap.data().termsAcceptedVersion !== termsVersion) {
+        await updateDoc(ref, {
+          termsAcceptedVersion: termsVersion,
+          termsAcceptedAt: serverTimestamp(),
+          profileVersion: PROFILE_VERSION,
+          updatedAt: serverTimestamp(),
+        });
+      }
+      return;
+    }
+    await setDoc(ref, newProfileData(uid, displayName, termsVersion));
   },
 
   async recordSignIn(uid, displayName) {
@@ -100,11 +117,13 @@ export const firebaseUserService: UserService = {
     return readProfile(db, uid);
   },
 
-  async updateDisplayName(uid, displayName) {
+  async acceptTerms(uid, termsVersion) {
     const db = getFirebaseDb();
     if (!db) return;
     await updateDoc(doc(db, 'users', uid), {
-      displayName: displayName.trim(),
+      termsAcceptedVersion: termsVersion,
+      termsAcceptedAt: serverTimestamp(),
+      profileVersion: PROFILE_VERSION,
       updatedAt: serverTimestamp(),
     });
   },

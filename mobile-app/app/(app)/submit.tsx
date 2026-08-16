@@ -20,7 +20,7 @@ import { usePrayers } from '../../src/context/PrayerContext';
  */
 export default function SubmitPrayerScreen() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { profile, hasAcceptedCurrentTerms, acceptCurrentTerms } = useAuth();
   const { addPrayer } = usePrayers();
   const { showSuccess, showError } = useFeedback();
 
@@ -59,6 +59,25 @@ export default function SubmitPrayerScreen() {
         subtitle="Write what you're carrying. Others in the community will lift it up in prayer."
         submitLabel="Share request"
         ownerDisplayName={profile?.displayName ?? 'your name'}
+        termsAccepted={hasAcceptedCurrentTerms}
+        onAcceptTerms={async () => {
+          try {
+            await acceptCurrentTerms();
+            showSuccess('Terms accepted.');
+          } catch (e) {
+            showError(
+              e instanceof Error && e.message
+                ? e.message
+                : 'We could not save your Terms acceptance. Please try again.',
+            );
+            throw e;
+          }
+        }}
+        cancelLabel="Cancel and return to Feed"
+        onCancel={() => {
+          setFormKey((k) => k + 1);
+          router.navigate('/(app)/feed');
+        }}
         onSubmit={handleCreate}
       />
     </Screen>

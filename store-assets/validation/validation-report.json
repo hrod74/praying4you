@@ -1,0 +1,277 @@
+{
+  "status": "PASS",
+  "assets": [
+    {
+      "file": "apple/app-icon-1024.png",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 154115,
+      "valid": true
+    },
+    {
+      "file": "google-play/app-icon-512.png",
+      "dimensions": [
+        512,
+        512
+      ],
+      "format": "PNG",
+      "mode": "RGBA",
+      "alpha": true,
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 49963,
+      "valid": true
+    },
+    {
+      "file": "google-play/feature-graphic-1024x500.png",
+      "dimensions": [
+        1024,
+        500
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 105717,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/iphone-6.3/01-shared-prayer-feed.png",
+      "dimensions": [
+        1179,
+        2556
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 259673,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/iphone-6.3/02-create-prayer-request.png",
+      "dimensions": [
+        1179,
+        2556
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 172225,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/iphone-6.3/03-anonymous-display-choice.png",
+      "dimensions": [
+        1179,
+        2556
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 177059,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/iphone-6.3/04-prayer-detail.png",
+      "dimensions": [
+        1179,
+        2556
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 262201,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/iphone-6.3/05-prayers-prayed-for.png",
+      "dimensions": [
+        1179,
+        2556
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 254036,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/iphone-6.3/06-verse-of-the-day.png",
+      "dimensions": [
+        1179,
+        2556
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 253463,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/ipad-11/01-shared-prayer-feed.jpg",
+      "dimensions": [
+        1640,
+        2360
+      ],
+      "format": "JPEG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 209925,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/ipad-11/02-create-request-and-anonymous-choice.jpg",
+      "dimensions": [
+        1640,
+        2360
+      ],
+      "format": "JPEG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 307764,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/ipad-11/03-prayer-detail.jpg",
+      "dimensions": [
+        1640,
+        2360
+      ],
+      "format": "JPEG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 135182,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/ipad-11/04-prayers-prayed-for.jpg",
+      "dimensions": [
+        1640,
+        2360
+      ],
+      "format": "JPEG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 176547,
+      "valid": true
+    },
+    {
+      "file": "apple/screenshots/ipad-11/05-verse-of-the-day.jpg",
+      "dimensions": [
+        1640,
+        2360
+      ],
+      "format": "JPEG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 146391,
+      "valid": true
+    },
+    {
+      "file": "google-play/screenshots/phone/01-shared-prayer-feed.png",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 153307,
+      "valid": true
+    },
+    {
+      "file": "google-play/screenshots/phone/02-create-prayer-request.png",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 142265,
+      "valid": true
+    },
+    {
+      "file": "google-play/screenshots/phone/03-anonymous-display-choice.png",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 153843,
+      "valid": true
+    },
+    {
+      "file": "google-play/screenshots/phone/04-prayer-detail.png",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 107117,
+      "valid": true
+    },
+    {
+      "file": "google-play/screenshots/phone/05-prayers-prayed-for.png",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 166732,
+      "valid": true
+    },
+    {
+      "file": "google-play/screenshots/phone/06-verse-of-the-day.png",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "format": "PNG",
+      "mode": "RGB",
+      "alpha": false,
+      "alpha_range": null,
+      "bytes": 136002,
+      "valid": true
+    }
+  ],
+  "broken_review_board_paths": [],
+  "sensitive_text_hits": [],
+  "unicode_em_dash_count": 0,
+  "raw_capture_counts": {
+    "android-phone": 6,
+    "ios-iphone": 6,
+    "ios-ipad": 6
+  },
+  "ipad_duplicate_confirmed": true
+}

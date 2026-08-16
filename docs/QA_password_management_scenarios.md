@@ -21,6 +21,24 @@ What is still out of scope (so do not test these here):
 - Prayer requests, prayer interactions ("prayed for" counts), and reports are unchanged.
 - No push notifications, AI features, social/Google sign-in, or passwordless/email-link sign-in.
 
+## Manual QA Evidence (2026-08-06)
+
+The owner manually tested the two flows below on a **physical device** (not Expo Go on a simulator).
+Both passed. This is a real, dated verification, distinct from, and stronger than, the unchecked
+scenario boxes below, which remain the record of what has *not* yet been individually walked through.
+
+- [x] **Authentication (sign-in)**: signed in with an existing account on a physical device.
+  Result: **Passed**. Tested: 2026-08-06.
+- [x] **Password reset** (the flow described in Scenario 1, "Forgot Password From Sign-In," below):
+  requested a password reset from the sign-in screen on a physical device and confirmed it worked as
+  designed. Result: **Passed**. Tested: 2026-08-06.
+
+**Not covered by this evidence**, still unverified: Scenario 2 (unknown-email non-enumeration copy),
+Scenario 3 (change password while signed in), Scenario 4 (password mismatch), Scenario 5 (wrong current
+password), Scenario 6 (weak password), Scenario 7 (recent-login requirement), and Scenario 8
+(local/mock fallback). The individual checkboxes in those scenarios below have not been marked and
+should not be read as passed until each is actually run.
+
 ## Before You Start
 
 - [ ] Expo is running with `npx expo start -c`

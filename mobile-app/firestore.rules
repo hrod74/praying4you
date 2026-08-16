@@ -1,23 +1,33 @@
 rules_version = '2';
 
-// Praying For You — Firestore Security Rules (Alpha)
+// Praying For You, Firestore Security Rules (Alpha)
 //
 // Scope so far:
-//   - users/{uid}              private profile document (Phase J.2c) — owner-only.
-//   - prayerRequests/{id}      prayer requests (Phase J.2e) — signed-in read of active requests;
+//   - users/{uid}              private profile document (Phase J.2c), owner-only.
+//   - prayerRequests/{id}      prayer requests (Phase J.2e): signed-in read of active requests;
 //                              owner-only create/edit/soft-remove; a controlled +1 to prayerCount
-//                              tied to a new interaction (Phase J.2f.3).
-//   - prayerInteractions/{id}  "I prayed for this" (Phase J.2f.3) — one per user+request, id is
+//                              tied to a new interaction (Phase J.2f.3). A named request's
+//                              displayName must equal the owner's current users/{uid}.displayName
+//                              (an Anonymous request's must be the literal "Anonymous"), so an
+//                              atomic profile-plus-requests rename batch can be validated against
+//                              the profile state AFTER the batch (see the displayName rule note
+//                              below the prayerRequests match block).
+//   - prayerInteractions/{id}  "I prayed for this" (Phase J.2f.3), one per user+request, id is
 //                              `{uid}_{requestId}`; owner can create + read only their own; never
 //                              updatable; a user may DELETE ONLY their own interactions, solely as
 //                              account-deletion cleanup (Phase J.2h). AGGREGATE-ONLY (no "who prayed"
 //                              listing); deleting an interaction never changes prayerCount.
-//   - reports/{id}             "report this request" (Phase J.2g) — one per reporter+request, id is
+//   - reports/{id}             "report this request" (Phase J.2g), one per reporter+request, id is
 //                              `{uid}_{requestId}`; reporter-only create + read-own; never updatable.
 //                              A reporter may LIST and DELETE ONLY their own reports, solely so
 //                              account deletion (Phase J.2h) can remove the records that identify them
 //                              as the reporter. Still a private moderation record reviewed MANUALLY in
 //                              the Firebase Console, with no cross-user "who reported" surface.
+//   - hiddenAccounts/{id}      "Hide requests from this account," account-level, one-directional
+//                              user-blocking control. One per blocker+hidden-account, id is
+//                              `{blockerUid}_{hiddenUid}`; blocker-only create/read/list/delete of
+//                              their own OUTGOING hides; never updatable. No rule lets anyone list or
+//                              query by hiddenUid, so a user can never learn who has hidden them.
 //
 // IMPORTANT: these rules are NOT auto-deployed. The owner must publish the FULL contents of this
 // file in the Firebase Console (Firestore Database > Rules > Publish) or via the Firebase CLI for
@@ -29,7 +39,10 @@ rules_version = '2';
 //     interaction may contain an `email` field (enforced on create + update below).
 //   - prayerRequests carry `authorUid` for ownership/moderation; it is an opaque UID and is never
 //     shown in the UI. The real name behind an anonymous post is not stored on the request.
-//   - prayerInteractions store only the user's own `userUid`, the `requestId`, and metadata — never
+//   - A named (non-Anonymous) request's `displayName` must always equal the owner's current
+//     `users/{uid}.displayName`; a client can never substitute an arbitrary name. This is what
+//     keeps a renamed account's public identity consistent everywhere it appears.
+//   - prayerInteractions store only the user's own `userUid`, the `requestId`, and metadata, never
 //     an email or a display name. A user can read only their OWN interaction; there is no query or
 //     rule that exposes the list of who prayed for a request. The only cross-user signal is the
 //     aggregate `prayerCount` on the request.
@@ -47,7 +60,26 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    // Private user profile — owner-only. The document id IS the user's UID, so requiring
+    // Whether `displayName` is a legitimate public name for a request authored by the signed-in
+    // user: the literal "Anonymous" when isAnonymous is true, or, when isAnonymous is false,
+    // exactly the CURRENT value of the owner's private `users/{uid}.displayName`.
+    //
+    // Uses getAfter()/existsAfter(), not get()/exists(), so this also validates the atomic
+    // profile-plus-requests rename batch: when the SAME batch also writes a new displayName to
+    // users/{uid}, getAfter() reads that pending write (the value the document will hold once the
+    // whole batch commits), not the value before it. For any write that does NOT touch
+    // users/{uid} in the same operation (the ordinary case), getAfter() reads the same, already
+    // committed value get() would, so this behaves exactly like an ordinary consistency check
+    // there. If the private profile doc does not exist at all (yet), a named request can never be
+    // created or edited until it does; Anonymous remains available regardless.
+    function isLegitimatePublicName(data) {
+      return (data.isAnonymous == true && data.displayName == 'Anonymous')
+        || (data.isAnonymous == false
+          && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid))
+          && data.displayName == getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.displayName);
+    }
+
+    // Private user profile, owner-only. The document id IS the user's UID, so requiring
     // request.auth.uid == uid is sufficient to guarantee a user only touches their own profile.
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -64,7 +96,10 @@ service cloud.firestore {
         && (resource.data.status == 'active' || resource.data.authorUid == request.auth.uid);
 
       // CREATE: a signed-in user may create only their OWN request, starting active with a zero
-      // count and safe field shapes, and may NOT include an email field.
+      // count and safe field shapes, may NOT include an email field, and its public displayName
+      // must be a legitimate one for the signed-in owner (see isLegitimatePublicName above): the
+      // literal "Anonymous" when anonymous, else exactly the owner's current profile name. A
+      // client can never substitute an arbitrary display name for a named request.
       allow create: if isSignedIn()
         && request.resource.data.authorUid == request.auth.uid
         && request.resource.data.status == 'active'
@@ -73,22 +108,33 @@ service cloud.firestore {
         && request.resource.data.body is string
         && request.resource.data.category is string
         && request.resource.data.displayName is string
-        && !('email' in request.resource.data);
+        && !('email' in request.resource.data)
+        && isLegitimatePublicName(request.resource.data);
 
       // UPDATE (edit + soft-remove): owner only. Protected fields (authorUid, createdAt,
       // prayerCount) must not change, status must stay within the allowed set, and no email may be
       // introduced. This rule never lets a client change prayerCount; the controlled +1 lives in the
       // separate "pray" rule below.
+      //
+      // The displayName invariant applies only when this update actually touches `displayName` or
+      // `isAnonymous` (an ordinary owner edit always sends both together, and so does the atomic
+      // rename-propagation batch, which sends `displayName`). A status-only change, such as a
+      // soft-remove or the account-deletion cleanup batch, never touches either field, so it is
+      // never blocked by this invariant even if some pre-existing request predates this rule.
       allow update: if isSignedIn()
         && resource.data.authorUid == request.auth.uid
         && request.resource.data.authorUid == resource.data.authorUid
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.prayerCount == resource.data.prayerCount
         && request.resource.data.status in ['active', 'removed']
-        && !('email' in request.resource.data);
+        && !('email' in request.resource.data)
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'isAnonymous'])
+          || isLegitimatePublicName(request.resource.data)
+        );
 
-      // UPDATE (pray): any signed-in user may raise prayerCount by exactly +1 — and ONLY
-      // prayerCount — on an ACTIVE request, but only in the SAME atomic commit that creates their
+      // UPDATE (pray): any signed-in user may raise prayerCount by exactly +1, and ONLY
+      // prayerCount, on an ACTIVE request, but only in the SAME atomic commit that creates their
       // own brand-new interaction doc. `existsAfter` requires the interaction to exist after the
       // commit; `!exists` requires it did not exist before (so a given user can do this at most
       // once per request). This is what makes the count tamper-resistant: it can never be inflated
@@ -97,7 +143,7 @@ service cloud.firestore {
       //
       // NOTE for the client: the +1 MUST be written as a literal number (resource.data.prayerCount
       // + 1), NOT FieldValue.increment(1). A server-side increment transform is not a concrete value
-      // during rule evaluation, so the exact-value check below would fail and reject the update —
+      // during rule evaluation, so the exact-value check below would fail and reject the update,
       // and, since pray runs in a transaction, that would roll back the interaction create too. See
       // prayerInteractionService.pray.
       allow update: if isSignedIn()
@@ -111,7 +157,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Prayer interactions ("I prayed for this") — Phase J.2f.3. One doc per user+request, with the
+    // Prayer interactions ("I prayed for this"), Phase J.2f.3. One doc per user+request, with the
     // deterministic id `{uid}_{requestId}` so a user can never create a duplicate. AGGREGATE-ONLY to
     // others: a user may read only their OWN interaction, and there is no rule that lets anyone list
     // who prayed for a request.
@@ -151,7 +197,7 @@ service cloud.firestore {
       // docs, identified by `resource.data.userUid == request.auth.uid`. This removes the records that
       // directly identify the deleting user as someone who prayed. It is narrow and owner-only: it can
       // never touch another user's interaction. It does NOT (and cannot) change the request's
-      // prayerCount — the delete only affects this doc — so aggregate counts are intentionally
+      // prayerCount, the delete only affects this doc, so aggregate counts are intentionally
       // preserved (acceptable for MVP: there is no "who prayed" UI, so a count that is not decremented
       // reveals nothing about anyone). This does not weaken the duplicate-prevention rule above (that
       // is enforced on CREATE via `!exists`), and a deleting user's account is removed in the same
@@ -159,7 +205,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userUid == request.auth.uid;
     }
 
-    // Reports ("report this request") — Phase J.2g. One doc per reporter+request, deterministic id
+    // Reports ("report this request"), Phase J.2g. One doc per reporter+request, deterministic id
     // `{uid}_{requestId}`. A PRIVATE moderation record reviewed MANUALLY in the Firebase Console
     // (Console access bypasses these rules). From the client a reporter may create their own report
     // and read ONLY their own report (for duplicate handling); no one may list reports, read another
@@ -204,11 +250,60 @@ service cloud.firestore {
 
       // DELETE (account-deletion cleanup, Phase J.2h): a reporter may delete ONLY their own reports
       // (`resource.data.reporterUid == request.auth.uid`), so deleting an account removes the records
-      // that identify that user as the reporter. It is narrow and owner-only — it can never delete a
+      // that identify that user as the reporter. It is narrow and owner-only, it can never delete a
       // report filed by someone else (including reports filed by other users against the deleting
       // user's requests, which remain for manual review). This is the MVP choice over anonymizing the
       // reporter, since reports are private moderation records with no cross-user surface.
       allow delete: if isSignedIn() && resource.data.reporterUid == request.auth.uid;
+    }
+
+    // Hidden accounts ("Hide requests from this account"), account-level, one-directional
+    // user-blocking control. One doc per blocker+hidden-account pair, deterministic id
+    // `{blockerUid}_{hiddenUid}`. A PRIVATE per-user safety record: a user may create/read/list/
+    // delete ONLY their own OUTGOING hides (accounts THEY have hidden). No rule lets anyone list
+    // or query by hiddenUid, so a user can never learn who has hidden them. Never updatable
+    // (unhide is a delete, not an edit); a repeat hide is handled client-side as a harmless no-op
+    // via a pre-check GET, never as a write to an existing doc.
+    match /hiddenAccounts/{hideId} {
+      // GET (single doc): a user may read ONLY their own deterministic hide doc, authorized from
+      // the id prefix `{blockerUid}_` (works even before it exists, for the idempotent
+      // pre-check). The prefix check blocks reading another user's hide doc.
+      allow get: if isSignedIn()
+        && hideId[0:(request.auth.uid.size() + 1)] == (request.auth.uid + '_');
+
+      // LIST: a user may list ONLY their own outgoing hides (`resource.data.blockerUid ==
+      // request.auth.uid`), exactly what the Settings "Hidden accounts" screen and
+      // account-deletion cleanup need. This is owner-self-scoped, NOT a "who hid me" surface: a
+      // caller can only ever see accounts THEY hid, never who hid them. A query without that
+      // blockerUid filter (or filtered to another user) is denied.
+      allow list: if isSignedIn() && resource.data.blockerUid == request.auth.uid;
+
+      // CREATE: a signed-in user may create ONLY their own outgoing hide, never against
+      // themselves. The doc id must be `{blockerUid}_{hiddenUid}`; ONLY the known fields may be
+      // present (hasOnly => no email / prayer text / reason / device info); fromAnonymous must be
+      // a bool; and an optional displayLabelSnapshot, if present, is a public-name snapshot only
+      // (never validated against a request here, mirroring how the client is trusted for
+      // low-risk display metadata elsewhere in this phase).
+      allow create: if isSignedIn()
+        && hideId == (request.auth.uid + '_' + request.resource.data.hiddenUid)
+        && request.resource.data.blockerUid == request.auth.uid
+        && request.resource.data.hiddenUid != request.auth.uid
+        && request.resource.data.fromAnonymous is bool
+        && request.resource.data.keys().hasOnly(
+             ['id', 'blockerUid', 'hiddenUid', 'createdAt', 'schemaVersion', 'fromAnonymous', 'displayLabelSnapshot'])
+        && !('email' in request.resource.data);
+
+      // No client UPDATE: a hide is immutable. Unhide is a DELETE, not an edit; a repeat hide is
+      // handled as a harmless no-op by the client (pre-checked via GET), never a write to an
+      // existing doc.
+      allow update: if false;
+
+      // DELETE (Unhide, and account-deletion cleanup): a user may delete ONLY their own outgoing
+      // hides. This both powers "Unhide" from Settings and removes the deleting user's own
+      // outgoing hide records on account deletion. It can never delete a hide record belonging to
+      // another user, including one where the deleting user is the HIDDEN party. Those INCOMING
+      // records are intentionally retained; see the implementation doc for why.
+      allow delete: if isSignedIn() && resource.data.blockerUid == request.auth.uid;
     }
 
     // Everything else is denied until its phase adds explicit rules + tests.

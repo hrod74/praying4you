@@ -48,6 +48,12 @@ This is the **release gate** for Alpha. It rolls up the per-feature checklists i
       returns to signed-out, the Auth user is removed, and `users/{uid}` is removed
       (full cleanup detail: [`docs/QA_delete_scenarios.md`](./QA_delete_scenarios.md))
 
+> **Manual QA evidence (2026-08-06):** Sign-in (authentication) and password reset were
+> independently re-verified by the owner on a physical device, both passing. See
+> [`docs/QA_password_management_scenarios.md`](./QA_password_management_scenarios.md#manual-qa-evidence-2026-08-06)
+> for the dated record. Sign up, edit profile name, and delete account above are not covered by this
+> physical-device evidence and remain as previously recorded.
+
 ## 2. Prayer Requests
 
 - [x] **Create prayer request** — post a named request; confirm it appears at the top of the feed and

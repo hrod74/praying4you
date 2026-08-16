@@ -14,6 +14,11 @@ import {
 } from '../../../src/models/types';
 import { ReportError } from '../../../src/services/firebase/reportErrors';
 import { colors, radius, spacing, typography } from '../../../src/theme/theme';
+import {
+  confirmHideAccount,
+  HIDE_ACCOUNT_ACTION_LABEL,
+  HIDE_ACCOUNT_SUCCESS_MESSAGE,
+} from '../../../src/utils/hideAccountCopy';
 
 const NOTE_MAX = 300;
 
@@ -29,7 +34,7 @@ export default function ReportScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { getById, reportPrayer } = usePrayers();
+  const { getById, reportPrayer, hideAccountForRequest } = usePrayers();
 
   const prayer = getById(id);
 
@@ -38,6 +43,34 @@ export default function ReportScreen() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Optional next action after a successful report, kept fully separate from the verified report
+  // submission state above (reason/notes/saving/done/error) so this addition cannot affect it.
+  const [hidingAccount, setHidingAccount] = useState(false);
+  const [accountHidden, setAccountHidden] = useState(false);
+  const [hideError, setHideError] = useState<string | null>(null);
+
+  const handleHideAccount = () => {
+    if (!profile || !prayer) return;
+    confirmHideAccount(() => {
+      void (async () => {
+        setHidingAccount(true);
+        setHideError(null);
+        try {
+          await hideAccountForRequest(prayer.id, profile.id);
+          setAccountHidden(true);
+        } catch (e) {
+          setHideError(
+            e instanceof Error && e.message
+              ? e.message
+              : 'We could not update this right now. Please try again.',
+          );
+        } finally {
+          setHidingAccount(false);
+        }
+      })();
+    });
+  };
 
   const isOwn = Boolean(profile && prayer && prayer.userId === profile.id);
 
@@ -76,7 +109,46 @@ export default function ReportScreen() {
             not shown to the person who posted.
           </Text>
         </View>
-        <Button label="Done" onPress={() => router.back()} />
+
+        {/* Optional next action: hiding is separate from reporting (it does not create or change
+            a report, and reporting never hides an account automatically). */}
+        {accountHidden ? (
+          <Text style={styles.hideDoneText}>{HIDE_ACCOUNT_SUCCESS_MESSAGE}</Text>
+        ) : (
+          <View style={styles.hideOptionBlock}>
+            <Text style={styles.hideOptionText}>
+              You can also stop seeing requests from this account.
+            </Text>
+            <Button
+              label={hidingAccount ? 'Hiding…' : HIDE_ACCOUNT_ACTION_LABEL}
+              variant="secondary"
+              onPress={handleHideAccount}
+              disabled={hidingAccount}
+              accessibilityHint="Stops showing prayer requests from this account"
+            />
+            {hideError ? (
+              <Text style={styles.errorText} accessibilityLiveRegion="polite">
+                {hideError}
+              </Text>
+            ) : null}
+          </View>
+        )}
+
+        <Button
+          label="Done"
+          onPress={() => {
+            // Preserves the verified report-submission behavior when no account was hidden
+            // (router.back(), unchanged). If the optional hide action succeeded, router.back()
+            // would return to the now-hidden author's detail route, which the detail screen
+            // correctly (but unhelpfully) resolves to "Prayer not found." Route to the feed
+            // instead, so a successful hide never intentionally lands the user on that screen.
+            if (accountHidden) {
+              router.replace('/(app)/feed');
+            } else {
+              router.back();
+            }
+          }}
+        />
       </Screen>
     );
   }
@@ -220,5 +292,18 @@ const styles = StyleSheet.create({
   errorText: {
     ...typography.muted,
     color: colors.danger,
+  },
+  hideOptionBlock: {
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  hideOptionText: {
+    ...typography.muted,
+    textAlign: 'center',
+  },
+  hideDoneText: {
+    ...typography.muted,
+    textAlign: 'center',
+    paddingBottom: spacing.md,
   },
 });

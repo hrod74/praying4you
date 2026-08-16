@@ -1,7 +1,7 @@
 # Beta Feedback Plan: Praying For You
 
 **Lens:** Growth / Beta Research Advisor (`agents/growth-beta-research-advisor.md`).
-**Status:** planning only. No Firebase project, EAS project, code, dependencies, or secrets exist yet. This plan is used once the Firebase MVP is built and an installable beta can be shared (see `firebase-mvp-plan.md` §16, §17 J.7).
+**Status (updated 2026-08-06):** the condition this plan was waiting on has been met: the Firebase MVP is built (Firebase Authentication, Firestore-backed prayer requests/interactions/reports, published security rules, account deletion). *(This line previously said no Firebase project/code existed yet and that the plan was "used once the Firebase MVP is built"; that framing is now stale.)* An installable beta build does not exist yet (no EAS configuration, no signed build), and the wider 8-15 person beta recruitment described below has not started; only the smaller, controlled Alpha (3-4 testers) has run so far, per `docs/QA_alpha_readiness.md`. This plan is otherwise ready to execute once `docs/reviews/Pre_Developer_Account_Readiness_Plan.md` clears the remaining blockers (build configuration, privacy/terms/support pages, remaining QA).
 **Principle:** a beta exists to learn, not to grow numbers. The goal is honest answers about clarity, trust, emotional fit, and safety, not vanity metrics or early revenue.
 
 ---
