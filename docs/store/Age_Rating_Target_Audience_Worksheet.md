@@ -567,6 +567,11 @@ The app also now contains the smaller in-app policy-link and visible 18+ onboard
 Sections 10b and 12c. The blocker remains open only for the approved commitment to add beta-specific
 18+ language to the live Privacy Policy and Terms pages before external beta testing.
 
+*(Further update 2026-08-16, blocker closed)*: the live Privacy Policy and Terms now contain the
+approved private-beta 18-and-older language, retain the future public-release decision, and show an
+August 16, 2026 effective date. Both deployed pages passed a live smoke test. The UGC Compliance
+Blocker is closed for the controlled external beta.
+
 Explicitly not treated as a blocker in this worksheet: the absence of an in-app age-verification or
 age-gate mechanism (Section 6). Neither platform's base UGC or app-review requirements demand an
 age gate for an app that declares a standard adult or general audience; this becomes load-bearing

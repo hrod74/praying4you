@@ -460,6 +460,11 @@ fresh disclosure review before release.
    direction. This update does not resolve the separate privacy, retention, console-mapping, or final
    binary-review items in this worksheet.
 
+   *(Further update 2026-08-16)*: the live Privacy Policy and Terms now contain the approved
+   private-beta 18-and-older language and passed a post-deployment smoke test. The UGC Compliance
+   Blocker is closed. The separate privacy, retention, console-mapping, and binary-review items remain
+   unchanged.
+
 ## 16. Open owner decisions
 
 - Approve or revise every proposed Apple data type, purpose, linked status, and no-tracking answer.
