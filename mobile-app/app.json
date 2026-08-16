@@ -2,6 +2,7 @@
   "expo": {
     "name": "Praying For You",
     "slug": "praying4you",
+    "owner": "product-spark-studio",
     "version": "1.0.0",
     "scheme": "praying4you",
     "orientation": "portrait",
@@ -32,6 +33,12 @@
     "plugins": [
       "expo-router",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0d161eba-4631-418c-a437-4e613a87804d"
+      }
+    }
   }
 }
