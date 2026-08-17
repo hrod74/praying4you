@@ -130,6 +130,8 @@ Work that can be prepared without developer accounts:
 
 ## 6. Developer-Fee Readiness Gate
 
+**Gate verdict, 2026-08-17: PASSED.** All seven conditions below are satisfied for the controlled beta. Critical QA is recorded with narrow deferrals explicitly accepted; no beta-blocking defect is known; the EAS project, Android standalone build, and Android preview OTA workflow are verified; identifiers are final; the required website pages are live; store copy, age-rating direction, privacy disclosures, and visual assets are approved; and the reviewer-account strategy is approved in `docs/store/Reviewer_Account_Strategy.md`. This verdict authorizes proceeding to Apple Developer Program and Google Play Console organization enrollment. It does not authorize public release or bypass signed-build and store-review QA.
+
 Product Spark Studio should pay for the Apple Developer Program and Google Play Console when **all** of the following are true:
 
 1. **Critical QA has passed.** Authentication and password reset are already confirmed (2026-08-06). The prayer-interaction and account-deletion checklists (section 2) have been run and recorded, and reporting/feed-filter items are closed out or explicitly and knowingly deferred.
