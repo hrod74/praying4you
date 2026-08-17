@@ -74,6 +74,8 @@ Everything in this section can be started immediately; none of it requires a pai
 
 **Still outstanding, requiring an account or credential this pass deliberately did not create:** the EAS project itself is not yet linked (no `extra.eas.projectId` in `app.json`); that requires an Expo account login (`eas login` / `eas init`), which is a real account-creation step and was not performed. `eas config` (EAS's own resolved-config validator) also requires that same login and could not be run; validation here was limited to `expo config`, `expo-doctor`, and direct JSON parsing, all of which are login-free.
 
+*(Update 2026-08-17)*: the outstanding statement above is superseded. The project is linked to the Product Spark Studio Expo organization as `@product-spark-studio/praying4you`, with EAS project ID `0d161eba-4631-418c-a437-4e613a87804d`. Android preview builds have been produced and installed. EAS Update is configured with runtime version `1.0.0`; Android preview OTA delivery and a follow-up cleanup update both passed without reinstalling the APK. See `docs/QA_eas_android_standalone_scenarios.md` and `docs/QA_eas_update_scenarios.md`. No iOS build, production update, store submission, or developer-account enrollment is claimed by this correction.
+
 Explicitly out of scope for this task: no signed production build was created, no account was created or logged into, and no submission occurred.
 
 ---

@@ -97,6 +97,8 @@ To keep this reconciliation honest, findings below are grouped into four kinds w
 
 *(Update 2026-08-16, Android standalone build)*: this supersedes the statements above that no build had left Expo Go and no EAS project existed. Product Spark Studio now owns the linked EAS project `@product-spark-studio/praying4you`; the Android application ID is `com.productsparkstudio.prayingforyou`; and a corrected EAS preview APK was produced from source commit `75a53db506a8e85740ff5d2f925e9b4e0b0a8e04`. The owner installed it in an Android Studio Pixel 2 emulator and passed Firebase sign-in and startup, prayer creation and duplicate prevention, pre-publication content filtering, offline Verse of the Day, and network-reconnection smoke tests with no defects. See `docs/QA_eas_android_standalone_scenarios.md`. This is an internal Android preview build, not an app-store submission, iOS result, or production-release approval.
 
+*(Update 2026-08-17, EAS Update)*: `expo-updates` is installed and the project is configured for EAS Update with an app-version runtime policy. A new Android preview APK connected to the `preview` channel was installed and passed its Firebase baseline check. A temporary Settings card was then delivered through an Android preview OTA update and observed by the owner without reinstalling the APK. A second preview OTA update removed the card, and the owner confirmed the cleanup without reinstalling. The production channel was untouched. See `docs/QA_eas_update_scenarios.md`. Android preview OTA delivery is verified; iOS OTA delivery remains unverified until an iOS build exists.
+
 ---
 
 ## 6. Legal & Privacy
