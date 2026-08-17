@@ -283,11 +283,6 @@ export default function SettingsScreen() {
 
   return (
     <Screen scroll>
-      <View style={styles.card}>
-        <Text style={styles.activityLabel}>Preview update test successful</Text>
-        <Text style={styles.aboutText}>Delivered through EAS Update on August 17, 2026.</Text>
-      </View>
-
       {/* Profile */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your profile</Text>
