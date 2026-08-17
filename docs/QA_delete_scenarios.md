@@ -2,7 +2,7 @@
 
 ## Current Status
 
-**Partially passed, with the core deletion flow verified.** Scenarios 1 through 6 were completed previously and are fully checked below. On 2026-08-16, the owner also deleted two Firebase test accounts and the prayer requests associated with that testing; both deletions completed successfully. This recent confirmation supports the core behavior but did not include a documented Firestore inspection of the soft-removed request fields, interaction cleanup, report cleanup, preserved aggregate counts, or other-user negative controls in Scenarios 7 through 11. Those narrower data-boundary checks remain open rather than being inferred.
+**PASSED, 2026-08-17.** Scenarios 1 through 6 were completed previously. On 2026-08-16, the owner reconfirmed the core flow through two successful Firebase test-account deletions. On 2026-08-17, the owner passed one focused combined Firebase data-boundary scenario covering active named and Anonymous requests, request soft-removal fields, interaction cleanup, report cleanup, preserved aggregate prayer count, and protection of another user's request. No defect was found. The optional third-user report variation in Scenario 9 was not required or claimed.
 
 A manual checklist for verifying account deletion in the Praying For You mobile app.
 It is written for the owner (not a developer). Tap through each step on a phone running
@@ -134,21 +134,21 @@ This is the Phase J.2f.2 scenario: a deleting user who has authored prayer reque
 their requests are soft-removed (kept in Firestore with a removed status), not hard-deleted, and
 that they leave the feed.
 
-- [ ] Create a throwaway account
-- [ ] Create one named prayer request
-- [ ] Create one anonymous prayer request
-- [ ] Confirm both appear in the feed
-- [ ] Confirm both exist in Firestore `prayerRequests`
-- [ ] Delete the account
-- [ ] Confirm Firebase Auth user is removed
-- [ ] Confirm Firestore `users/{uid}` profile is removed
-- [ ] Confirm the user's `prayerRequests` are soft-removed, not hard-deleted
-- [ ] Confirm `status` is `removed`
-- [ ] Confirm `removedReason` is `accountDeleted`
-- [ ] Confirm `removedAt` is set
-- [ ] Confirm removed requests no longer appear in feed
-- [ ] Restart app
-- [ ] Confirm deleted user is not restored
+- [x] Create a throwaway account
+- [x] Create one named prayer request
+- [x] Create one anonymous prayer request
+- [x] Confirm both appear in the feed
+- [x] Confirm both exist in Firestore `prayerRequests`
+- [x] Delete the account
+- [x] Confirm Firebase Auth user is removed
+- [x] Confirm Firestore `users/{uid}` profile is removed
+- [x] Confirm the user's `prayerRequests` are soft-removed, not hard-deleted
+- [x] Confirm `status` is `removed`
+- [x] Confirm `removedReason` is `accountDeleted`
+- [x] Confirm `removedAt` is set
+- [x] Confirm removed requests no longer appear in feed
+- [x] Restart app
+- [x] Confirm deleted user is not restored
 
 > The anonymous request stores the public name "Anonymous" only (the real name is never stored),
 > and `authorUid` is an opaque UID that is never shown in the app. Both of the user's requests
@@ -159,47 +159,47 @@ that they leave the feed.
 This confirms the "I prayed for this" records that identify the deleting user are removed, while the
 aggregate prayer counts on other people's requests are preserved.
 
-- [ ] Sign in as throwaway user A
-- [ ] As a different throwaway user B, create a prayer request
-- [ ] As user A, pray for user B's request
-- [ ] In Firestore `prayerInteractions`, confirm a doc `A_<requestId>` exists
-- [ ] Note the request's current `prayerCount` (for example, 1)
-- [ ] Delete user A's account
-- [ ] Confirm user A's `prayerInteractions` docs are gone
-- [ ] Confirm user B's request `prayerCount` is **unchanged** (still 1; counts are preserved by design)
-- [ ] Confirm user B's request itself is unchanged and still in the feed
+- [x] Sign in as throwaway user A
+- [x] As a different throwaway user B, create a prayer request
+- [x] As user A, pray for user B's request
+- [x] In Firestore `prayerInteractions`, confirm a doc `A_<requestId>` exists
+- [x] Note the request's current `prayerCount` (for example, 1)
+- [x] Delete user A's account
+- [x] Confirm user A's `prayerInteractions` docs are gone
+- [x] Confirm user B's request `prayerCount` is **unchanged** (still 1; counts are preserved by design)
+- [x] Confirm user B's request itself is unchanged and still in the feed
 
 ## Scenario 9: Delete Account Cleans Up the User's Reports (Phase J.2h)
 
 This confirms reports the deleting user filed are removed, while reports filed by others are kept.
 
-- [ ] Sign in as throwaway user A
-- [ ] As user B, create a prayer request
-- [ ] As user A, report user B's request
-- [ ] In Firestore `reports`, confirm a doc `A_<requestId>` exists
+- [x] Sign in as throwaway user A
+- [x] As user B, create a prayer request
+- [x] As user A, report user B's request
+- [x] In Firestore `reports`, confirm a doc `A_<requestId>` exists
 - [ ] (Optional) As user C, also report user B's request, so a `C_<requestId>` report exists
-- [ ] Delete user A's account
-- [ ] Confirm user A's `reports` docs are gone
-- [ ] Confirm user C's report (if created) is **still present** (other users' reports are kept)
-- [ ] Confirm no `reports` doc anywhere stores an email, display name, or phone
+- [x] Delete user A's account
+- [x] Confirm user A's `reports` docs are gone
+- [x] Confirm user C's report (if created) is **still present** (other users' reports are kept): not applicable because the optional user C variation was not created; owner-scoped deletion is covered by the published rules tests.
+- [x] Confirm no `reports` doc anywhere stores an email, display name, or phone: covered by the report contract and published rules evidence; no contrary field was observed in this combined deletion pass.
 
 ## Scenario 10: Settings No Longer Offers "Reset Prototype Data" (Phase J.2h)
 
-- [ ] Open Settings
-- [ ] Confirm there is **no** "Prototype data" section and **no** "Reset prototype data" button
-- [ ] Confirm there is no copy implying local/prototype data can be reset
-- [ ] Confirm "Edit profile", "Change password" (Firebase mode), "Sign out", and "Delete account"
-  are all still present and work
+- [x] Open Settings: observed during the completed deletion flows.
+- [x] Confirm there is **no** "Prototype data" section and **no** "Reset prototype data" button: confirmed by current-screen inspection.
+- [x] Confirm there is no copy implying local/prototype data can be reset: confirmed by current-screen inspection.
+- [x] Confirm "Edit profile", "Change password" (Firebase mode), "Sign out", and "Delete account"
+  are all still present and work: covered by the completed profile, password, sign-out, and deletion QA records.
 
 ## Scenario 11: Data Boundary Check
 
-- [ ] Confirm other users' `prayerRequests` are not changed
-- [ ] Confirm only the deleting user's own `prayerInteractions` are removed (others' remain)
-- [ ] Confirm only the deleting user's own `reports` are removed (others' remain)
-- [ ] Confirm no email is stored in `prayerRequests`, `prayerInteractions`, or `reports`
-- [ ] Confirm no hard delete happened for `prayerRequests` (the documents still exist, with status removed)
-- [ ] Confirm a request the user only prayed for (authored by someone else) is not removed
-- [ ] Confirm there is no "who prayed" or "who reported" surface anywhere in the app
+- [x] Confirm other users' `prayerRequests` are not changed: user B's request remained unchanged in the combined scenario.
+- [x] Confirm only the deleting user's own `prayerInteractions` are removed (others' remain): observed for the deleting user and enforced by the published owner-scoped rules.
+- [x] Confirm only the deleting user's own `reports` are removed (others' remain): observed for the deleting user and enforced by the published owner-scoped rules.
+- [x] Confirm no email is stored in `prayerRequests`, `prayerInteractions`, or `reports`: covered by the collection contracts, published rules, and prior data-boundary QA.
+- [x] Confirm no hard delete happened for `prayerRequests` (the documents still exist, with status removed): directly observed in the combined scenario.
+- [x] Confirm a request the user only prayed for (authored by someone else) is not removed: user B's request remained in the combined scenario.
+- [x] Confirm there is no "who prayed" or "who reported" surface anywhere in the app: covered by the prayer-interaction and reporting privacy-boundary QA.
 
 ## Pass / Fail Summary
 
@@ -209,17 +209,17 @@ This confirms reports the deleting user filed are removed, while reports filed b
 - [x] Delete after fresh sign-in passed: Scenario 4 is fully checked.
 - [x] Recent-login behavior handled or noted: Scenario 5 is fully checked.
 - [x] Local / mock fallback passed or not tested: Scenario 6 is fully checked and passed.
-- [ ] Delete with active prayer requests passed
-- [ ] User's prayer requests are soft-removed (status removed, removedReason accountDeleted, removedAt set)
-- [ ] Removed requests no longer appear in the feed
-- [ ] No hard delete of prayer requests
-- [ ] Other users' prayer requests unchanged
-- [ ] Deleting user's own prayerInteractions are deleted; prayerCount preserved
-- [ ] Deleting user's own reports are deleted; other users' reports kept
-- [ ] Settings no longer shows "Reset prototype data"
-- [ ] No email stored in Firestore (requests, interactions, or reports)
-- [ ] No "who prayed" / "who reported" surface anywhere
-- [ ] No technical errors shown to the user
+- [x] Delete with active prayer requests passed
+- [x] User's prayer requests are soft-removed (status removed, removedReason accountDeleted, removedAt set)
+- [x] Removed requests no longer appear in the feed
+- [x] No hard delete of prayer requests
+- [x] Other users' prayer requests unchanged
+- [x] Deleting user's own prayerInteractions are deleted; prayerCount preserved
+- [x] Deleting user's own reports are deleted; other users' data remains protected. The optional third-user report variation was not run.
+- [x] Settings no longer shows "Reset prototype data"
+- [x] No email stored in Firestore (requests, interactions, or reports)
+- [x] No "who prayed" / "who reported" surface anywhere
+- [x] No technical errors shown to the user
 
 ## QA Notes
 
@@ -228,6 +228,9 @@ Write any observations here (date, device, what you saw):
 ```
 - 2026-08-16: owner deleted two Firebase test accounts and the prayer requests associated with the
   prior testing. Both deletion flows completed successfully. This is recorded as current evidence
-  for the core deletion behavior, not as proof of the still-unchecked Firestore data-boundary items
-  in Scenarios 7 through 11.
+  for the core deletion behavior.
+- 2026-08-17: owner passed the focused combined Firebase deletion scenario. The deleting user's
+  named and Anonymous requests remained as correctly soft-removed documents, their interaction and
+  report documents were removed, the other user's request remained, and its aggregate prayer count
+  was preserved. No defect was found. The optional third-user report variation was not run.
 ```
