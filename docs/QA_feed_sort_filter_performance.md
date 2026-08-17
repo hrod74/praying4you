@@ -1,5 +1,32 @@
 # QA Feed Sorting, Filtering, and Performance
 
+## Current Status
+
+**CONTROLLED-BETA SMOKE TEST PASSED, 2026-08-17.** The owner completed the focused seven-check Android standalone-build smoke test below. All seven checks passed and no defect was observed. The exhaustive large-feed performance matrix, multiple-iPhone layout matrix, and every combinatorial checklist item later in this document remain available for future testing and are not represented as completed.
+
+## Focused Android Standalone-Build Execution Record
+
+- Environment: EAS Android preview APK in an Android Studio Pixel 2 emulator
+- Backend mode: Firebase
+- Result: 7 of 7 checks passed
+- Defects found: 0
+
+- [x] Newest sort works.
+- [x] Oldest sort works.
+- [x] Most prayed sort works.
+- [x] Category filtering works.
+- [x] To pray for and My requests filtering works.
+- [x] Reset restores the complete feed.
+- [x] Scrolling and changing filters produce no warning, crash, or obvious lag.
+
+### Explicit controlled-beta deferrals
+
+- The 15-plus-request performance stress setup and detailed warning table were not rerun during this focused pass.
+- The small-iPhone, large-iPhone, and enlarged-system-text matrix remains deferred until an iOS build exists.
+- The full combinatorial sort/filter checklist below remains a reusable regression suite and is not marked complete by this focused pass.
+
+These deferrals do not block the controlled beta. The primary sort and filter controls were directly exercised in the standalone Android build, and the earlier Alpha provided additional organic feed usage evidence.
+
 A manual checklist for verifying the prayer feed's new sorting and filtering controls and its feed
 scale performance hardening, before broader beta testing of Praying For You. It is written for the
 owner (not a developer). Tap through each step on a phone running Expo Go, and check the box when the
