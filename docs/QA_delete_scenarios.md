@@ -1,5 +1,9 @@
 # QA Delete Scenarios
 
+## Current Status
+
+**Partially passed, with the core deletion flow verified.** Scenarios 1 through 6 were completed previously and are fully checked below. On 2026-08-16, the owner also deleted two Firebase test accounts and the prayer requests associated with that testing; both deletions completed successfully. This recent confirmation supports the core behavior but did not include a documented Firestore inspection of the soft-removed request fields, interaction cleanup, report cleanup, preserved aggregate counts, or other-user negative controls in Scenarios 7 through 11. Those narrower data-boundary checks remain open rather than being inferred.
+
 A manual checklist for verifying account deletion in the Praying For You mobile app.
 It is written for the owner (not a developer). Tap through each step on a phone running
 Expo Go, and check the box when the result matches what is described.
@@ -19,7 +23,7 @@ What this phase covers:
   and `removedAt` set; they are never hard-deleted.
 - **Cleaning up the records that identify the user as an actor** (Phase J.2h): the user's own
   `prayerInteractions` docs and their own `reports` docs are deleted while they are still signed in.
-  This cleanup is **best-effort** — if it cannot run (for example the new rules are not published yet),
+  This cleanup is **best-effort**. If it cannot run (for example the new rules are not published yet),
   account deletion still completes; it never traps a user in an undeletable account.
 - Returning the app to the signed-out / welcome state.
 
@@ -162,7 +166,7 @@ aggregate prayer counts on other people's requests are preserved.
 - [ ] Note the request's current `prayerCount` (for example, 1)
 - [ ] Delete user A's account
 - [ ] Confirm user A's `prayerInteractions` docs are gone
-- [ ] Confirm user B's request `prayerCount` is **unchanged** (still 1 — counts are preserved by design)
+- [ ] Confirm user B's request `prayerCount` is **unchanged** (still 1; counts are preserved by design)
 - [ ] Confirm user B's request itself is unchanged and still in the feed
 
 ## Scenario 9: Delete Account Cleans Up the User's Reports (Phase J.2h)
@@ -199,12 +203,12 @@ This confirms reports the deleting user filed are removed, while reports filed b
 
 ## Pass / Fail Summary
 
-- [ ] Happy path passed
-- [ ] Cancel flow passed
-- [ ] Deleted account cannot sign back in
-- [ ] Delete after fresh sign-in passed
-- [ ] Recent-login behavior handled or noted
-- [ ] Local / mock fallback passed or not tested
+- [x] Happy path passed: Scenario 1 is fully checked; reconfirmed through two successful Firebase test-account deletions on 2026-08-16.
+- [x] Cancel flow passed: Scenario 2 is fully checked.
+- [x] Deleted account cannot sign back in: Scenario 3 is fully checked.
+- [x] Delete after fresh sign-in passed: Scenario 4 is fully checked.
+- [x] Recent-login behavior handled or noted: Scenario 5 is fully checked.
+- [x] Local / mock fallback passed or not tested: Scenario 6 is fully checked and passed.
 - [ ] Delete with active prayer requests passed
 - [ ] User's prayer requests are soft-removed (status removed, removedReason accountDeleted, removedAt set)
 - [ ] Removed requests no longer appear in the feed
@@ -222,8 +226,8 @@ This confirms reports the deleting user filed are removed, while reports filed b
 Write any observations here (date, device, what you saw):
 
 ```
--
--
--
+- 2026-08-16: owner deleted two Firebase test accounts and the prayer requests associated with the
+  prior testing. Both deletion flows completed successfully. This is recorded as current evidence
+  for the core deletion behavior, not as proof of the still-unchecked Firestore data-boundary items
+  in Scenarios 7 through 11.
 ```
-
