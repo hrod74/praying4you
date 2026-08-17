@@ -95,6 +95,8 @@ To keep this reconciliation honest, findings below are grouped into four kinds w
 
 **Smallest changes to reach readiness:** Choose a bundle identifier and package name, set up an EAS project and build profiles, and produce a real signed build as a dry run. None of this requires a paid developer account and can start immediately. Update `.local/APP_DISTRIBUTION_TRACKER.md` to reflect that the LLC, EIN, domain, and business email already exist, so the tracker stops pointing at a resolved blocker. Once the remaining Repository Accuracy, Core QA, and EAS-prep work is done (see the companion `Pre_Developer_Account_Readiness_Plan.md`), enroll in the Apple Developer Program and Google Play Console as a deliberately late, well-timed step, and get that first build through TestFlight/Play internal testing before inviting any real tester.
 
+*(Update 2026-08-16, Android standalone build)*: this supersedes the statements above that no build had left Expo Go and no EAS project existed. Product Spark Studio now owns the linked EAS project `@product-spark-studio/praying4you`; the Android application ID is `com.productsparkstudio.prayingforyou`; and a corrected EAS preview APK was produced from source commit `75a53db506a8e85740ff5d2f925e9b4e0b0a8e04`. The owner installed it in an Android Studio Pixel 2 emulator and passed Firebase sign-in and startup, prayer creation and duplicate prevention, pre-publication content filtering, offline Verse of the Day, and network-reconnection smoke tests with no defects. See `docs/QA_eas_android_standalone_scenarios.md`. This is an internal Android preview build, not an app-store submission, iOS result, or production-release approval.
+
 ---
 
 ## 6. Legal & Privacy

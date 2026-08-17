@@ -146,7 +146,7 @@ What is out of scope here (do not test these):
 - [x] Confirm no email is stored in `prayerRequests`: confirmed by tester (2026-08-10): no `email` field on Account A's request document.
 - [x] Confirm UI does not show raw user IDs: confirmed by tester (2026-08-10): everything shown as names/"Anonymous"/counts only; no raw UID strings visible anywhere in the UI.
 - [x] Confirm UI does not show who prayed: already directly confirmed twice this session: Scenario 1 (Account B's view) and Scenario 4 (Account C's view), both showing only an anonymous count, no names/list. Carried forward as evidence for this item rather than re-tested a third time.
-- [ ] Confirm verses remain local: **not conclusively tested.** Tester attempted this by enabling airplane mode, but was still connected to wifi, and noted that Expo Go itself requires a live network connection to the Metro dev-server bundler to run at all, so a true "no network, does the verse still show" test isn't cleanly possible via simple airplane mode in this development environment. This item remains unverified; a real test would need either a production/standalone build (not Expo Go) or a way to block only Firebase/network calls while leaving the bundler connection intact.
+- [x] Confirm verses remain local: confirmed by tester (2026-08-16) in the corrected EAS Android preview APK on an Android Studio Pixel 2 emulator. The owner confirmed Verse of the Day online, enabled airplane mode, removed the app from recent apps, reopened it offline, and confirmed the verse remained visible. After airplane mode was disabled, the prayer feed returned. See `docs/QA_eas_android_standalone_scenarios.md`.
 
 ## Scenario 8: Local / Mock Fallback
 
@@ -206,5 +206,8 @@ Write any observations here (date, device, what you saw):
 - Scenario 8 ("Local / Mock Fallback") was not run. Deferred, like the "verses remain local" check, to
   a standalone/production build rather than forced under Expo Go's dev-server-dependent environment.
 - No defects found in any scenario that was run.
+- 2026-08-16, EAS Android preview APK on Android Studio Pixel 2 emulator: the previously deferred
+  "verses remain local" item passed in a standalone build. The app opened in airplane mode, Verse of
+  the Day remained visible, and the Firebase feed returned after reconnecting. See
+  `docs/QA_eas_android_standalone_scenarios.md` for the build identifier and full smoke-test record.
 ```
-
