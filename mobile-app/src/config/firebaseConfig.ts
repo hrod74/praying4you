@@ -1,5 +1,5 @@
 /**
- * Firebase web config — sourced ONLY from environment variables (Phase J.2a scaffold).
+ * Firebase web config, sourced ONLY from environment variables (Phase J.2a scaffold).
  *
  * No real Firebase values live in this repo. The values are read from Expo public env vars
  * (`EXPO_PUBLIC_FIREBASE_*`), which Expo inlines at build time and which are compatible with
@@ -26,20 +26,19 @@ export interface FirebaseWebConfig {
   measurementId?: string;
 }
 
-/** Reads a public Expo env var, returning '' when unset so the config object stays well-typed. */
-function env(name: string): string {
-  // EXPO_PUBLIC_* vars are statically inlined by Expo; access by explicit name.
-  return (process.env[name] ?? '').trim();
+/** Normalizes a public Expo env value while keeping direct access visible to Expo's bundler. */
+function env(value: string | undefined): string {
+  return (value ?? '').trim();
 }
 
 export const firebaseConfig: FirebaseWebConfig = {
-  apiKey: env('EXPO_PUBLIC_FIREBASE_API_KEY'),
-  authDomain: env('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-  projectId: env('EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
-  storageBucket: env('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: env('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: env('EXPO_PUBLIC_FIREBASE_APP_ID'),
-  measurementId: env('EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID') || undefined,
+  apiKey: env(process.env.EXPO_PUBLIC_FIREBASE_API_KEY),
+  authDomain: env(process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN),
+  projectId: env(process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID),
+  storageBucket: env(process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: env(process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+  appId: env(process.env.EXPO_PUBLIC_FIREBASE_APP_ID),
+  measurementId: env(process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID) || undefined,
 };
 
 /**
