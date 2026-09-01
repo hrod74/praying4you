@@ -1,6 +1,6 @@
 # Multidisciplinary Review Disposition
 
-Status: APPROVED BY OWNER ON 2026-08-15
+Status: V0.1 APPROVED BY OWNER ON 2026-08-15; PRAYER TABLE V0.2 VISUAL REVIEW PENDING
 
 | Review | Disposition |
 |---|---|

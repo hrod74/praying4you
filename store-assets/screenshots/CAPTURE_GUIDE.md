@@ -4,6 +4,8 @@ Status: APPROVED BY OWNER ON 2026-08-15
 
 Authentic, high-resolution app screenshots were supplied by the owner on 2026-08-15. This file preserves the capture specification and provenance for future refreshes. Do not fill screenshot slots with mock UI.
 
+Prayer Table refreshes were supplied on 2026-09-01 for the Android Verse screen and iPad Verse screen. Two additional iPhone captures, the Prayer Table welcome screen and Settings/About screen, were archived for website, portfolio, and social use outside the six-image store sequence.
+
 Capture six portrait flows using an owner-controlled adult test account and neutral test data. Capture the raw app UI with no device frame or marketing caption.
 
 | Order | Screen and required state | Safe test content | Raw destinations |

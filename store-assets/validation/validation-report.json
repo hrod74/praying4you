@@ -40,7 +40,7 @@
       "mode": "RGB",
       "alpha": false,
       "alpha_range": null,
-      "bytes": 105717,
+      "bytes": 103202,
       "valid": true
     },
     {
@@ -183,7 +183,7 @@
       "mode": "RGB",
       "alpha": false,
       "alpha_range": null,
-      "bytes": 146391,
+      "bytes": 155152,
       "valid": true
     },
     {
@@ -261,7 +261,7 @@
       "mode": "RGB",
       "alpha": false,
       "alpha_range": null,
-      "bytes": 136002,
+      "bytes": 151196,
       "valid": true
     }
   ],
@@ -269,9 +269,9 @@
   "sensitive_text_hits": [],
   "unicode_em_dash_count": 0,
   "raw_capture_counts": {
-    "android-phone": 6,
-    "ios-iphone": 6,
-    "ios-ipad": 6
+    "android-phone": 7,
+    "ios-iphone": 8,
+    "ios-ipad": 7
   },
   "ipad_duplicate_confirmed": true
 }

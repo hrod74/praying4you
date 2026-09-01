@@ -70,7 +70,7 @@ raw_counts = {
     "ios-iphone": len(list((ROOT / "store-assets/screenshots/raw/ios-iphone").glob("*.png"))),
     "ios-ipad": len(list((ROOT / "store-assets/screenshots/raw/ios-ipad").glob("*.jpeg"))),
 }
-ok &= raw_counts == {"android-phone": 6, "ios-iphone": 6, "ios-ipad": 6}
+ok &= raw_counts == {"android-phone": 7, "ios-iphone": 8, "ios-ipad": 7}
 
 report = {"status": "PASS" if ok else "FAIL", "assets": results, "broken_review_board_paths": broken,
           "sensitive_text_hits": sensitive_hits, "unicode_em_dash_count": emdash,

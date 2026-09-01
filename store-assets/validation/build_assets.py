@@ -53,7 +53,7 @@ def font(size: int, bold: bool = False):
     return ImageFont.load_default()
 
 draw = ImageDraw.Draw(canvas)
-draw.text((82, 157), "Praying For You", font=font(55, True), fill="#2B2118")
+draw.text((82, 157), "Prayer Table", font=font(55, True), fill="#2B2118")
 draw.text((85, 235), "Share prayer. Pray together.", font=font(27), fill="#5F4B3A")
 draw.rounded_rectangle((84, 290, 380, 296), radius=3, fill="#B58A3B")
 canvas.save(FEATURE, "PNG", optimize=True)
@@ -75,7 +75,7 @@ ipad_sources = [
     ("02-create-request.jpeg", "02-create-request-and-anonymous-choice.jpg"),
     ("04-prayer-detail.jpeg", "03-prayer-detail.jpg"),
     ("05-prayed-for.jpeg", "04-prayers-prayed-for.jpg"),
-    ("06-verse-of-day.jpeg", "05-verse-of-the-day.jpg"),
+    ("06-verse-of-day-prayer-table.jpeg", "05-verse-of-the-day.jpg"),
 ]
 android_sources = [
     ("01-feed.png", "01-shared-prayer-feed.png"),
@@ -83,7 +83,7 @@ android_sources = [
     ("03-anonymous-choice.png", "03-anonymous-display-choice.png"),
     ("04-prayer-detail.png", "04-prayer-detail.png"),
     ("05-prayed-for.png", "05-prayers-prayed-for.png"),
-    ("06-verse-of-day.png", "06-verse-of-the-day.png"),
+    ("06-verse-of-day-prayer-table.png", "06-verse-of-the-day.png"),
 ]
 
 for source_name, output_name in iphone_sources:
