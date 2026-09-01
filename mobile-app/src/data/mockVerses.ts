@@ -102,7 +102,7 @@ export const mockVerses: DailyVerse[] = [
       text: 'I will lift up mine eyes unto the hills, from whence cometh my help. My help cometh from the LORD.',
       translation: 'KJV',
     },
-    reflection: 'Lift your eyes for a moment — where is your help coming from?',
+    reflection: 'Lift your eyes for a moment. Where is your help coming from?',
   },
   {
     verse: {

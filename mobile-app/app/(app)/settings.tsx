@@ -557,10 +557,10 @@ export default function SettingsScreen() {
 
       {/* About */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About Praying For You</Text>
+        <Text style={styles.sectionTitle}>About Prayer Table</Text>
         <View style={styles.card}>
           <Text style={styles.aboutText}>
-            Praying For You is a quiet, supportive place to share what you're carrying and to
+            Prayer Table is a quiet, supportive place to share what you're carrying and to
             pray for others who are carrying their own. Post a request, or pick one up and
             lift it in prayer.
           </Text>
@@ -605,7 +605,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.footer}>Praying For You</Text>
+      <Text style={styles.footer}>Prayer Table</Text>
     </Screen>
   );
 }

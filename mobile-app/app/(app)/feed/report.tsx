@@ -169,7 +169,7 @@ export default function ReportScreen() {
         <Text style={styles.heading}>Report this request</Text>
         <Text style={styles.intro}>
           Thank you for helping keep this a safe, respectful space. Let us know what's
-          wrong — this is private and won't be shown to the person who posted.
+          wrong. This is private and won't be shown to the person who posted.
         </Text>
       </View>
 

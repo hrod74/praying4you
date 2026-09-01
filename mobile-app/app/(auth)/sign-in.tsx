@@ -164,7 +164,7 @@ export default function SignInScreen() {
         <View style={styles.block}>
           <Text style={styles.heading}>No profile yet</Text>
           <Text style={styles.muted}>
-            There's no local profile on this device. Create one to get started — it only
+            There's no local profile on this device. Create one to get started. It only
             takes a name and email.
           </Text>
         </View>

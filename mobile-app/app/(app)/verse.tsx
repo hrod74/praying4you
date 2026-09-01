@@ -27,7 +27,7 @@ export default function VerseScreen() {
         <Text style={styles.date}>{today}</Text>
       </View>
 
-      {/* Scripture (the Word) — the primary parchment "page". */}
+      {/* Scripture (the Word), the primary parchment "page". */}
       <View style={styles.page} accessibilityLabel={`${verse.reference}. ${verse.text}`}>
         {/* Decorative quote mark: cap its scaling so it never dominates the page. */}
         <Text style={styles.quoteMark} maxFontSizeMultiplier={1.3} accessibilityElementsHidden importantForAccessibility="no">
@@ -39,11 +39,11 @@ export default function VerseScreen() {
         </Text>
       </View>
 
-      {/* App-written reflection — clearly distinct from scripture. */}
+      {/* App-written reflection, clearly distinct from scripture. */}
       <View style={styles.reflectionBlock}>
         <Text style={styles.reflectionLabel}>Reflection</Text>
         <Text style={styles.reflectionText}>{reflection}</Text>
-        <Text style={styles.reflectionNote}>A gentle prompt from Praying For You.</Text>
+        <Text style={styles.reflectionNote}>A gentle prompt from Prayer Table.</Text>
       </View>
     </Screen>
   );

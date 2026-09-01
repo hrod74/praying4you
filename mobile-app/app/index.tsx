@@ -49,7 +49,7 @@ export default function WelcomeScreen() {
             <FontAwesome5 name="hands" size={66} color={colors.gold} />
           </View>
 
-          <Text style={styles.title}>Praying For You</Text>
+          <Text style={styles.title}>Prayer Table</Text>
           <Text style={styles.subtitle}>
             Share a prayer request, or pick one up and pray for someone else.
           </Text>

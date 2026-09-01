@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Praying For You, Firestore Security Rules (Alpha)
+// Prayer Table, Firestore Security Rules (Alpha)
 //
 // Scope so far:
 //   - users/{uid}              private profile document (Phase J.2c), owner-only.

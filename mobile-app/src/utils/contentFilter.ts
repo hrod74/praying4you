@@ -4,7 +4,7 @@
  * Scope and intent:
  * - This module has no side effects: no network calls, no third-party moderation service, no
  *   logging, no persistence, no analytics. It reads a string and returns a plain value.
- * - It is intentionally narrow. Praying For You is an adult-only Christian prayer-community app
+ * - It is intentionally narrow. Prayer Table is an adult-only Christian prayer-community app
  *   where legitimate prayers routinely discuss suicide, self-harm, abuse, addiction, illness,
  *   violence, grief, and mental health. This filter must not block those topics. It only blocks a
  *   small set of high-confidence categories (see BLOCK_RULES below) where there is essentially no

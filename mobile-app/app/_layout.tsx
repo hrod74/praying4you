@@ -35,7 +35,7 @@ function RootNavigator() {
         >
           🙏
         </Text>
-        <Text style={styles.splashTitle}>Praying For You</Text>
+        <Text style={styles.splashTitle}>Prayer Table</Text>
         <Text style={styles.splashSubtitle}>Preparing your prayer space…</Text>
         <ActivityIndicator color={colors.primary} style={styles.splashSpinner} />
       </View>
