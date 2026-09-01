@@ -18,6 +18,12 @@ This is the **release gate** for Alpha. It rolls up the per-feature checklists i
 
 ## Before You Start
 
+> **Store-release boundary (added 2026-08-28):** This Expo Go checklist is not sufficient approval
+> for a Play Store or TestFlight artifact. Before external distribution, the exact store artifact
+> must also pass the mandatory release gate in
+> [`QA_eas_android_standalone_scenarios.md`](./QA_eas_android_standalone_scenarios.md), including
+> automated Firebase-environment validation and clean-device/backend/cross-device verification.
+
 - [x] `mobile-app/.env.local` is present (real Firebase config) and **not committed**
 - [x] **The current `mobile-app/firestore.rules` are published** in the Firebase Console
       (Firestore Database → Rules). This is required for reporting and account-deletion cleanup to work.

@@ -1,5 +1,27 @@
 # QA EAS Android Standalone Build Scenarios
 
+## Mandatory release gate (added 2026-08-28)
+
+Every EAS `preview` or `production` build now runs `npm run validate:release-env` automatically
+before dependencies are installed. The build must fail if any required `EXPO_PUBLIC_FIREBASE_*`
+setting is missing, empty, or still a placeholder. Run `npm run test:release-env` to verify the
+gate's pass/fail behavior without using real Firebase values.
+
+Automation prevents another release artifact from silently selecting local/mock mode, but it does
+not prove that Firebase Auth, Firestore, Google Play delivery, or cross-device refresh work. Before
+approving an Android store release, install the exact Play-generated artifact on a clean device and
+record all of the following against that exact version code:
+
+- [ ] The EAS build log names all six Firebase variables as loaded from the intended environment.
+- [ ] Account creation requests a password and the new user appears in Firebase Authentication.
+- [ ] The corresponding private `users/{uid}` document appears in Firestore.
+- [ ] A newly posted prayer appears in Firestore `prayerRequests`.
+- [ ] The prayer appears on a second device/account after refresh.
+- [ ] No bundled mock prayer is labeled as the signed-in user's own request.
+
+Any unchecked item is a release blocker. Preview-APK QA or Expo Go QA cannot substitute for this
+exact-artifact gate.
+
 ## Status
 
 PASSED on 2026-08-16. The owner completed the checks below in an Android Studio Pixel 2 emulator using the corrected EAS preview APK. No defects were found in the tested scenarios.
