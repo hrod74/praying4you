@@ -23,11 +23,11 @@ import {
 const NOTE_MAX = 300;
 
 /**
- * Report a prayer request (Phase G — local/mock only).
+ * Report a prayer request.
  *
  * Presented as a calm modal from the detail screen. The user picks a reason and may add a
- * short note; submitting records the report locally (increments reportCount, flags the
- * request) and shows a gentle confirmation. There is NO real moderation backend. Reporting
+ * short note; the mode-aware service submits it to private manual review (Firestore in the
+ * beta, on-device storage in local fallback mode) and shows a gentle confirmation. Reporting
  * one's own request is prevented (the detail hides the entry point; this also guards).
  */
 export default function ReportScreen() {
@@ -168,8 +168,8 @@ export default function ReportScreen() {
       <View style={styles.introBlock}>
         <Text style={styles.heading}>Report this request</Text>
         <Text style={styles.intro}>
-          Thank you for helping keep this a safe, respectful space. Let us know what's
-          wrong. This is private and won't be shown to the person who posted.
+          Choose why this request concerns you. Your report is private, will be reviewed by a
+          person, and won't be shown to the person who posted it.
         </Text>
       </View>
 

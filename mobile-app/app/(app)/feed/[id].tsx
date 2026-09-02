@@ -220,20 +220,31 @@ export default function PrayerDetailScreen() {
         )}
       </View>
 
-      {/* Reporting and hiding: quiet and understated; hidden on the user's own request. */}
+      {/* Safety actions stay separate from the primary prayer moment, but reporting must still be
+          findable without coaching. Hidden on the user's own request. */}
       {!isOwnRequest ? (
-        <View style={styles.reportRow}>
+        <View style={styles.safetyBlock}>
+          <View style={styles.safetyIntro}>
+            <Text style={styles.safetyHeading}>Safety and privacy</Text>
+            <Text style={styles.safetyText}>
+              If this request feels unsafe or inappropriate, you can report it privately for
+              review. The person who posted it will not see who reported it.
+            </Text>
+          </View>
           {alreadyReported ? (
-            <Text style={styles.reportedNote}>You reported this request. Thank you.</Text>
+            <View style={styles.reportedState} accessibilityRole="text">
+              <Text style={styles.reportedTitle}>Report submitted</Text>
+              <Text style={styles.reportedNote}>
+                Thank you. Your report is private and will be reviewed.
+              </Text>
+            </View>
           ) : (
-            <Pressable
+            <Button
+              label="Report this request"
+              variant="secondary"
               onPress={() => router.push(`/(app)/feed/report?id=${prayer.id}`)}
-              accessibilityRole="button"
-              accessibilityLabel="Report this request"
-              hitSlop={8}
-            >
-              <Text style={styles.reportLink}>Report this request</Text>
-            </Pressable>
+              accessibilityHint="Opens a private report form for this prayer request"
+            />
           )}
           <Pressable
             onPress={handleHideAccount}
@@ -242,7 +253,7 @@ export default function PrayerDetailScreen() {
             accessibilityLabel={HIDE_ACCOUNT_ACTION_LABEL}
             accessibilityHint="Stops showing prayer requests from this account and returns to the feed"
             hitSlop={8}
-            style={styles.hideLinkSpacing}
+            style={styles.safetyLink}
           >
             <Text style={styles.reportLink}>{HIDE_ACCOUNT_ACTION_LABEL}</Text>
           </Pressable>
@@ -310,18 +321,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
-  reportRow: {
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
+  safetyBlock: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.lg,
+    padding: spacing.lg,
     gap: spacing.sm,
   },
+  safetyIntro: {
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  safetyHeading: {
+    ...typography.body,
+    fontWeight: '600',
+  },
+  safetyText: typography.muted,
   reportLink: {
     ...typography.muted,
     textDecorationLine: 'underline',
+    textAlign: 'center',
   },
-  hideLinkSpacing: {
+  safetyLink: {
     minHeight: 44,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reportedState: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  reportedTitle: {
+    ...typography.body,
+    fontWeight: '600',
   },
   reportedNote: typography.muted,
   centered: {

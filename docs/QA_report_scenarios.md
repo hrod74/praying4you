@@ -4,6 +4,16 @@
 
 **PASSED WITH EXPLICIT DEFERRALS, 2026-08-17.** Scenarios 1 through 6 passed in Firebase mode. The stale pass/fail summary has been reconciled with those completed checks and the published rules evidence. A reporting-specific forced network failure and the local/mock fallback were not manually run; both are explicitly deferred for the controlled external beta, which uses Firebase. The existing error mapper prevents raw Firebase errors, and the mode-aware local reporting seam remains implemented. No known reporting defect remains.
 
+**DISCOVERABILITY ENHANCEMENT PASSED WITH ONE ACCESSIBILITY DEFERRAL, 2026-09-02.** Beta survey feedback showed
+that neither of the first two respondents confirmed completing the reporting test. The prayer-detail
+entry point is now a visible secondary action inside a dedicated **Safety and privacy** section, with
+plain-language reassurance that reports are private, reviewed, and do not identify the reporter to
+the person who posted. The report form repeats that reassurance. The underlying report service,
+Firestore data shape, rules, duplicate handling, and moderation workflow are unchanged. The owner
+passed every Scenario 0 visual and functional check on a physical device. The VoiceOver/TalkBack
+announcement-and-hint check was not run and remains explicitly pending; this does not block the
+current beta.
+
 A manual checklist for verifying Firestore-backed reporting ("Report this request") in the Praying For
 You mobile app. It is written for the owner (not a developer). Tap through each step on a phone running
 Expo Go, and check the box when the result matches what is described.
@@ -37,6 +47,33 @@ What is out of scope here (do not test these):
 > Tip: keep a Firestore tab on the `reports` collection so you can watch a report document appear.
 > Confirm it contains only opaque UIDs, a reason, a status, a timestamp (and an optional note), and
 > no email, display name, or phone.
+
+## Scenario 0: Reporting Discoverability and Reassurance (2026-09-02 Enhancement)
+
+- [x] Give a tester no instructions beyond opening another person's prayer request
+- [x] Confirm they can find **Safety and privacy** without being told where reporting is located
+- [x] Confirm **Report this request** is visually secondary to **I prayed for this**
+- [x] Tap **Report this request** and confirm the report form opens
+- [x] Confirm the detail screen explains that reporting is private and does not identify the
+      reporter to the person who posted
+- [x] Confirm the report form explains that a person will review the private report
+- [ ] With VoiceOver or TalkBack, confirm the report action is announced as a button and its hint
+      explains that it opens a private report form
+- [x] After submitting, return to detail and confirm **Report submitted** replaces the action
+- [x] Confirm **Hide requests from this account** remains available as a separate action
+- [x] Confirm no author-facing notification or reporter identity is shown
+
+> **Owner observation, 2026-09-02:** The new Safety and privacy section is intentionally easier to
+> find, but the added explanatory text also draws the eye more than the former link. This is not a
+> release blocker. Monitor report volume and report quality during beta for an unexplained increase
+> in reports submitted mainly because the action is more prominent. If that pattern appears, revisit
+> the section's visual weight or move the action into a calm overflow menu without weakening access
+> to this safety control.
+
+> **Accessibility deferral, 2026-09-02:** VoiceOver/TalkBack was not tested. The report action uses
+> the shared `Button` component with `accessibilityRole="button"` and an explicit private-form hint,
+> and TypeScript validation passes, but this is implementation evidence rather than assistive-
+> technology QA. Keep the checklist item open until it is tested on-device.
 
 ## Scenario 1: Report Another User's Active Request
 
@@ -137,4 +174,8 @@ Write any observations here (date, device, what you saw):
   published rules evidence. Stored-field privacy and identity-boundary checks were already passed.
   Reporting-specific network failure injection and local/mock reporting remain explicit,
   non-blocking deferrals for the controlled Firebase beta.
+- 2026-09-02: owner completed the reporting-discoverability physical-device review. All visual and
+  functional checks passed. VoiceOver/TalkBack was not tested and remains explicitly deferred.
+  Owner noted that the new Safety and privacy explanation draws more attention than the former link;
+  monitor beta report volume and report quality before changing the approved design.
 ```
