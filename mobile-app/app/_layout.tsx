@@ -5,7 +5,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { FeedbackProvider } from '../src/context/FeedbackContext';
-import { colors, spacing, typography } from '../src/theme/theme';
+import { ThemeProvider, useAppTheme } from '../src/context/ThemeContext';
+import { colors, createThemedStyles, spacing, typography } from '../src/theme/theme';
 
 /**
  * Root layout.
@@ -60,8 +61,17 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
+    <ThemeProvider>
+      <ThemedRoot />
+    </ThemeProvider>
+  );
+}
+
+function ThemedRoot() {
+  const { theme } = useAppTheme();
+  return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
+      <StatusBar style={theme.appearance === 'dark' ? 'light' : 'dark'} />
       <FeedbackProvider>
         <AuthProvider>
           <RootNavigator />
@@ -71,7 +81,7 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   splash: {
     flex: 1,
     alignItems: 'center',
@@ -92,4 +102,4 @@ const styles = StyleSheet.create({
   splashSpinner: {
     marginTop: spacing.md,
   },
-});
+} as const));

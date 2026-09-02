@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAppTheme } from '../context/ThemeContext';
 import {
   PRAYER_CATEGORIES,
   PRAYER_CATEGORY_LABELS,
@@ -18,7 +19,7 @@ import {
   type FeedShow,
   type FeedSort,
 } from '../feed/feedQuery';
-import { colors, radius, spacing, typography } from '../theme/theme';
+import { colors, createThemedStyles, radius, spacing, typography } from '../theme/theme';
 
 /**
  * FeedControls — a compact, modern sort/filter toolbar for the prayer feed.
@@ -154,6 +155,7 @@ function FeedControlsComponent({
   /** Restore the calm default feed (Show: All requests, Category: All, Sort: Newest). */
   onReset: () => void;
 }) {
+  useAppTheme();
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   // The filter sheet edits a DRAFT; nothing changes the feed until Apply (Reset is the exception).
@@ -347,7 +349,7 @@ function FeedControlsComponent({
 
 export const FeedControls = memo(FeedControlsComponent);
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   container: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
@@ -559,6 +561,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primaryText,
   },
-});
+} as const));
 
 export default FeedControls;

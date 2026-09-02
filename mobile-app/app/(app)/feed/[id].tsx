@@ -16,9 +16,10 @@ import { EmptyState } from '../../../src/components/EmptyState';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useFeedback } from '../../../src/context/FeedbackContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
+import { useAppTheme } from '../../../src/context/ThemeContext';
 import type { PrayerRequest } from '../../../src/models/types';
 import { getRequestById } from '../../../src/services/prayerRequests';
-import { colors, radius, spacing, typography } from '../../../src/theme/theme';
+import { colors, createThemedStyles, radius, spacing, typography } from '../../../src/theme/theme';
 import { formatLongDate, formatPrayerCount } from '../../../src/utils/format';
 import {
   confirmHideAccount,
@@ -39,6 +40,7 @@ import {
  * (e.g., a direct link), it falls back to the service so the screen is self-sufficient.
  */
 export default function PrayerDetailScreen() {
+  useAppTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuth();
@@ -263,7 +265,7 @@ export default function PrayerDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -367,4 +369,4 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     backgroundColor: colors.background,
   },
-});
+} as const));

@@ -9,13 +9,14 @@ import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
 import { usePrayers } from '../../src/context/PrayerContext';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import {
   AccountDeletionError,
   CHANGE_PASSWORD_COPY,
   DELETE_ERROR_COPY,
   PasswordChangeError,
 } from '../../src/services/firebase/authErrors';
-import { colors, radius, spacing, typography } from '../../src/theme/theme';
+import { colors, createThemedStyles, radius, spacing, typography } from '../../src/theme/theme';
 import { evaluateDisplayNameSubmission } from '../../src/utils/displayNameSubmissionGate';
 import { formatShortDate } from '../../src/utils/format';
 import {
@@ -35,6 +36,7 @@ import {
  * never on any public prayer surface.
  */
 export default function SettingsScreen() {
+  useAppTheme();
   const router = useRouter();
   const { profile, signOut, updateProfile, requiresPassword, changePassword, deleteAccount } =
     useAuth();
@@ -610,7 +612,7 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   section: {
     gap: spacing.sm,
   },
@@ -733,4 +735,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
   },
-});
+} as const));

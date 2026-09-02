@@ -6,7 +6,8 @@ import { EmptyState } from '../../../src/components/EmptyState';
 import { PrayerCard } from '../../../src/components/PrayerCard';
 import { useAuth } from '../../../src/context/AuthContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
-import { spacing, typography } from '../../../src/theme/theme';
+import { useAppTheme } from '../../../src/context/ThemeContext';
+import { createThemedStyles, spacing, typography } from '../../../src/theme/theme';
 
 /**
  * My prayer requests (Phase H.1).
@@ -17,6 +18,7 @@ import { spacing, typography } from '../../../src/theme/theme';
  * guides a first share. Local/mock only.
  */
 export default function MyRequestsScreen() {
+  useAppTheme();
   const router = useRouter();
   const { profile } = useAuth();
   const { getMyRequests, hasPrayed } = usePrayers();
@@ -61,7 +63,7 @@ export default function MyRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   list: {
     flex: 1,
   },
@@ -79,4 +81,4 @@ const styles = StyleSheet.create({
   separator: {
     height: spacing.md,
   },
-});
+} as const));

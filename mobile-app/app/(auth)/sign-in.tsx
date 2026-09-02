@@ -7,8 +7,9 @@ import { Screen } from '../../src/components/Screen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import { PASSWORD_RESET_COPY } from '../../src/services/firebase/authErrors';
-import { colors, spacing, typography } from '../../src/theme/theme';
+import { colors, createThemedStyles, spacing, typography } from '../../src/theme/theme';
 import { validateEmail } from '../../src/utils/validation';
 
 /**
@@ -21,6 +22,7 @@ import { validateEmail } from '../../src/utils/validation';
  *   single on-device profile (no password, no server).
  */
 export default function SignInScreen() {
+  useAppTheme();
   const router = useRouter();
   const { profile, signIn, requiresPassword, sendPasswordReset } = useAuth();
   const { showSuccess, showError } = useFeedback();
@@ -203,7 +205,7 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   block: {
     gap: spacing.sm,
   },
@@ -225,4 +227,4 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-});
+} as const));

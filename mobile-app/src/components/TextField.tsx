@@ -7,7 +7,8 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { colors, radius, spacing, typography } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, radius, spacing, typography } from '../theme/theme';
 
 /**
  * TextField — a labeled input with optional helper and inline error text.
@@ -27,6 +28,7 @@ export const TextField = forwardRef<
     errorText?: string | null;
   }
 >(function TextField({ label, helperText, errorText, style, ...inputProps }, ref) {
+  useAppTheme();
   const [focused, setFocused] = useState(false);
   const hasError = Boolean(errorText);
 
@@ -64,7 +66,7 @@ export const TextField = forwardRef<
   );
 });
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   container: {
     gap: spacing.xs,
   },
@@ -95,6 +97,6 @@ const styles = StyleSheet.create({
     ...typography.muted,
     color: colors.danger,
   },
-});
+} as const));
 
 export default TextField;

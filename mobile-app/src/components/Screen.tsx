@@ -9,7 +9,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, spacing } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, spacing } from '../theme/theme';
 
 /**
  * Screen — a calm, consistently-padded container for a single screen's content.
@@ -31,6 +32,7 @@ export function Screen({
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
+  useAppTheme();
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -52,7 +54,7 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   flex: {
     flex: 1,
     backgroundColor: colors.background,
@@ -61,6 +63,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.lg,
   },
-});
+} as const));
 
 export default Screen;

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { useAppTheme } from '../../../src/context/ThemeContext';
 import { colors } from '../../../src/theme/theme';
 
 /**
@@ -12,6 +13,7 @@ import { colors } from '../../../src/theme/theme';
  * bottom navigation.
  */
 export default function FeedStackLayout() {
+  useAppTheme();
   return (
     <Stack
       screenOptions={{

@@ -8,7 +8,8 @@ import { Screen } from '../../src/components/Screen';
 import { TextField } from '../../src/components/TextField';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeedback } from '../../src/context/FeedbackContext';
-import { colors, spacing, typography } from '../../src/theme/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
+import { colors, createThemedStyles, spacing, typography } from '../../src/theme/theme';
 import { evaluateDisplayNameSubmission } from '../../src/utils/displayNameSubmissionGate';
 import {
   DISPLAY_NAME_MAX,
@@ -31,6 +32,7 @@ import {
  * sensitive account is never created by an accidental return tap.
  */
 export default function CreateProfileScreen() {
+  useAppTheme();
   const router = useRouter();
   const { createProfile, requiresPassword } = useAuth();
   const { showSuccess, showError } = useFeedback();
@@ -242,7 +244,7 @@ export default function CreateProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   intro: {
     gap: spacing.sm,
   },
@@ -301,4 +303,4 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-});
+} as const));

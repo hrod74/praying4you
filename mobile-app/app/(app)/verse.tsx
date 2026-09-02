@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '../../src/components/Screen';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import { getVerseOfTheDay } from '../../src/services/verseService';
-import { colors, radius, scaleLineHeight, spacing, typography } from '../../src/theme/theme';
+import { colors, createThemedStyles, radius, scaleLineHeight, spacing, typography } from '../../src/theme/theme';
 import { formatLongDate } from '../../src/utils/format';
 
 /**
@@ -16,6 +17,7 @@ import { formatLongDate } from '../../src/utils/format';
  * with the verse text. Display-only — no sharing or engagement features.
  */
 export default function VerseScreen() {
+  useAppTheme();
   // Stable for this mount; rotates by calendar day.
   const { verse, reflection } = useMemo(() => getVerseOfTheDay(), []);
   const today = useMemo(() => formatLongDate(new Date().toISOString()), []);
@@ -29,10 +31,6 @@ export default function VerseScreen() {
 
       {/* Scripture (the Word), the primary parchment "page". */}
       <View style={styles.page} accessibilityLabel={`${verse.reference}. ${verse.text}`}>
-        {/* Decorative quote mark: cap its scaling so it never dominates the page. */}
-        <Text style={styles.quoteMark} maxFontSizeMultiplier={1.3} accessibilityElementsHidden importantForAccessibility="no">
-          “
-        </Text>
         <Text style={styles.verseText}>{verse.text}</Text>
         <Text style={styles.reference}>
           {verse.reference} · {verse.translation}
@@ -49,7 +47,7 @@ export default function VerseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   eyebrowRow: {
     gap: spacing.xs,
   },
@@ -73,12 +71,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
-  },
-  quoteMark: {
-    fontSize: 44,
-    lineHeight: 44,
-    color: colors.border,
-    marginBottom: -spacing.md,
   },
   verseText: {
     ...typography.prayerBody,
@@ -110,4 +102,4 @@ const styles = StyleSheet.create({
     ...typography.muted,
     marginTop: spacing.xs,
   },
-});
+} as const));

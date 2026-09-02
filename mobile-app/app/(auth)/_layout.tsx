@@ -1,6 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 
 import { useAuth } from '../../src/context/AuthContext';
+import { useAppTheme } from '../../src/context/ThemeContext';
 import { colors } from '../../src/theme/theme';
 
 /**
@@ -11,6 +12,7 @@ import { colors } from '../../src/theme/theme';
  */
 export default function AuthLayout() {
   const { isSignedIn } = useAuth();
+  useAppTheme();
 
   if (isSignedIn) {
     return <Redirect href="/(app)/feed" />;

@@ -5,7 +5,8 @@ import {
   PRAYER_CATEGORY_LABELS,
   type PrayerCategory,
 } from '../models/types';
-import { colors, radius, spacing } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, radius, spacing } from '../theme/theme';
 
 /**
  * CategorySelect — a quiet set of selectable category chips for the submit form.
@@ -21,6 +22,7 @@ export function CategorySelect({
   value: PrayerCategory;
   onChange: (category: PrayerCategory) => void;
 }) {
+  useAppTheme();
   return (
     <View style={styles.row} accessibilityRole="radiogroup">
       {PRAYER_CATEGORIES.map((key) => {
@@ -44,7 +46,7 @@ export function CategorySelect({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -76,6 +78,6 @@ const styles = StyleSheet.create({
   labelSelected: {
     color: colors.primaryText,
   },
-});
+} as const));
 
 export default CategorySelect;

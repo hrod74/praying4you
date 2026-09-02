@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PRAYER_CATEGORY_LABELS, type PrayerCategory } from '../models/types';
-import { colors, radius, spacing } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, radius, spacing } from '../theme/theme';
 
 /**
  * CategoryTag — a small, understated chip showing a prayer's category.
@@ -11,6 +12,7 @@ import { colors, radius, spacing } from '../theme/theme';
  * scan requests.
  */
 export function CategoryTag({ category }: { category: PrayerCategory }) {
+  useAppTheme();
   return (
     <View style={styles.tag}>
       <Text style={styles.label} numberOfLines={1} maxFontSizeMultiplier={1.4}>
@@ -20,11 +22,13 @@ export function CategoryTag({ category }: { category: PrayerCategory }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   tag: {
     alignSelf: 'flex-start',
     backgroundColor: colors.accent,
     borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
@@ -32,8 +36,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.3,
-    color: colors.textMuted,
+    color: colors.text,
   },
-});
+} as const));
 
 export default CategoryTag;

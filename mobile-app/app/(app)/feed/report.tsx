@@ -7,13 +7,14 @@ import { Screen } from '../../../src/components/Screen';
 import { TextField } from '../../../src/components/TextField';
 import { useAuth } from '../../../src/context/AuthContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
+import { useAppTheme } from '../../../src/context/ThemeContext';
 import {
   REPORT_REASONS,
   REPORT_REASON_LABELS,
   type ReportReason,
 } from '../../../src/models/types';
 import { ReportError } from '../../../src/services/firebase/reportErrors';
-import { colors, radius, spacing, typography } from '../../../src/theme/theme';
+import { colors, createThemedStyles, radius, spacing, typography } from '../../../src/theme/theme';
 import {
   confirmHideAccount,
   HIDE_ACCOUNT_ACTION_LABEL,
@@ -31,6 +32,7 @@ const NOTE_MAX = 300;
  * one's own request is prevented (the detail hides the entry point; this also guards).
  */
 export default function ReportScreen() {
+  useAppTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
@@ -224,7 +226,7 @@ export default function ReportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   introBlock: {
     gap: spacing.sm,
   },
@@ -306,4 +308,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingBottom: spacing.md,
   },
-});
+} as const));

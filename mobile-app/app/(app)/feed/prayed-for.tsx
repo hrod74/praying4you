@@ -6,7 +6,8 @@ import { EmptyState } from '../../../src/components/EmptyState';
 import { PrayerCard } from '../../../src/components/PrayerCard';
 import { useAuth } from '../../../src/context/AuthContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
-import { spacing, typography } from '../../../src/theme/theme';
+import { useAppTheme } from '../../../src/context/ThemeContext';
+import { createThemedStyles, spacing, typography } from '../../../src/theme/theme';
 
 /**
  * Prayers I've prayed for (Phase H.1).
@@ -16,6 +17,7 @@ import { spacing, typography } from '../../../src/theme/theme';
  * detail. A warm empty state invites the user to pray for someone. Local/mock only.
  */
 export default function PrayedForScreen() {
+  useAppTheme();
   const router = useRouter();
   const { profile } = useAuth();
   const { getPrayedRequests, hasPrayed } = usePrayers();
@@ -60,7 +62,7 @@ export default function PrayedForScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   list: {
     flex: 1,
   },
@@ -78,4 +80,4 @@ const styles = StyleSheet.create({
   separator: {
     height: spacing.md,
   },
-});
+} as const));

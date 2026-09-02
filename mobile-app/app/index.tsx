@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '../src/components/Button';
 import { useAuth } from '../src/context/AuthContext';
-import { colors, spacing, typography } from '../src/theme/theme';
+import { useAppTheme } from '../src/context/ThemeContext';
+import { colors, createThemedStyles, spacing, typography } from '../src/theme/theme';
 
 /**
  * Welcome / entry screen.
@@ -21,6 +22,7 @@ import { colors, spacing, typography } from '../src/theme/theme';
  * centered box with room beneath it, and is hidden from screen readers as decoration.
  */
 export default function WelcomeScreen() {
+  useAppTheme();
   const router = useRouter();
   const { isSignedIn } = useAuth();
 
@@ -78,7 +80,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
@@ -142,4 +144,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.lg,
   },
-});
+} as const));

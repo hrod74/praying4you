@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { spacing, typography } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { createThemedStyles, spacing, typography } from '../theme/theme';
 
 /**
  * EmptyState — a calm, warm message for empty / not-found / error situations.
@@ -17,6 +18,7 @@ export function EmptyState({
   message?: string;
   icon?: string;
 }) {
+  useAppTheme();
   return (
     <View style={styles.container}>
       <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
@@ -28,7 +30,7 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -48,6 +50,6 @@ const styles = StyleSheet.create({
     ...typography.muted,
     textAlign: 'center',
   },
-});
+} as const));
 
 export default EmptyState;

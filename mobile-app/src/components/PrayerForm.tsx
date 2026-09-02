@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { PrayerCategory } from '../models/types';
-import { colors, radius, spacing, typography } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, radius, spacing, typography } from '../theme/theme';
 import { evaluatePrayerSubmission } from '../utils/prayerSubmissionGate';
 import { PRAYER_BODY_MAX, validatePrayerBody } from '../utils/validation';
 import { Button } from './Button';
@@ -59,6 +60,7 @@ export function PrayerForm({
   /** Called with the validated values. May reject; the form re-enables on rejection. */
   onSubmit: (values: PrayerFormValues) => Promise<void>;
 }) {
+  useAppTheme();
   const [body, setBody] = useState(initialValues?.body ?? '');
   const [category, setCategory] = useState<PrayerCategory>(initialValues?.category ?? 'other');
   const [isAnonymous, setIsAnonymous] = useState(initialValues?.isAnonymous ?? false);
@@ -239,7 +241,7 @@ export function PrayerForm({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   intro: {
     gap: spacing.sm,
   },
@@ -326,6 +328,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
-});
+} as const));
 
 export default PrayerForm;

@@ -17,7 +17,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing, typography } from '../theme/theme';
+import { useAppTheme } from './ThemeContext';
+import { colors, createThemedStyles, radius, spacing, typography } from '../theme/theme';
 
 /**
  * FeedbackContext — one calm, shared confirmation pattern for the whole app (Phase H.1).
@@ -55,6 +56,7 @@ const ERROR_MS = 4200;
 const FeedbackContext = createContext<FeedbackContextValue | undefined>(undefined);
 
 export function FeedbackProvider({ children }: { children: ReactNode }) {
+  useAppTheme();
   const [toast, setToast] = useState<ToastState | null>(null);
   const anim = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -175,7 +177,7 @@ export function useFeedback(): FeedbackContextValue {
   return ctx;
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   host: {
     flex: 1,
   },
@@ -230,6 +232,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     flex: 1,
   },
-});
+} as const));
 
 export default FeedbackProvider;

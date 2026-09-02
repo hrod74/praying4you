@@ -17,13 +17,14 @@ import { PrayerCard } from '../../../src/components/PrayerCard';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useFeedback } from '../../../src/context/FeedbackContext';
 import { usePrayers } from '../../../src/context/PrayerContext';
+import { useAppTheme } from '../../../src/context/ThemeContext';
 import {
   applyFeedControls,
   DEFAULT_FEED_CONTROLS,
   isFeedCustomized,
   type FeedControls as FeedControlsState,
 } from '../../../src/feed/feedQuery';
-import { colors, spacing, typography } from '../../../src/theme/theme';
+import { colors, createThemedStyles, spacing, typography } from '../../../src/theme/theme';
 import {
   confirmHideAccount,
   HIDE_ACCOUNT_SUCCESS_MESSAGE,
@@ -54,6 +55,7 @@ function Separator() {
 }
 
 export default function FeedScreen() {
+  useAppTheme();
   const router = useRouter();
   const { profile } = useAuth();
   const { prayers, isLoading, error, refresh, hasPrayed, pray, hideAccountForRequest } =
@@ -224,7 +226,7 @@ export default function FeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   list: {
     flex: 1,
     backgroundColor: colors.background,
@@ -252,4 +254,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   centeredText: typography.muted,
-});
+} as const));

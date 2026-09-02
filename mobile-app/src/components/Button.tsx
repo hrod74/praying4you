@@ -6,7 +6,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radius, spacing } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, radius, spacing } from '../theme/theme';
 
 type Variant = 'primary' | 'secondary';
 
@@ -34,6 +35,7 @@ export function Button({
   accessibilityHint?: string;
   style?: StyleProp<ViewStyle>;
 }) {
+  useAppTheme();
   const isPrimary = variant === 'primary';
   return (
     <Pressable
@@ -58,7 +60,7 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   base: {
     minHeight: 52,
     borderRadius: radius.md,
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
   },
   secondary: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   pressed: {
@@ -91,6 +93,6 @@ const styles = StyleSheet.create({
   secondaryLabel: {
     color: colors.text,
   },
-});
+} as const));
 
 export default Button;

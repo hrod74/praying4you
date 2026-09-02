@@ -3,7 +3,8 @@ import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PRAYER_CATEGORY_LABELS, type PrayerRequest } from '../models/types';
-import { colors, radius, spacing, typography } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, radius, spacing, typography } from '../theme/theme';
 import { HIDE_ACCOUNT_ACTION_LABEL } from '../utils/hideAccountCopy';
 import { formatPrayerCount, formatShortDate, truncate } from '../utils/format';
 import { CategoryTag } from './CategoryTag';
@@ -56,6 +57,7 @@ function PrayerCardComponent({
   /** Whether the current user has prayed for this request (lightweight feed indicator). */
   prayed?: boolean;
 }) {
+  useAppTheme();
   // Display name is derived from the anonymity flag, so an anonymous post can never
   // reveal a real name even if cached data were inconsistent.
   const shownName = prayer.isAnonymous ? 'Anonymous' : prayer.displayName;
@@ -141,11 +143,11 @@ function PrayerCardComponent({
 
 export const PrayerCard = memo(PrayerCardComponent);
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     padding: spacing.lg,
     gap: spacing.sm,
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
@@ -248,6 +250,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     backgroundColor: colors.accent,
   },
   prayedText: {
@@ -256,6 +260,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     flexShrink: 1,
   },
-});
+} as const));
 
 export default PrayerCard;

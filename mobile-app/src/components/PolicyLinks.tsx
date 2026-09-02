@@ -1,6 +1,7 @@
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing, typography } from '../theme/theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { colors, createThemedStyles, spacing, typography } from '../theme/theme';
 
 export const TERMS_URL = 'https://productsparkstudio.com/terms/';
 
@@ -11,6 +12,7 @@ const POLICY_LINKS = [
 ] as const;
 
 export function PolicyLinks() {
+  useAppTheme();
   return (
     <View style={styles.links} accessibilityRole="summary">
       {POLICY_LINKS.map(({ label, url }) => (
@@ -29,7 +31,7 @@ export function PolicyLinks() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   links: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -41,6 +43,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
-});
+} as const));
 
 export default PolicyLinks;

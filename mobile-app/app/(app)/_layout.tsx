@@ -4,7 +4,8 @@ import { StyleSheet, Text } from 'react-native';
 
 import { useAuth } from '../../src/context/AuthContext';
 import { PrayerProvider } from '../../src/context/PrayerContext';
-import { colors } from '../../src/theme/theme';
+import { useAppTheme } from '../../src/context/ThemeContext';
+import { colors, createThemedStyles } from '../../src/theme/theme';
 
 /**
  * Main app tab shell (shown only to a signed-in user).
@@ -65,6 +66,7 @@ const tabLabel =
 
 export default function AppTabsLayout() {
   const { isSignedIn } = useAuth();
+  useAppTheme();
 
   if (!isSignedIn) {
     return <Redirect href="/" />;
@@ -114,7 +116,7 @@ export default function AppTabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyles(() => ({
   tabLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -125,4 +127,4 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     textAlign: 'center',
   },
-});
+} as const));
