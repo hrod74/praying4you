@@ -44,7 +44,7 @@ export default function PrayerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuth();
-  const { getById, hasPrayed, pray, hasReported, removePrayer, hideAccountForRequest, isAccountHidden } =
+  const { getById, hasPrayed, pray, undoPrayer, hasReported, removePrayer, hideAccountForRequest, isAccountHidden } =
     usePrayers();
   const { showSuccess, showError } = useFeedback();
   const fromContext = getById(id);
@@ -106,7 +106,10 @@ export default function PrayerDetailScreen() {
     setPending(true);
     try {
       await pray(prayer.id, profile.id);
-      showSuccess('You prayed for this.');
+      showSuccess('You prayed for this.', {
+        label: 'Undo',
+        onPress: () => { void handleUndoPrayer(); },
+      });
     } catch (e) {
       // Surface the interaction layer's calm, safe copy (e.g. removed request / network); never a
       // raw Firebase error.
@@ -118,6 +121,37 @@ export default function PrayerDetailScreen() {
     } finally {
       setPending(false);
     }
+  };
+
+  const handleUndoPrayer = async () => {
+    if (!profile) return;
+    setPending(true);
+    try {
+      await undoPrayer(prayer.id, profile.id);
+      showSuccess('Accidental prayer action corrected.');
+    } catch (e) {
+      showError(
+        e instanceof Error && e.message
+          ? e.message
+          : 'We could not correct that prayer action right now. Please try again.',
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const confirmUndoPrayer = () => {
+    Alert.alert(
+      'Undo prayer?',
+      'This removes your prayer mark and decreases the prayer count by one.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Undo prayer',
+          onPress: () => { void handleUndoPrayer(); },
+        },
+      ],
+    );
   };
 
   // "Hide requests from this account" from the detail screen. On success, per the required
@@ -208,8 +242,21 @@ export default function PrayerDetailScreen() {
             />
           </View>
         ) : alreadyPrayed ? (
-          <View style={styles.prayedConfirm} accessibilityRole="text">
-            <Text style={styles.prayedConfirmText}>🙏 You prayed for this</Text>
+          <View style={styles.prayedBlock}>
+            <View style={styles.prayedConfirm} accessibilityRole="text">
+              <Text style={styles.prayedConfirmText}>🙏 You prayed for this</Text>
+            </View>
+            <Pressable
+              onPress={confirmUndoPrayer}
+              disabled={pending}
+              accessibilityRole="button"
+              accessibilityLabel="Undo prayer"
+              accessibilityHint="Removes your prayer mark and decreases the prayer count by one"
+              hitSlop={8}
+              style={({ pressed }) => [styles.undoLink, pressed && styles.undoLinkPressed]}
+            >
+              <Text style={styles.undoLinkText}>Undo prayer</Text>
+            </Pressable>
           </View>
         ) : (
           <Button
@@ -311,6 +358,9 @@ const styles = createThemedStyles(() => ({
     ...typography.muted,
     fontStyle: 'italic',
   },
+  prayedBlock: {
+    gap: spacing.sm,
+  },
   prayedConfirm: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,
@@ -322,6 +372,22 @@ const styles = createThemedStyles(() => ({
     ...typography.body,
     fontWeight: '600',
     color: colors.text,
+  },
+  undoLink: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  undoLinkPressed: {
+    opacity: 0.7,
+  },
+  undoLinkText: {
+    ...typography.muted,
+    color: colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   safetyBlock: {
     backgroundColor: colors.surface,

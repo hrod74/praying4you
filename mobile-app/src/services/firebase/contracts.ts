@@ -152,6 +152,12 @@ export interface PrayerInteractionService {
    * request is missing or not active.
    */
   pray(userUid: string, requestId: string): Promise<{ created: boolean }>;
+  /**
+   * Correct an accidental prayer by deleting the caller's matching interaction and decrementing
+   * the aggregate count by exactly one in the same transaction. A missing interaction is an
+   * idempotent no-op. The count is never allowed to fall below zero.
+   */
+  undoPrayer(userUid: string, requestId: string): Promise<{ removed: boolean }>;
   /** Whether the signed-in user has already prayed for a request (own record only). */
   hasPrayed(userUid: string, requestId: string): Promise<boolean>;
   /**

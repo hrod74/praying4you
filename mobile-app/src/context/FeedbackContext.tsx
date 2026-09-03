@@ -41,11 +41,12 @@ interface ToastState {
   id: number;
   message: string;
   tone: Tone;
+  action?: { label: string; onPress: () => void };
 }
 
 interface FeedbackContextValue {
   /** Show a calm success confirmation (auto-dismisses). */
-  showSuccess: (message: string) => void;
+  showSuccess: (message: string, action?: { label: string; onPress: () => void }) => void;
   /** Show a gentle error message (auto-dismisses, lingers a little longer). */
   showError: (message: string) => void;
 }
@@ -79,10 +80,10 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   }, [anim]);
 
   const show = useCallback(
-    (message: string, tone: Tone) => {
+    (message: string, tone: Tone, action?: { label: string; onPress: () => void }) => {
       clearTimer();
       counter.current += 1;
-      setToast({ id: counter.current, message, tone });
+      setToast({ id: counter.current, message, tone, action });
       anim.setValue(0);
       Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
       // Announce for VoiceOver / TalkBack so the confirmation is not visual-only.
@@ -101,13 +102,17 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             if (finished) setToast(null);
           });
         },
-        tone === 'error' ? ERROR_MS : SUCCESS_MS,
+        tone === 'error' ? ERROR_MS : action ? 5000 : SUCCESS_MS,
       );
     },
     [anim],
   );
 
-  const showSuccess = useCallback((message: string) => show(message, 'success'), [show]);
+  const showSuccess = useCallback(
+    (message: string, action?: { label: string; onPress: () => void }) =>
+      show(message, 'success', action),
+    [show],
+  );
   const showError = useCallback((message: string) => show(message, 'error'), [show]);
 
   const value = useMemo<FeedbackContextValue>(
@@ -146,11 +151,7 @@ function Toast({
         { top: insets.top + 52, opacity: anim, transform: [{ translateY }] },
       ]}
     >
-      <Pressable
-        onPress={onDismiss}
-        accessibilityRole="button"
-        accessibilityLabel={toast.message}
-        accessibilityHint="Dismisses this message"
+      <View
         accessibilityLiveRegion="polite"
         style={[styles.toast, isError ? styles.toastError : styles.toastSuccess]}
       >
@@ -164,7 +165,30 @@ function Toast({
         <Text style={styles.message} maxFontSizeMultiplier={1.6}>
           {toast.message}
         </Text>
-      </Pressable>
+        {toast.action ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={toast.action.label}
+            accessibilityHint="Corrects the prayer action"
+            onPress={() => {
+              onDismiss();
+              toast.action?.onPress();
+            }}
+            style={styles.action}
+          >
+            <Text style={styles.actionText}>{toast.action.label}</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss message"
+          onPress={onDismiss}
+          hitSlop={8}
+          style={styles.dismiss}
+        >
+          <Text style={styles.dismissText} allowFontScaling={false}>×</Text>
+        </Pressable>
+      </View>
     </Animated.View>
   );
 }
@@ -231,6 +255,27 @@ const styles = createThemedStyles(() => ({
   message: {
     ...typography.body,
     flex: 1,
+  },
+  action: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  actionText: {
+    color: colors.primary,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  dismiss: {
+    width: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -spacing.sm,
+  },
+  dismissText: {
+    color: colors.textMuted,
+    fontSize: 22,
   },
 } as const));
 

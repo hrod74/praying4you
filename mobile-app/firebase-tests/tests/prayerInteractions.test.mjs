@@ -18,7 +18,7 @@ import {
 import { makeTestEnv, interactionDoc, requestDoc } from './helpers.mjs';
 
 /**
- * Rules tests for `prayerInteractions/{uid}_{requestId}` and the tied `prayerCount` +1.
+ * Rules tests for `prayerInteractions/{uid}_{requestId}` and the tied `prayerCount` +/-1.
  *
  * Proves the AGGREGATE-ONLY model and the bug fixes from J.2f.3:
  *  - a user can GET their own deterministic interaction doc even before it exists (the transaction's
@@ -88,6 +88,14 @@ async function interactionExists(uid, reqId) {
 function prayBatch(db, uid, reqId, newCount) {
   const batch = writeBatch(db);
   batch.set(doc(db, `prayerInteractions/${uid}_${reqId}`), interactionDoc(uid, reqId));
+  batch.update(doc(db, `prayerRequests/${reqId}`), { prayerCount: newCount });
+  return batch.commit();
+}
+
+/** Mirror the app's correction flow: delete own interaction and write a literal -1 atomically. */
+function undoPrayerBatch(db, uid, reqId, newCount) {
+  const batch = writeBatch(db);
+  batch.delete(doc(db, `prayerInteractions/${uid}_${reqId}`));
   batch.update(doc(db, `prayerRequests/${reqId}`), { prayerCount: newCount });
   return batch.commit();
 }
@@ -201,6 +209,50 @@ test('a different user can create a separate interaction and increment the count
   await assertSucceeds(prayBatch(bob, 'bob', 'req1', (await readCount('req1')) + 1));
   await assertSucceeds(prayBatch(carol, 'carol', 'req1', (await readCount('req1')) + 1));
   assert.equal(await readCount('req1'), 2);
+});
+
+test('a valid correction deletes the caller interaction and decrements count by exactly 1', async () => {
+  await seedRequest('req1', 'alice', { prayerCount: 2 });
+  await seedInteraction('bob', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertSucceeds(undoPrayerBatch(bob, 'bob', 'req1', 1));
+  assert.equal(await interactionExists('bob', 'req1'), false);
+  assert.equal(await readCount('req1'), 1);
+});
+
+test('prayerCount cannot be decremented without deleting the caller matching interaction', async () => {
+  await seedRequest('req1', 'alice', { prayerCount: 2 });
+  await seedInteraction('bob', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertFails(updateDoc(doc(bob, 'prayerRequests/req1'), { prayerCount: 1 }));
+  assert.equal(await readCount('req1'), 2);
+});
+
+test('a correction cannot decrement by more than exactly 1', async () => {
+  await seedRequest('req1', 'alice', { prayerCount: 5 });
+  await seedInteraction('bob', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertFails(undoPrayerBatch(bob, 'bob', 'req1', 3));
+  assert.equal(await interactionExists('bob', 'req1'), true);
+  assert.equal(await readCount('req1'), 5);
+});
+
+test('a correction can never make prayerCount negative', async () => {
+  await seedRequest('req1', 'alice', { prayerCount: 0 });
+  await seedInteraction('bob', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertFails(undoPrayerBatch(bob, 'bob', 'req1', -1));
+  assert.equal(await interactionExists('bob', 'req1'), true);
+  assert.equal(await readCount('req1'), 0);
+});
+
+test('a user cannot decrement by deleting another user interaction', async () => {
+  await seedRequest('req1', 'alice', { prayerCount: 1 });
+  await seedInteraction('carol', 'req1');
+  const bob = testEnv.authenticatedContext('bob').firestore();
+  await assertFails(undoPrayerBatch(bob, 'carol', 'req1', 0));
+  assert.equal(await interactionExists('carol', 'req1'), true);
+  assert.equal(await readCount('req1'), 1);
 });
 
 test('an interaction is immutable: the client cannot update it', async () => {

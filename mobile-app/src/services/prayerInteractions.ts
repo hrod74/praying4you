@@ -36,6 +36,14 @@ export async function prayForRequest(
   return firebasePrayerInteractionService.pray(userUid, requestId);
 }
 
+/** Atomically remove the caller's prayer interaction and decrement the aggregate count. */
+export async function undoPrayerForRequest(
+  userUid: string,
+  requestId: string,
+): Promise<{ removed: boolean }> {
+  return firebasePrayerInteractionService.undoPrayer(userUid, requestId);
+}
+
 /**
  * The ids of requests the signed-in user has prayed for (Firebase mode), for hydrating their
  * already-prayed state and the "Prayers I've prayed for" list. Own records only; never who-prayed

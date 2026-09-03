@@ -113,6 +113,40 @@ export const firebasePrayerInteractionService: PrayerInteractionService = {
     }
   },
 
+  async undoPrayer(userUid, requestId) {
+    const db = requireDb();
+    const interactionRef = doc(db, COLLECTION, interactionDocId(userUid, requestId));
+    const requestRef = doc(db, REQUESTS, requestId);
+    try {
+      return await runTransaction(db, async (tx) => {
+        const requestSnap = await tx.get(requestRef);
+        if (!requestSnap.exists() || requestSnap.data().status !== 'active') {
+          throw new PrayerInteractionError('unavailable');
+        }
+        const interactionSnap = await tx.get(interactionRef);
+        if (!interactionSnap.exists()) return { removed: false };
+
+        const currentCount = requestSnap.data().prayerCount;
+        if (typeof currentCount !== 'number' || currentCount <= 0) {
+          throw new PrayerInteractionError('generic');
+        }
+
+        tx.delete(interactionRef);
+        tx.update(requestRef, { prayerCount: currentCount - 1 });
+        return { removed: true };
+      });
+    } catch (error) {
+      if (__DEV__) {
+        const code = (error as { code?: string })?.code ?? 'unknown';
+        if (code !== 'unknown' || !(error instanceof PrayerInteractionError)) {
+          console.warn(`[undo-prayer] interaction write failed (code: ${code}).`);
+        }
+      }
+      const mapped = prayerInteractionError(error);
+      throw mapped.code === 'generic' ? new PrayerInteractionError('undoGeneric') : mapped;
+    }
+  },
+
   async hasPrayed(userUid, requestId) {
     const db = requireDb();
     try {

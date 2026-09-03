@@ -21,6 +21,7 @@ import {
   saveSubmittedPrayers,
   type NewPrayerInput,
 } from '../services/prayerService';
+import { withoutPrayerInteraction } from '../services/interactionUndo';
 import {
   createRequest,
   editRequest,
@@ -32,6 +33,7 @@ import {
   interactionsUseFirebase,
   listMyPrayedRequestIds,
   prayForRequest,
+  undoPrayerForRequest,
 } from '../services/prayerInteractions';
 import { reportsUseFirebase, reportRequest } from '../services/reports';
 import { ReportError } from '../services/firebase/reportErrors';
@@ -142,6 +144,8 @@ interface PrayerContextValue {
   hasPrayed: (requestId: string, userId: string) => boolean;
   /** Record an "I prayed for this" interaction (idempotent per user+request). */
   pray: (requestId: string, userId: string) => Promise<void>;
+  /** Correct an accidental prayer; idempotent and never decrements below zero. */
+  undoPrayer: (requestId: string, userId: string) => Promise<void>;
   /** Whether the given user has already reported the given request. */
   hasReported: (requestId: string, userId: string) => boolean;
   /** Report a request locally (idempotent per user+request); flags it and counts it. */
@@ -188,6 +192,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
   const [prayedIds, setPrayedIds] = useState<Set<string>>(new Set());
   // Synchronous guard so rapid double-taps can't double-record before state updates.
   const prayedKeys = useRef<Set<string>>(new Set());
+  const undoingKeys = useRef<Set<string>>(new Set());
   // LOCAL mode: recorded reports; drives the local derived flag/report count.
   const [reports, setReports] = useState<Report[]>([]);
   // FIREBASE mode: request ids the CURRENT user has reported this session (reports are a private
@@ -443,6 +448,41 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const undoPrayer = useCallback(async (requestId: string, userId: string) => {
+    const key = interactionKey(userId, requestId);
+    if (undoingKeys.current.has(key)) return;
+    undoingKeys.current.add(key);
+
+    try {
+      if (USE_FIREBASE_INTERACTIONS) {
+        const { removed } = await undoPrayerForRequest(userId, requestId);
+        setPrayedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(requestId);
+          return next;
+        });
+        prayedKeys.current.delete(key);
+        if (removed) {
+          setBaseline((prev) =>
+            prev.map((p) =>
+              p.id === requestId ? { ...p, prayerCount: Math.max(0, p.prayerCount - 1) } : p,
+            ),
+          );
+        }
+        return;
+      }
+
+      setInteractions((prev) => {
+        const next = withoutPrayerInteraction(prev, userId, requestId);
+        void saveInteractions(next);
+        return next;
+      });
+      prayedKeys.current.delete(key);
+    } finally {
+      undoingKeys.current.delete(key);
+    }
+  }, []);
+
   const hasReported = useCallback(
     (requestId: string, userId: string) =>
       USE_FIREBASE_REPORTS
@@ -579,6 +619,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       getPrayedRequests,
       hasPrayed,
       pray,
+      undoPrayer,
       hasReported,
       reportPrayer,
       resetLocalData,
@@ -600,6 +641,7 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
       getPrayedRequests,
       hasPrayed,
       pray,
+      undoPrayer,
       hasReported,
       reportPrayer,
       resetLocalData,

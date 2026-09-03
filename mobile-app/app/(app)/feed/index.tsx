@@ -30,6 +30,7 @@ import {
   HIDE_ACCOUNT_SUCCESS_MESSAGE,
 } from '../../../src/utils/hideAccountCopy';
 import type { PrayerRequest } from '../../../src/models/types';
+import { prayedStateKey } from '../../../src/feed/prayedStateKey';
 
 /**
  * Prayer feed (read path) with sorting + filtering and feed-scale performance hardening.
@@ -58,7 +59,7 @@ export default function FeedScreen() {
   useAppTheme();
   const router = useRouter();
   const { profile } = useAuth();
-  const { prayers, isLoading, error, refresh, hasPrayed, pray, hideAccountForRequest } =
+  const { prayers, isLoading, error, refresh, getPrayedRequests, hasPrayed, pray, undoPrayer, hideAccountForRequest } =
     usePrayers();
   const { showSuccess, showError } = useFeedback();
 
@@ -80,6 +81,13 @@ export default function FeedScreen() {
   );
 
   const customized = isFeedCustomized(controls);
+  // FlatList is a PureComponent. Declare the current user's prayed ids as explicit extra data so a
+  // correction re-evaluates memoized rows even when the aggregate request object is independently
+  // reconciled by Firestore. React.memo still skips every card whose actual props did not change.
+  const prayedExtraData = useMemo(
+    () => prayedStateKey(userId ? getPrayedRequests(userId).map((p) => p.id) : []),
+    [userId, getPrayedRequests],
+  );
 
   const handlePress = useCallback(
     (id: string) => router.push(`/(app)/feed/${id}`),
@@ -94,7 +102,18 @@ export default function FeedScreen() {
       if (!profile) return;
       try {
         await pray(id, profile.id);
-        showSuccess('You prayed for this.');
+        showSuccess('You prayed for this.', {
+          label: 'Undo',
+          onPress: () => {
+            void undoPrayer(id, profile.id).catch((e) => {
+              showError(
+                e instanceof Error && e.message
+                  ? e.message
+                  : 'We could not correct that prayer action right now. Please try again.',
+              );
+            });
+          },
+        });
       } catch (e) {
         // Surface the interaction layer's calm, safe copy (e.g. removed request / network); never a
         // raw Firebase error.
@@ -105,7 +124,7 @@ export default function FeedScreen() {
         );
       }
     },
-    [profile, pray, showSuccess, showError],
+    [profile, pray, undoPrayer, showSuccess, showError],
   );
 
   // "Hide requests from this account" from a feed card. Confirms, then hides the author (looked
@@ -178,6 +197,7 @@ export default function FeedScreen() {
       data={visiblePrayers}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
+      extraData={prayedExtraData}
       style={styles.list}
       contentContainerStyle={styles.content}
       ListHeaderComponent={

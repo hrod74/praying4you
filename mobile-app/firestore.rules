@@ -153,6 +153,17 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/prayerInteractions/$(request.auth.uid + '_' + requestId))
         && existsAfter(/databases/$(database)/documents/prayerInteractions/$(request.auth.uid + '_' + requestId));
 
+      // UPDATE (undo accidental prayer): decrement by exactly one, and only in the same atomic
+      // commit that deletes the caller's existing matching interaction. Requiring a positive
+      // previous count prevents a negative aggregate even if legacy data is inconsistent.
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prayerCount'])
+        && resource.data.prayerCount > 0
+        && request.resource.data.prayerCount == resource.data.prayerCount - 1
+        && resource.data.status == 'active'
+        && exists(/databases/$(database)/documents/prayerInteractions/$(request.auth.uid + '_' + requestId))
+        && !existsAfter(/databases/$(database)/documents/prayerInteractions/$(request.auth.uid + '_' + requestId));
+
       // No client deletes: removal is a soft remove (status -> removed), never a hard delete.
       allow delete: if false;
     }

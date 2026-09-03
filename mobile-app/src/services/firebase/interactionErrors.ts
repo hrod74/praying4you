@@ -12,6 +12,8 @@ import { FirebaseError } from 'firebase/app';
 export const INTERACTION_ERROR_COPY = {
   /** The interaction/increment could not be written. */
   generic: 'We could not mark this as prayed for right now. Please try again.',
+  /** An accidental prayer action could not be corrected. */
+  undoGeneric: 'We could not correct that prayer action right now. Please try again.',
   /** The user has already prayed for this request (idempotent; usually handled silently in the UI). */
   already: 'You have already prayed for this request.',
   /** The target request was removed or does not exist. */
